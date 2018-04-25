@@ -391,6 +391,7 @@ static int altera_a10_cdr_pll_set_rate(struct clk_hw *clk_hw,
 		adxcfg_calibration_check(st, i, false);
 	}
 
+	dev_info(st->dev, "Cdr set rate to %ld\n",rate);
 	adxcvr_post_lane_rate_change(st, rate);
 
 	st->initial_recalc = false;

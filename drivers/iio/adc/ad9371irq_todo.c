@@ -33,6 +33,15 @@
 #include <linux/clkdev.h>
 #include <linux/clk-provider.h>
 
+#define A10AD9371_FOXCONN_AD9371IRQ
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+#include <linux/interrupt.h>
+#include <linux/irq.h>
+#include <asm/signal.h>
+#include <asm-generic/siginfo.h>
+#include <linux/fs.h>
+#endif
+
 #include "mykonos/t_mykonos.h"
 #include "mykonos/mykonos.h"
 #include "mykonos/mykonos_gpio.h"
@@ -87,6 +96,9 @@ static mykonosFir_t snifferRxFir= {
 	&snifferFirCoefs[0]/* A pointer to an array of filter coefficients*/
 };
 
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+static struct fasync_struct *irq_async;
+#endif
 static int ad9371_string_to_val(const char *buf, int *val)
 {
 	int ret, integer, fract;
@@ -162,6 +174,17 @@ static int ad9371_reset(struct ad9371_rf_phy *phy)
 
 	return -ENODEV;
 }
+
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+static irqreturn_t ad9371_event_handler(int irq, void *private)
+{
+    struct iio_dev *indio_dev = private;
+    
+    kill_fasync(&irq_async, SIGIO, POLL_IN);
+    
+    return (IRQ_HANDLED);
+}
+#endif
 
 static int ad9371_fir_cpy(mykonosFir_t *fir_src, mykonosFir_t *fir_dest)
 {
@@ -745,10 +768,6 @@ static int ad9371_setup(struct ad9371_rf_phy *phy)
 	/*** < User: Make sure SYSREF is stopped/disabled > ***/
 	mykError = MYKONOS_enableSysrefToDeframer(mykDevice, 0);
 	mykError = MYKONOS_resetDeframer(mykDevice);
-
-	ret = clk_prepare_enable(phy->jesd_tx_clk);
-	if (ret < 0)
-		return ret;
 
 	/*** < User: make sure BBIC JESD framer is actively transmitting CGS> ***/
 	mykError = MYKONOS_enableSysrefToDeframer(mykDevice, 1);
@@ -3791,6 +3810,26 @@ static int ad9371_probe(struct spi_device *spi)
 	indio_dev->channels = ad9371_phy_chan;
 	indio_dev->num_channels = ARRAY_SIZE(ad9371_phy_chan);
 
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+    dev_info(&spi->dev, "begin to see irq:%d,%s\n", spi->irq, indio_dev->name);
+    if (spi->irq > 0) { // print-out 45
+        dev_info(&spi->dev, "begin to request_threaded_irq\n");
+        ret = request_threaded_irq(phy->spi->irq,
+                    ad9371_event_handler,
+                    NULL,
+                    IRQF_TRIGGER_HIGH,
+                    indio_dev->name,
+                    indio_dev);
+        if (ret < 0) {
+            dev_err(&spi->dev,"Unable to register IRQ handler\n");
+            goto out_iio_device_unregister;
+        } else {
+            enable_irq(phy->spi->irq);
+            dev_info(&spi->dev, "irq is enabled.\n");
+        }
+    }
+#endif
+
 	ret = iio_device_register(indio_dev);
 	if (ret < 0)
 		goto out_clk_del_provider;
@@ -3818,17 +3857,24 @@ static int ad9371_probe(struct spi_device *spi)
 	dev_info(&spi->dev, "%s : AD937%d Rev %d, Firmware %u.%u.%u API version: %u.%u.%u.%u successfully initialized",
 		 __func__, AD937x_PARTID(phy), rev, vers[0], vers[1], vers[2],
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
-	gpiod_put(phy->sysref_req_gpio);/* release: multiple ad9371 chips share this gpio */
+
 	return 0;
 
 out_iio_device_unregister:
-	iio_device_unregister(indio_dev);
+	iio_device_unregister(indio_dev); 
 out_clk_del_provider:
 	of_clk_del_provider(spi->dev.of_node);
 out_disable_clocks:
 	//ad9371_clks_disable(phy);
 out_unregister_notifier:
 	release_firmware(phy->fw);
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+out_free_interrupt:
+	if (spi->irq > 0) {
+		disable_irq(phy->spi->irq);
+		free_irq(phy->spi->irq, indio_dev);
+    }
+#endif
 
 	return ret;
 }
@@ -3842,6 +3888,14 @@ static int ad9371_remove(struct spi_device *spi)
 	sysfs_remove_bin_file(&phy->indio_dev->dev.kobj, &phy->bin_gt);
 	iio_device_unregister(phy->indio_dev);
  	of_clk_del_provider(spi->dev.of_node);
+#if defined(A10AD9371_FOXCONN_AD9371IRQ)
+	if (spi->irq) {
+		disable_irq(phy->spi->irq);
+		free_irq(phy->spi->irq, phy->indio_dev);
+		//hiddev_fasync();
+		//beep_fasync(-1, file, 0);
+	}
+#endif
 
 	return 0;
 }

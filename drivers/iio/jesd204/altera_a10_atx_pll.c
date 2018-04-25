@@ -210,6 +210,7 @@ static int altera_a10_atx_pll_set_rate(struct clk_hw *clk_hw,
 
 	atx_pll_calibration_check(st);
 	xcvr_calib_tx(st);
+	dev_info(st->dev, "Atx set rate to %ld\n",rate);
 	adxcvr_post_lane_rate_change(st, rate);
 
 	st->initial_recalc = false;

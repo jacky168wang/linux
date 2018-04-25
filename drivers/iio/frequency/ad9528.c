@@ -368,16 +368,20 @@ static int ad9528_sync(struct iio_dev *indio_dev)
 {
 	int ret = ad9528_write(indio_dev,
 			AD9528_CHANNEL_SYNC, AD9528_CHANNEL_SYNC_SET);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev,"write AD9528_CHANNEL_SYNC_SET\n");
 		return ret;
+    }
 
 	ret = ad9528_io_update(indio_dev);
 	if (ret < 0)
 		return ret;
 
 	ret = ad9528_write(indio_dev, AD9528_CHANNEL_SYNC, 0);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev,"write ad9528 channel sync\n");
 		return ret;
+    }
 
 	ret = ad9528_io_update(indio_dev);
 	if (ret < 0)
@@ -844,21 +848,27 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 			AD9528_SER_CONF_SOFT_RESET |
 			((st->spi->mode & SPI_3WIRE || pdata->spi3wire)? 0 :
 			 AD9528_SER_CONF_SDO_ACTIVE));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "ad9528 SERIAL_PORT_CONFIG error\n");
 		return ret;
-
+	}
 	ret = ad9528_write(indio_dev, AD9528_SERIAL_PORT_CONFIG_B,
 			AD9528_SER_CONF_READ_BUFFERED);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "ad9528 SERIAL_PORT_CONFIG_B error\n");
 		return ret;
-
+	}
 	ret = ad9528_io_update(indio_dev);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "ad9528 io_update error\n");
 		return ret;
+	}
 
 	ret = ad9528_read(indio_dev, AD9528_CHIP_ID);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "read AD9528_CHIP_ID error\n");
 		return ret;
+	}
 
 	if (ret != AD9528_SPI_MAGIC) {
 		dev_err(&indio_dev->dev,
@@ -871,18 +881,24 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	 */
 	ret = ad9528_write(indio_dev, AD9528_PLL1_REF_A_DIVIDER,
 		pdata->refa_r_div);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL1_REF_A_DIVIDER error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL1_REF_B_DIVIDER,
 		pdata->refb_r_div);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL1_REF_B_DIVIDER error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL1_FEEDBACK_DIVIDER,
 		pdata->pll1_feedback_div);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL1_FEEDBACK_DIVIDER error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL1_CHARGE_PUMP_CTRL,
 		AD_IFE(pll1_bypass_en, AD9528_PLL1_CHARGE_PUMP_TRISTATE,
@@ -890,8 +906,10 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 			pll1_charge_pump_current_nA) |
 		AD9528_PLL1_CHARGE_PUMP_MODE_NORMAL |
 		AD9528_PLL1_CHARGE_PUMP_AUTO_TRISTATE_DIS));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL1_CHARGE_PUMP_CTRL error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL1_CTRL,
 		AD_IFE(pll1_bypass_en,
@@ -911,8 +929,10 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 		AD_IF(refb_cmos_neg_inp_en, AD9528_PLL1_REFB_CMOS_NEG_INP_EN) |
 		AD_IF(pll1_feedback_src_vcxo, AD9528_PLL1_SOURCE_VCXO) |
 		AD9528_PLL1_REF_MODE(pdata->ref_mode));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL1_CTRL error\n");
 		return ret;
+	}
 
 	/*
 	 * PLL2 Setup
@@ -932,20 +952,26 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	ret = ad9528_write(indio_dev, AD9528_PLL2_CHARGE_PUMP,
 		AD9528_PLL2_CHARGE_PUMP_CURRENT_nA(pdata->
 			pll2_charge_pump_current_nA));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_CHARGE_PUMP error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_FEEDBACK_DIVIDER_AB,
 		AD9528_PLL2_FB_NDIV_A_CNT(pll2_ndiv_a_cnt) |
 		AD9528_PLL2_FB_NDIV_B_CNT(pll2_ndiv_b_cnt));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_FEEDBACK_DIVIDER_AB error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_CTRL,
 		AD9528_PLL2_CHARGE_PUMP_MODE_NORMAL |
 		AD_IF(pll2_freq_doubler_en, AD9528_PLL2_FREQ_DOUBLER_EN));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_CTRL error\n");
 		return ret;
+	}
 
 
 	vco_freq = div_u64((unsigned long long)pdata->vcxo_freq *
@@ -955,15 +981,19 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	vco_ctrl = AD_IF(pll2_freq_doubler_en || pdata->pll2_r1_div != 1,
 				AD9528_PLL2_DOUBLER_R1_EN);
 	ret = ad9528_write(indio_dev, AD9528_PLL2_VCO_CTRL, vco_ctrl);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_VCO_CTRL error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_VCO_DIVIDER,
 		AD9528_PLL2_VCO_DIV_M1(pdata->pll2_vco_div_m1) |
 		AD_IFE(pll2_vco_div_m1, 0,
 		       AD9528_PLL2_VCO_DIV_M1_PWR_DOWN_EN));
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(&indio_dev->dev, "write AD9528_PLL2_VCO_DIVIDER error\n");
 		return ret;
+    }
 
 	if (pdata->pll2_vco_div_m1)
 		st->vco_out_freq[AD9528_VCO] =
@@ -978,13 +1008,17 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_R1_DIVIDER,
 		AD9528_PLL2_R1_DIV(pdata->pll2_r1_div));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write pll2_r1_div error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_N2_DIVIDER,
 		AD9528_PLL2_N2_DIV(pdata->pll2_n2_div));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_N2_DIVIDER error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_LOOP_FILTER_CTRL,
 		AD9528_PLL2_LOOP_FILTER_CPOLE1(pdata->cpole1) |
@@ -992,8 +1026,10 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 		AD9528_PLL2_LOOP_FILTER_RPOLE2(pdata->rpole2) |
 		AD_IF(rzero_bypass_en,
 		      AD9528_PLL2_LOOP_FILTER_RZERO_BYPASS_EN));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_LOOP_FILTER_CTRL error\n");
 		return ret;
+    }
 
 	st->clk_data.clks = st->clks;
 	st->clk_data.clk_num = AD9528_NUM_CHAN;
@@ -1014,8 +1050,10 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 			AD9528_CLK_DIST_DIV(chan->channel_divider) |
 			AD9528_CLK_DIST_DIV_PHASE(chan->divider_phase) |
 			AD9528_CLK_DIST_CTRL(chan->signal_source));
-		if (ret < 0)
+		if (ret < 0) {
+        	dev_err(&indio_dev->dev, "write channel_num error\n");
 			return ret;
+		}
 
 		st->ad9528_channels[i].type = IIO_ALTVOLTAGE;
 		st->ad9528_channels[i].output = 1;
@@ -1046,18 +1084,24 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 
 	ret = ad9528_write(indio_dev, AD9528_CHANNEL_PD_EN,
 			AD9528_CHANNEL_PD_MASK(~active_mask));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_CHANNEL_PD_EN error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_CHANNEL_SYNC_IGNORE,
 			AD9528_CHANNEL_IGNORE_MASK(ignoresync_mask));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_CHANNEL_SYNC_IGNORE error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_SYSREF_K_DIVIDER,
 			AD9528_SYSREF_K_DIV(pdata->sysref_k_div));
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_SYSREF_K_DIVIDER error\n");
 		return ret;
+	}
 
 	sysref_ctrl = AD9528_SYSREF_PATTERN_MODE(pdata->sysref_pattern_mode) |
 		AD9528_SYSREF_SOURCE(pdata->sysref_src) |
@@ -1065,41 +1109,57 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 		AD9528_SYSREF_PATTERN_TRIGGER_CTRL(pdata->sysref_req_trigger_mode) |
 		(pdata->sysref_req_en ? AD9528_SYSREF_REQUEST_BY_PIN : 0);
 	ret = ad9528_write(indio_dev, AD9528_SYSREF_CTRL, sysref_ctrl);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_SYSREF_CTRL error\n");
 		return ret;
+	}
 
 	ret = ad9528_write(indio_dev, AD9528_PD_EN, AD9528_PD_BIAS);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PD_EN error\n");
 		return ret;
+	}
 
 	ret = ad9528_io_update(indio_dev);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) {
+		dev_err(&indio_dev->dev, " ad9528_io_update error\n");
+        return ret;
+    }	
 
 	ret = ad9528_write(indio_dev, AD9528_PLL2_VCO_CTRL,
 			vco_ctrl | AD9528_PLL2_VCO_CALIBRATE);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_PLL2_VCO_CTRL error\n");
 		return ret;
+	}
 
 	ret = ad9528_io_update(indio_dev);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(&indio_dev->dev, "write ad9528_io_update error\n");
 		return ret;
+    }
 
 	ret = ad9528_poll(indio_dev, AD9528_READBACK,
 			AD9528_IS_CALIBRATING, 0);
-	if (ret < 0)
-		return ret;
-
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_READBACK error\n");
+        return ret;
+    }
+    
 	sysref_ctrl |= AD9528_SYSREF_PATTERN_REQ;
 	ret = ad9528_write(indio_dev, AD9528_SYSREF_CTRL, sysref_ctrl);
-	if (ret < 0)
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write AD9528_SYSREF_PATTERN_REQ error\n");
 		return ret;
+	}
 
 	if (pdata->stat0_pin_func_sel != 0xFF) {
 		ret = ad9528_write(indio_dev, AD9528_STAT_MON0,
 				   pdata->stat0_pin_func_sel);
-		if (ret < 0)
-			return ret;
+        if (ret < 0) {
+            dev_err(&indio_dev->dev, "write AD9528_STAT_MON0 error\n");
+            return ret;
+		}
 
 		stat_en_mask |= AD9528_STAT0_PIN_EN;
 	}
@@ -1107,8 +1167,10 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	if (pdata->stat1_pin_func_sel != 0xFF) {
 		ret = ad9528_write(indio_dev, AD9528_STAT_MON1,
 				   pdata->stat1_pin_func_sel);
-		if (ret < 0)
-			return ret;
+        if (ret < 0) {
+            dev_err(&indio_dev->dev, "write AD9528_STAT_MON1 error\n");
+            return ret;
+		}
 
 		stat_en_mask |= AD9528_STAT1_PIN_EN;
 	}
@@ -1116,17 +1178,23 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	if (stat_en_mask) {
 		ret = ad9528_write(indio_dev, AD9528_STAT_PIN_EN,
 				   stat_en_mask);
-		if (ret < 0)
-			return ret;
+        if (ret < 0) {
+            dev_err(&indio_dev->dev, "write AD9528_STAT_PIN_EN error\n");
+            return ret;
+		}
 	}
 
 	ret = ad9528_io_update(indio_dev);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write ad9528_io_update error\n");
+        return ret;
+    }
 
 	ret = ad9528_sync(indio_dev);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) {
+        dev_err(&indio_dev->dev, "write ad9528_sync error\n");
+        return ret;
+    }
 
 	for (i = 0; i < pdata->num_channels; i++) {
 		struct clk *clk;
@@ -1364,7 +1432,6 @@ static int ad9528_probe(struct spi_device *spi)
 	}
 
 	mdelay(10);
-
 	if (!PTR_ERR_OR_ZERO(status0_gpio))
 		gpiod_direction_input(status0_gpio);
 	if (!PTR_ERR_OR_ZERO(status1_gpio))
@@ -1381,7 +1448,6 @@ static int ad9528_probe(struct spi_device *spi)
 	indio_dev->modes = INDIO_DIRECT_MODE;
 	indio_dev->channels = st->ad9528_channels;
 	indio_dev->num_channels = pdata->num_channels;
-
 	ret = ad9528_setup(indio_dev);
 	if (ret < 0)
 		goto error_disable_reg;

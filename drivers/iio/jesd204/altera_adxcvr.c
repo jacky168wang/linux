@@ -582,6 +582,7 @@ static int adxcvr_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	dev_info(&pdev->dev, "lane rate: %d\n",st->lane_rate);
 	ret = adxcvr_register_lane_clk(st);
 	if (ret)
 		return ret;
