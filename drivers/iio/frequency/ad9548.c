@@ -18,7 +18,7 @@
 
 #include <linux/iio/iio.h>
 
-/* enable/disable: 10/96.8M sys_clk_in */
+/* enable/disable: 96.8/10M sys_clk_in */
 //#define SYS_CLK_96D8M
 
 #define AD_READ		(1 << 15)
