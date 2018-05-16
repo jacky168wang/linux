@@ -18,8 +18,8 @@
 
 #include <linux/iio/iio.h>
 
-/* enable/disable: 96.8/10M sys_clk_in */
-//#define SYS_CLK_96D8M
+/* enable/disable: 76.8/10M sys_clk_in */
+//#define SYS_CLK_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
@@ -45,7 +45,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0000, 0x90},
 #endif
 	{0x0100, 0x18}, /* System clock */
-#if defined(SYS_CLK_96D8M)
+#if defined(SYS_CLK_10M)
 	{0x0101, 0x4D},
 	{0x0102, 0x05},/*03-13 0x45->0x05*/
 	{0x0103, 0x0D},
@@ -80,7 +80,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0212, 0x00},
 	{0x0213, 0xFF}, /* Auxiliary DAC */
 	{0x0214, 0x01},
-#if defined(SYS_CLK_96D8M)
+#if defined(SYS_CLK_10M)
 	{0x0300, 0xE7}, /* DPLL */
 	{0x0301, 0xE2},
 	{0x0302, 0x35},
