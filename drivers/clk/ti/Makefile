@@ -24,4 +24,3 @@ endif
 endif	# CONFIG_ARCH_OMAP2PLUS
 
 obj-$(CONFIG_COMMON_CLK_TI_ADPLL)	+= adpll.o
-obj-$(CONFIG_ADCIIO_CLK_TI_LMK04828)	+= lmk04828.o

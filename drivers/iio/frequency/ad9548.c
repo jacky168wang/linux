@@ -19,7 +19,7 @@
 #include <linux/iio/iio.h>
 
 /* enable/disable: 76.8/10M sys_clk_in */
-//#define SYS_CLK_10M
+#define SYS_CLK_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
@@ -220,17 +220,13 @@ static int ad9548_read(struct spi_device *spi, unsigned reg)
 	cmd = AD_READ | AD_CNT(1) | AD_ADDR(reg);
 	buf[0] = cmd >> 8;
 	buf[1] = cmd & 0xFF;
-
-
 	ret = spi_write_then_read(spi, &buf[0], 2, &buf[2], 1);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) return ret;
 
 	return buf[2];
 }
 
-static int ad9548_write(struct spi_device *spi,
-			 unsigned reg, unsigned val)
+static int ad9548_write(struct spi_device *spi, unsigned reg, unsigned val)
 {
 	unsigned char buf[3];
 	int ret;
@@ -240,10 +236,8 @@ static int ad9548_write(struct spi_device *spi,
 	buf[0] = cmd >> 8;
 	buf[1] = cmd & 0xFF;
 	buf[2] = val;
-
 	ret = spi_write(spi, buf, 3);
-	if (ret < 0)
-		return ret;
+	if (ret < 0) return ret;
 
 	return 0;
 }
@@ -251,6 +245,23 @@ static int ad9548_write(struct spi_device *spi,
 static int ad9548_probe(struct spi_device *spi)
 {
 	int i, ret, timeout;
+
+	dev_info(&spi->dev, "%s: enter", __func__);
+
+#ifdef CONFIG_OF
+	/*
+    np = of_find_node_by_name(NULL, "clksyn_ad9548");
+    if (NULL == np) {
+        dev_err(&spi->dev, "device-tree: node 'ad9548-spi' not find\n");
+ 		return -EINVAL;
+    }
+	ret = of_property_read_u32_index(np, "pl-cs-val", 0, &pl_cs_val);
+    if (ret < 0) {
+        dev_err(&spi->dev, "device-tree: property 'pl-cs-val' not find\n");
+ 		return -EINVAL;
+    }*/
+#endif
+
 #if 1
 	ret = ad9548_write(spi, 0x0, 0x20);
 	if (ret < 0) {
@@ -260,7 +271,7 @@ static int ad9548_probe(struct spi_device *spi)
 	mdelay(1);
 	ret = ad9548_read(spi, 0x3);
 	if (ret < 0) {
-		dev_err(&spi->dev, "Failed to read 0x3\n");
+		dev_err(&spi->dev, "Failed to read [3] for ID\n");
  		return -ENODEV;
 	}
 	if (ret != CHIPID_AD9548) {
@@ -272,7 +283,7 @@ static int ad9548_probe(struct spi_device *spi)
 		mdelay(1);
 		ret = ad9548_read(spi, 0x3);
 		if (ret < 0) {
-			dev_err(&spi->dev, "Failed to read 0x0003\n");
+			dev_err(&spi->dev, "Failed to read [3] for ID\n");
  			return -ENODEV;
 		}
 		if (ret != CHIPID_AD9548) {
@@ -280,52 +291,57 @@ static int ad9548_probe(struct spi_device *spi)
  			return -ENODEV;
 		}
 	}
-	dev_info(&spi->dev, "Rev. 0x%X probed\n", ad9548_read(spi, 0x2));
+	dev_info(&spi->dev, "Rev.0x%X probed\n", ad9548_read(spi, 0x2));
 #endif
-	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++)
+	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
 		switch (ad9548_regs[i][0]) {
 		case WAIT_B:
 			timeout = 100;
 			do {
 				ret = ad9548_read(spi, 0xD01);
-				if (ret < 0)
-					return ret;
-				if (ret & BIT(0))
-					break;
+				if (ret < 0) return ret;
+				if (ret & BIT(0)) break;
 				mdelay(1);
 			} while (timeout--);
-
 			if (timeout <= 0) {
 				dev_info(&spi->dev, "system clock PLL unlock in 100ms\n");
 				return -ETIMEDOUT;
 			}
 			break;
 		default:
-			ret = ad9548_write(spi, ad9548_regs[i][0],
-					   ad9548_regs[i][1]);
-			if (ret < 0)
-				return ret;
+			ret = ad9548_write(spi, ad9548_regs[i][0], ad9548_regs[i][1]);
+			if (ret < 0) return ret;
 			break;
 		}
+	}
 
-	dev_info(&spi->dev, "Rev. 0x%X probed\n", ad9548_read(spi, 0x2));
-
+	dev_info(&spi->dev, "%s: succeed\n", __func__);
 	return 0;
 }
 
-static const struct spi_device_id ad9548_id[] = {
-	{"ad9548", 0},
-	{}
+#ifdef CONFIG_OF
+static const struct of_device_id ad9548_dt_ids[] = {
+    { .compatible = "adi,ad9548" },
+    { }
 };
-MODULE_DEVICE_TABLE(spi, ad9548_id);
+#endif
+
+static const struct spi_device_id ad9548_hw_ids[] = {
+	{ "ad9548", CHIPID_AD9548 },
+	{ }
+};
+MODULE_DEVICE_TABLE(spi, ad9548_ids);
 
 static struct spi_driver ad9548_driver = {
 	.driver = {
 		.name	= "ad9548",
 		.owner	= THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(ad9548_dt_ids),
+#endif
 	},
 	.probe		= ad9548_probe,
-	.id_table	= ad9548_id,
+	.id_table	= ad9548_hw_ids,
 };
 module_spi_driver(ad9548_driver);
 

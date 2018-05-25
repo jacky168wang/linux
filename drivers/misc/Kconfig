@@ -420,6 +420,20 @@ config TI_DAC7512
 	  This driver can also be built as a module. If so, the module
 	  will be called ti_dac7512.
 
+config TI_LMK04828
+	tristate "Texas Instruments LMK04828 Low-Noise Clock Jitter Cleaner"
+	depends on SPI
+	default n
+	help
+	  Say yes here to build support for TI LMK04828 Ultra Low-Noise JESD204B
+	  Compliant Clock Jitter Cleaner with Dual Loop PLLs.
+	  NOTICE: Current HW design in fact use it as one clock generator: 
+	    VCO->122.88MHz->LMK04828-> 76.8MHz -> AD9548 -> ... -> AD9528
+	    VCO->122.88MHz->LMK04828-> 1PPS    -> FPGA Synchronize -> 1ms IRQ -> ARM
+
+	  This driver can also be built as a module. If so, the module
+	  will be called ti_lmk04828.
+
 config VMWARE_BALLOON
 	tristate "VMware Balloon Driver"
 	depends on VMWARE_VMCI && X86 && HYPERVISOR_GUEST

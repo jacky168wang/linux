@@ -4,13 +4,3 @@ config COMMON_CLK_TI_ADPLL
 	default y if SOC_TI81XX
 	---help---
 	  ADPLL clock driver for the dm814x SoC using common clock framework.
-
-config ADCIIO_CLK_TI_LMK04828
-	tristate "clock driver for TI LMK04828"
-	depends on ARCH_SOCFPGA && SPI
-	default y
-	---help---
-	  TI LMK04828 generally refer clock source to high-speed ADC with JESD204B
-	  interface. Current default values in the driver is to produce reference
-	  clock for AD9548 so that AD9548 could generate PPS.
-

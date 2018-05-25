@@ -95,7 +95,8 @@
 	txc-skew-ps = <1860>; /* 960ps */
 	rxdv-skew-ps = <420>; /* 0ps */
 	rxc-skew-ps = <1680>; /* 780ps */
-	max-frame-size = <5000>;
+	max-frame-size = <3800>;
+	//max-frame-size = <5000>; /* iperf test: performace is worse than 3800 */
 	status = "okay";
 };
 
@@ -136,8 +137,12 @@
 	 * because the LCD module does not work at the standard 100Khz
 	 */
 	clock-frequency = <100000>;
-	i2c-sda-falling-time-ns = <6000>;
-	i2c-scl-falling-time-ns = <6000>;
+	/* to enable si5338, reference:
+	 * https://rocketboards.org/foswiki/Documentation/
+	 * ProgramSi5338QuadClockGeneratorOnArria10SoCDevKit
+	 */
+	//i2c-sda-falling-time-ns = <6000>;
+	//i2c-scl-falling-time-ns = <6000>;
 
 	lcd: lcd@28 {
 		compatible = "newhaven,nhd-0216k3z-nsw-bbw";

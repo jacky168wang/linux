@@ -1,4 +1,0 @@
-/dts-v1/;
-#include "a10ad9371_foxconn_base.dtsi"
-#include "a10ad9371_foxconn_mgp_clk.dtsi"
-#include "a10ad9371_foxconn_mgp_n4.dtsi"

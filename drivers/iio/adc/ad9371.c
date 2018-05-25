@@ -3664,7 +3664,7 @@ static int ad9371_probe(struct spi_device *spi)
 	mykonosBuild_t buildType;
 	u32 api_vers[4];
 
-	dev_info(&spi->dev, "%s : enter", __func__);
+	dev_info(&spi->dev, "%s: enter", __func__);
 
 	clk = devm_clk_get(&spi->dev, "jesd_rx_clk");
 	if (IS_ERR(clk))
@@ -3815,10 +3815,13 @@ static int ad9371_probe(struct spi_device *spi)
 	MYKONOS_getApiVersion(phy->mykDevice, &api_vers[0], &api_vers[1], &api_vers[2], &api_vers[3]);
 	MYKONOS_getDeviceRev(phy->mykDevice, &rev);
 
-	dev_info(&spi->dev, "%s : AD937%d Rev %d, Firmware %u.%u.%u API version: %u.%u.%u.%u successfully initialized",
+	dev_info(&spi->dev, "%s: AD937%d Rev.%d, Firmware %u.%u.%u API %u.%u.%u.%u successfully initialized",
 		 __func__, AD937x_PARTID(phy), rev, vers[0], vers[1], vers[2],
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
-	gpiod_put(phy->sysref_req_gpio);/* release: multiple ad9371 chips share this gpio */
+
+	/* release: multiple ad9371 chips share this gpio */
+	gpiod_put(phy->sysref_req_gpio);
+
 	return 0;
 
 out_iio_device_unregister:

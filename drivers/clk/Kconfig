@@ -66,6 +66,23 @@ config COMMON_CLK_SI5351
 	  This driver supports Silicon Labs 5351A/B/C programmable clock
 	  generators.
 
+config COMMON_CLK_SI5338
+	tristate "Clock driver for SiLabs 5338"
+	depends on I2C
+	select REGMAP_I2C
+	select RATIONAL
+	---help---
+	  This driver supports Silicon Labs 5338 programmable clock
+	  generators.
+config COMMON_CLK_SI5338SIMPLE
+	tristate "Clock driver for SiLabs 5338 based on altera peel script"
+	depends on I2C
+	select REGMAP_I2C
+	select RATIONAL
+	---help---
+	  This driver supports Silicon Labs 5338 programmable clock
+	  generators.
+
 config COMMON_CLK_SI514
 	tristate "Clock driver for SiLabs 514 devices"
 	depends on I2C

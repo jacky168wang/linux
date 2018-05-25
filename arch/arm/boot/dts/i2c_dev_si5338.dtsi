@@ -1,0 +1,103 @@
+/*
+ * Reference: linux/Documentation/devicetree/bindings/clock/silabs,si5338.txt
+ */
+
+#include <dt-bindings/clock/clk-si5338.h>
+
+/ {
+    clocks {
+    	/* 25MHz reference crystal */
+		si5338_xtal: ref25M_si5338 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <25000000>;
+		};
+
+		si5338_clkin56: ref100M_si5338 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <100000000>;
+		};
+	};
+};
+
+&i2c1 {
+	/* reference:
+	 * https://rocketboards.org/foswiki/Documentation/
+	 * ProgramSi5338QuadClockGeneratorOnArria10SoCDevKit
+	 */
+	//i2c-sda-falling-time-ns = <0>;
+	//i2c-scl-falling-time-ns = <0>;
+	i2c-sda-hold-time-ns = <160>;
+
+	/* reference: "Si5338-RevB-Registers.h" produced
+	 * by SilconLab "CLOCKBUILDER DESKTOP" tool
+	 */
+	si5338: clkgen_si5338@71 {
+		compatible = "silabs,si5338";
+		reg = <0x71>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#clock-cells = <1>;
+
+		/* connect xtal to 25MHz, in5/in6 to 100MHz */
+		//clocks = <&si5338_xtal>, <0>, <0>, <0>, <&si5338_clkin56>;
+		clocks = <&si5338_xtal>, <0>, <0>, <0>, <0>;
+		clock-names = "xtal", "in12", "in3", "in4", "in56";
+
+		/* connect xtal as source of refclk */
+		silabs,ref-source = <SI5338_REF_SRC_XTAL>;
+
+		/* connect in5/in6 as source of fbclk */
+		//silabs,fb-source = <SI5338_FB_SRC_CLKIN56>;
+		silabs,fb-source = <SI5338_FB_SRC_NOCLK>;
+
+		/* connect divrefclk as source of pll */
+		silabs,pll-source = <SI5338_PFD_IN_REF_XOCLK>;
+
+		/* Choose one MS for pll master */
+		silabs,pll-master = <0>;
+
+		/* Specify pll-vco frequency. pll-master is ignored. */
+		silabs,pll-vco = <2500000000>; /* N=100 */
+		//silabs,pll-vco = <2578125000>; /* N=103.125 */
+
+		/* output */
+		clkout0 {
+			reg = <0>;
+			silabs,drive-config = "2V5_LVDS";
+			silabs,clock-source = <SI5338_OUT_MUX_MS0>;
+			silabs,disable-state = <SI5338_OUT_DIS_HIZ>;
+			/* 125M per Si5338-RevB-Registers.h */
+			clock-frequency = <125000000>;
+			enabled;
+		};
+		clkout1 {
+			reg = <1>;
+			silabs,drive-config = "2V5_LVDS";
+			silabs,clock-source = <SI5338_OUT_MUX_MSN>;
+			silabs,disable-state = <SI5338_OUT_DIS_HIZ>;
+			/* 270M per Si5338-RevB-Registers.h */
+			clock-frequency = <270000000>;
+			enabled;
+		};
+		clkout2 {
+			reg = <2>;
+			silabs,drive-config = "2V5_LVDS";
+			silabs,clock-source = <SI5338_OUT_MUX_MSN>;
+			silabs,disable-state = <SI5338_OUT_DIS_HIZ>;
+			/* 322.265625M per Si5338-RevB-Registers.h */
+			clock-frequency = <322265625>;
+			enabled;
+		};
+		clkout3 {
+			reg = <3>;
+			silabs,drive-config = "2V5_LVDS";
+			silabs,clock-source = <SI5338_OUT_MUX_MSN>;
+			silabs,disable-state = <SI5338_OUT_DIS_HIZ>;
+			/* 125M per Si5338-RevB-Registers.h */
+			clock-frequency = <125000000>;
+			enabled;
+		};
+	};
+};
