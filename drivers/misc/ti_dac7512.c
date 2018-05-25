@@ -89,7 +89,9 @@ MODULE_DEVICE_TABLE(of, dac7512_of_match);
 static struct spi_driver dac7512_driver = {
 	.driver = {
 		.name	= "dac7512",
+#ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(dac7512_of_match),
+#endif
 	},
 	.probe	= dac7512_probe,
 	.remove	= dac7512_remove,

@@ -26,7 +26,7 @@
  * option) any later version.
  */
 
-//#define DEBUG 1
+#define DEBUG 1
 #include <dt-bindings/clock/clk-si5338.h>
 #include <linux/bsearch.h>
 #include <linux/clk.h>
@@ -3190,7 +3190,7 @@ static struct clk *si5338_register_clock(struct device *dev,
 }
 
 #define STRNCAT_LENGTH (MAX_NAME_LENGTH - name_prefix_length)
-static int si5338_i2c_probe(struct i2c_client *client,
+static int si5338_probe(struct i2c_client *client,
 			    const struct i2c_device_id *id)
 {
 	struct si5338_platform_data *pdata;
@@ -3784,7 +3784,7 @@ static int si5338_i2c_probe(struct i2c_client *client,
 	return 0;
 }
 
-static int si5338_i2c_remove(struct i2c_client *client)
+static int si5338_remove(struct i2c_client *client)
 {
 	struct si5338_driver_data *drvdata = i2c_get_clientdata(client);
 	int n;
@@ -3799,25 +3799,25 @@ static int si5338_i2c_remove(struct i2c_client *client)
 	}
 
 	dev_info(&client->dev, "Removed\n");
-
 	return 0;
 }
 
-
-static const struct i2c_device_id si5338_i2c_ids[] = {
+static const struct i2c_device_id si5338_hw_ids[] = {
 	{ "si5338", 0 },
 	{ }
 };
-MODULE_DEVICE_TABLE(i2c, si5338_i2c_ids);
+MODULE_DEVICE_TABLE(i2c, si5338_hw_ids);
 
 static struct i2c_driver si5338_driver = {
 	.driver = {
 		.name = "si5338",
+#ifdef CONFIG_OF
 		.of_match_table = of_match_ptr(si5338_dt_ids),
+#endif
 	},
-	.probe = si5338_i2c_probe,
-	.remove = si5338_i2c_remove,
-	.id_table = si5338_i2c_ids,
+	.probe = si5338_probe,
+	.remove = si5338_remove,
+	.id_table = si5338_hw_ids,
 };
 module_i2c_driver(si5338_driver);
 

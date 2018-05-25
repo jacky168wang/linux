@@ -1,28 +1,174 @@
-﻿/*
- * clk-si5338.c: Silicon Labs Si5338 I2C Clock Generator
- *
- * Copyright 2015 Freescale Semiconductor
- * York Sun <yorksun@freescale.com>
- *
- * Some code is taken from si5338.c by Andrey Filippov  <andrey@elphel.com>
- * Copyright 2013 Elphel, Inc.
- *
- * SI5338 has several blocks, including
- *   Inputs (IN1/IN2, IN3, IN4, IN5/IN6, XTAL)
- *   PLL (Synthesis stage 1)
- *   MultiSynth (Synthesis state 2)
- *   Outputs (OUT0/1/2/3)
- * Each block is registered as a clock device to form a tree structure.
- * See Documentation/devicetree/bindings/clock/silabs,si5338.txt for details.
- *
- * This driver uses regmap to cache register values to reduce transactions
- * on I2C bus. Volatile registers are specified.
- *
- * This program is free software; you can redistribute  it and/or modify it
- * under  the terms of  the GNU General  Public License as published by the
- * Free Software Foundation;  either version 2 of the  License, or (at your
- * option) any later version.
- */
+/*
+# si5338_cfg
+#
+# Script to program Silicon Labs SI5338 Clock chip on Intel/Altera
+# Arria 10 SoC DevKit
+# by  David Koltak  Intel PSG  05/18/2016
+#
+#!/usr/bin/perl
+
+if ($#ARGV != 1)
+{ die "USAGE: $0 {i2c_dev_addr} {reg_map_file}\n"; }
+
+$I2C_BUS_NUM = 0;
+$I2C_SI5228_ADDR = $ARGV[0];
+$I2C_REG_MAP = $ARGV[1];
+
+#
+# READ DATA ARRAY FROM REGISTER MAP FILE
+#
+
+open(_INFILE_, "<$I2C_REG_MAP") || die "ERROR: Unable to open '$I2C_REG_MAP'\n";
+$SI5338_CFG_DATA = "";
+$data_found = 0;
+while ($line = <_INFILE_>)
+{
+  if ($data_found)
+  {
+    $line =~ s/\s+//g;
+    $SI5338_CFG_DATA .= "$line\n";
+    if ($line =~ /};/)
+    { last; }
+  }
+  elsif ($line =~ /Reg_Data\s+const\s+code\s+Reg_Store\[NUM_REGS_MAX\]\s+=\s+{/)
+  { $data_found = 1; }
+}
+
+close(_INFILE_);
+
+#
+# SCRIPT TO PROGRAM SI5338 PART
+#
+
+print "INFO: Disabling si5338 outputs\n";
+
+write_reg(230, 0x10, 0x10);
+
+print "INFO: Pausing si5338 LOL\n";
+
+write_reg(241, 0x80, 0x80);
+
+print "INFO: Writing register map to si5338\n";
+
+@cfg_data = split(/\n/, $SI5338_CFG_DATA);
+$idx = 0;
+
+write_reg(255, 0x00, 0xFF);
+
+foreach $cfg_set (@cfg_data)
+{
+  if ($cfg_set eq "")
+  { next; }
+  
+  $idx++;
+  
+  if ($cfg_set =~ /{\s*(\d\w*)\s*,\s*(\d\w*)\s*,\s*(\d\w*)\s*}/)
+  {
+    $reg_waddr = $1;
+    $reg_wdata = $2;
+    $reg_wmask = $3;
+    
+    if ($reg_waddr =~ /^0/) { $reg_waddr = oct($reg_waddr); }
+    if ($reg_wdata =~ /^0/) { $reg_wdata = oct($reg_wdata); }
+    if ($reg_wmask =~ /^0/) { $reg_wmask = oct($reg_wmask); }
+    
+    write_reg($reg_waddr, $reg_wdata, $reg_wmask);
+  }
+  else { die "ERROR: Invalid config data line at index $idx\n"; }
+}
+
+print "INFO: Validating si5338 input clock status\n";
+
+$rtn = read_reg(218);
+while (($rtn & 0x04) != 0)
+{ $rtn = read_reg(218); }
+
+print "INFO: Configuring si5338 PLL for locking\n";
+
+write_reg(49, 0x00, 0x80);
+
+print "INFO: Initiating si5338 PLL lock sequence\n";
+
+write_reg(246, 0x02, 0x02);
+sleep(1); # NOTE: Only need 25 ms, but 1 second will work
+
+print "INFO: Restarting si5338 LOL\n";
+
+write_reg(241, 0x65, 0xFF);
+
+print "INFO: Confirming si5338 PLL locked status\n";
+
+$rtn = read_reg(218);
+while (($rtn & 0x15) != 0)
+{ $rtn = read_reg(218); }
+
+print "INFO: Copying si5338 FCAL values to active reg\n";
+
+$rtn = read_reg(237);
+write_reg(47, $rtn, 0x03);
+
+$rtn = read_reg(236);
+write_reg(46, $rtn, 0xFF);
+
+$rtn = read_reg(235);
+write_reg(45, $rtn, 0xFF);
+
+write_reg(47, 0x14, 0xFC);
+
+print "INFO: Setting si5338 PLL to use FCAL values\n";
+
+write_reg(49, 0x80, 0x80);
+
+print "INFO: Enabling si5338 outputs\n";
+
+write_reg(230, 0x00, 0x10);
+
+print " * * * FINISHED * * *\n";
+exit;            
+
+#
+# HELPER FUNCTIONS
+#
+
+sub read_reg
+{
+  my $addr = shift;
+  my $data;
+  my $cmd = "i2cget -y $I2C_BUS_NUM $I2C_SI5228_ADDR $addr";
+  
+  print "<-- $cmd\n";
+  $data = `$cmd`;
+  
+  if (!($data =~ /^0x\w\w/))
+  { die "ERROR: Bad return value '$data' from '$cmd'\n"; }
+  
+  return oct($data);
+}
+
+sub write_reg
+{
+  my $addr = shift;
+  my $data = shift;
+  my $mask = shift;
+  my $cmd = "i2cset -y $I2C_BUS_NUM $I2C_SI5228_ADDR $addr $data";
+  
+  if ($mask == 0)
+  { return 0; }
+  elsif ($mask != 0xFF)
+  {
+    $data = ($data & $mask) | (read_reg($addr) & ~$mask);
+    $cmd = "i2cset -y $I2C_BUS_NUM $I2C_SI5228_ADDR $addr $data";
+  }
+  
+  print "--> $cmd\n";
+  $data = system($cmd);
+  
+  if ($data)
+  { die "ERROR: Bad return value '$data' from '$cmd'\n"; }
+  
+  return 0;
+}
+*/
 
 #define DEBUG 1
 #include <linux/bsearch.h>
@@ -58,36 +204,16 @@
 #define AWE_SOFT_RESET		0xf602
 #define NUM_REGS_MAX 350
 
-/*
- * Si5351 i2c probe and device tree parsing
- */
-#ifdef CONFIG_OF
-static const struct of_device_id si5338_dt_ids[] = {
-	{ .compatible = "silabs,si5338" },
-	{ }
-};
-MODULE_DEVICE_TABLE(of, si5338_dt_ids);
-static int si5338_dt_parse(struct i2c_client *client)
-{
-	return 0;
-}
-
-#else
-static int si5338_dt_parse(struct i2c_client *client)
-{
-	return 0;
-}
-#endif /* CONFIG_OF */
 
 /*
- * This array is used to determine if a register is writable. The msk is
+ * This array is used to determine if a register is writable. The mask is
  * not used in this driver. The data is in format of 0xAAAMM where AAA is
- * address, MM is bit msk. 1 means the corresponding bit is writable.
+ * address, MM is bit mask. 1 means the corresponding bit is writable.
  * Created from SiLabs ClockBuilder output.
  * Note: Register 226, 230, 241, 246, 255 are not included in header file
  *	 from ClockBuilder v2.7 or later. Manually added here.
  */
-static const u32 register_msks[] = {
+static const u32 register_masks[] = {
 	0x61d, 0x1b80, 0x1cff, 0x1dff, 0x1eff, 0x1fff, 0x20ff, 0x21ff,
 	0x22ff, 0x23ff, 0x241f, 0x251f, 0x261f, 0x271f, 0x28ff, 0x297f,
 	0x2a3f, 0x2bff, 0x2dff, 0x2eff, 0x2f3f, 0x30ff, 0x31ff, 0x32ff, 0x33ff,
@@ -124,11 +250,11 @@ static const u32 register_msks[] = {
 static int si5338_find_msk(const void *key, const void *elt)
 {
 	const u32 *reg = key;
-	const u32 *register_msk = elt;
+	const u32 *msk = elt;
 
-	if (*reg > *register_msk >> 8)
+	if (*reg > *msk >> 8)
 		return 1;
-	if (*reg < *register_msk >> 8)
+	if (*reg < *msk >> 8)
 		return -1;
 
 	return 0;
@@ -136,7 +262,7 @@ static int si5338_find_msk(const void *key, const void *elt)
 
 static bool si5338_regmap_is_writeable(struct device *dev, unsigned int reg)
 {
-	return bsearch(&reg, register_msks, ARRAY_SIZE(register_msks),
+	return bsearch(&reg, register_masks, ARRAY_SIZE(register_masks),
 		       sizeof(u32), si5338_find_msk) != NULL;
 }
 
@@ -408,104 +534,104 @@ static const unsigned short ad9548_regs[NUM_REGS_MAX][3] = {
 {252,0x00,0x00},
 {253,0x00,0x00},
 {254,0x00,0x00},
-{255, 1, 0xFF}, // set page bit to 1 
-{  0,0x00,0x00},
-{  1,0x00,0x00},
-{  2,0x00,0x00},
-{  3,0x00,0x00},
-{  4,0x00,0x00},
-{  5,0x00,0x00},
-{  6,0x00,0x00},
-{  7,0x00,0x00},
-{  8,0x00,0x00},
-{  9,0x00,0x00},
-{ 10,0x00,0x00},
-{ 11,0x00,0x00},
-{ 12,0x00,0x00},
-{ 13,0x00,0x00},
-{ 14,0x00,0x00},
-{ 15,0x00,0x00},
-{ 16,0x00,0x00},
-{ 17,0x01,0x00},
-{ 18,0x00,0x00},
-{ 19,0x00,0x00},
-{ 20,0x90,0x00},
-{ 21,0x31,0x00},
-{ 22,0x00,0x00},
-{ 23,0x00,0x00},
-{ 24,0x01,0x00},
-{ 25,0x00,0x00},
-{ 26,0x00,0x00},
-{ 27,0x00,0x00},
-{ 28,0x00,0x00},
-{ 29,0x00,0x00},
-{ 30,0x00,0x00},
-{ 31,0x00,0xFF},
-{ 32,0x00,0xFF},
-{ 33,0x01,0xFF},
-{ 34,0x00,0xFF},
-{ 35,0x00,0xFF},
-{ 36,0x90,0xFF},
-{ 37,0x31,0xFF},
-{ 38,0x00,0xFF},
-{ 39,0x00,0xFF},
-{ 40,0x01,0xFF},
-{ 41,0x00,0xFF},
-{ 42,0x00,0xFF},
-{ 43,0x00,0x0F},
-{ 44,0x00,0x00},
-{ 45,0x00,0x00},
-{ 46,0x00,0x00},
-{ 47,0x00,0xFF},
-{ 48,0x00,0xFF},
-{ 49,0x01,0xFF},
-{ 50,0x00,0xFF},
-{ 51,0x00,0xFF},
-{ 52,0x90,0xFF},
-{ 53,0x31,0xFF},
-{ 54,0x00,0xFF},
-{ 55,0x00,0xFF},
-{ 56,0x01,0xFF},
-{ 57,0x00,0xFF},
-{ 58,0x00,0xFF},
-{ 59,0x00,0x0F},
-{ 60,0x00,0x00},
-{ 61,0x00,0x00},
-{ 62,0x00,0x00},
-{ 63,0x00,0xFF},
-{ 64,0x00,0xFF},
-{ 65,0x01,0xFF},
-{ 66,0x00,0xFF},
-{ 67,0x00,0xFF},
-{ 68,0x90,0xFF},
-{ 69,0x31,0xFF},
-{ 70,0x00,0xFF},
-{ 71,0x00,0xFF},
-{ 72,0x01,0xFF},
-{ 73,0x00,0xFF},
-{ 74,0x00,0xFF},
-{ 75,0x00,0x0F},
-{ 76,0x00,0x00},
-{ 77,0x00,0x00},
-{ 78,0x00,0x00},
-{ 79,0x00,0xFF},
-{ 80,0x00,0xFF},
-{ 81,0x00,0xFF},
-{ 82,0x00,0xFF},
-{ 83,0x00,0xFF},
-{ 84,0x90,0xFF},
-{ 85,0x31,0xFF},
-{ 86,0x00,0xFF},
-{ 87,0x00,0xFF},
-{ 88,0x01,0xFF},
-{ 89,0x00,0xFF},
-{ 90,0x00,0xFF},
-{ 91,0x00,0x0F},
-{ 92,0x00,0x00},
-{ 93,0x00,0x00},
-{ 94,0x00,0x00},
-{255,   0,0xFF}
-}; // set page bit to 0
+{255,   1,0xFF}, // set page bit to 1 
+{  0+256,0x00,0x00},
+{  1+256,0x00,0x00},
+{  2+256,0x00,0x00},
+{  3+256,0x00,0x00},
+{  4+256,0x00,0x00},
+{  5+256,0x00,0x00},
+{  6+256,0x00,0x00},
+{  7+256,0x00,0x00},
+{  8+256,0x00,0x00},
+{  9+256,0x00,0x00},
+{ 10+256,0x00,0x00},
+{ 11+256,0x00,0x00},
+{ 12+256,0x00,0x00},
+{ 13+256,0x00,0x00},
+{ 14+256,0x00,0x00},
+{ 15+256,0x00,0x00},
+{ 16+256,0x00,0x00},
+{ 17+256,0x01,0x00},
+{ 18+256,0x00,0x00},
+{ 19+256,0x00,0x00},
+{ 20+256,0x90,0x00},
+{ 21+256,0x31,0x00},
+{ 22+256,0x00,0x00},
+{ 23+256,0x00,0x00},
+{ 24+256,0x01,0x00},
+{ 25+256,0x00,0x00},
+{ 26+256,0x00,0x00},
+{ 27+256,0x00,0x00},
+{ 28+256,0x00,0x00},
+{ 29+256,0x00,0x00},
+{ 30+256,0x00,0x00},
+{ 31+256,0x00,0xFF},
+{ 32+256,0x00,0xFF},
+{ 33+256,0x01,0xFF},
+{ 34+256,0x00,0xFF},
+{ 35+256,0x00,0xFF},
+{ 36+256,0x90,0xFF},
+{ 37+256,0x31,0xFF},
+{ 38+256,0x00,0xFF},
+{ 39+256,0x00,0xFF},
+{ 40+256,0x01,0xFF},
+{ 41+256,0x00,0xFF},
+{ 42+256,0x00,0xFF},
+{ 43+256,0x00,0x0F},
+{ 44+256,0x00,0x00},
+{ 45+256,0x00,0x00},
+{ 46+256,0x00,0x00},
+{ 47+256,0x00,0xFF},
+{ 48+256,0x00,0xFF},
+{ 49+256,0x01,0xFF},
+{ 50+256,0x00,0xFF},
+{ 51+256,0x00,0xFF},
+{ 52+256,0x90,0xFF},
+{ 53+256,0x31,0xFF},
+{ 54+256,0x00,0xFF},
+{ 55+256,0x00,0xFF},
+{ 56+256,0x01,0xFF},
+{ 57+256,0x00,0xFF},
+{ 58+256,0x00,0xFF},
+{ 59+256,0x00,0x0F},
+{ 60+256,0x00,0x00},
+{ 61+256,0x00,0x00},
+{ 62+256,0x00,0x00},
+{ 63+256,0x00,0xFF},
+{ 64+256,0x00,0xFF},
+{ 65+256,0x01,0xFF},
+{ 66+256,0x00,0xFF},
+{ 67+256,0x00,0xFF},
+{ 68+256,0x90,0xFF},
+{ 69+256,0x31,0xFF},
+{ 70+256,0x00,0xFF},
+{ 71+256,0x00,0xFF},
+{ 72+256,0x01,0xFF},
+{ 73+256,0x00,0xFF},
+{ 74+256,0x00,0xFF},
+{ 75+256,0x00,0x0F},
+{ 76+256,0x00,0x00},
+{ 77+256,0x00,0x00},
+{ 78+256,0x00,0x00},
+{ 79+256,0x00,0xFF},
+{ 80+256,0x00,0xFF},
+{ 81+256,0x00,0xFF},
+{ 82+256,0x00,0xFF},
+{ 83+256,0x00,0xFF},
+{ 84+256,0x90,0xFF},
+{ 85+256,0x31,0xFF},
+{ 86+256,0x00,0xFF},
+{ 87+256,0x00,0xFF},
+{ 88+256,0x01,0xFF},
+{ 89+256,0x00,0xFF},
+{ 90+256,0x00,0xFF},
+{ 91+256,0x00,0x0F},
+{ 92+256,0x00,0x00},
+{ 93+256,0x00,0x00},
+{ 94+256,0x00,0x00},
+{255,   0,0xFF} // set page bit to 0
+};
 
 static const struct regmap_range_cfg si5338_regmap_range[] = {
 	{
@@ -534,81 +660,104 @@ static const struct regmap_config si5338_regmap_config = {
  * SI5338 register access
  */
 
-struct si5338_t {
+struct si5338simple_t {
 	struct i2c_client *client;
 	struct regmap *regmap;
 };
 
-
-static unsigned int si5338_reg_read(struct si5338_t *drvdata, u16 reg, u8 msk)
+static inline int si5338simple_reg_read(struct si5338simple_t *drvdata, u16 reg, u8 *val)
 {
     int ret;
-	unsigned int val;
-	
-	ret = regmap_read(drvdata->regmap, reg, &val);
+	unsigned int tmp;
+
+	ret = regmap_read(drvdata->regmap, reg, &tmp);
 	if (ret) {
-		dev_err(&drvdata->client->dev,
-			"unable to read from reg%02x\n", reg);
+		dev_err(&drvdata->client->dev, "regmap_read: [0x%x] -> 0x%x\n",
+			reg, tmp);
 		return -ENODEV;
 	}
-
-	return (u8)val;
+	dev_dbg(&drvdata->client->dev, "i2cget -y 0 0x71 %d -> %d\n", reg, tmp);
+	*val = (u8)tmp;
+	return 0;
 }
 
-static int si5338_reg_write(struct si5338_t *drvdata, u8 val, u16 reg, u8 msk)
+static inline int si5338simple_reg_write(struct si5338simple_t *drvdata, u8 val, u16 reg, u8 msk)
 {
 	int ret;
 	unsigned int tmp;
 
 	if (msk == 0x00) return 0;
 
-	if (msk == 0xff) {
-	 	ret = regmap_write(drvdata->regmap, reg, val);
-		dev_dbg(&drvdata->client->dev, "i2cset -y 0 0x71 %d %d\n",
-			reg<256 ? reg: reg-256, val);
-		if (ret < 0) {
-			return -ENODEV;
-		}
-	} else {
 #if 0
-		regmap_update_bits(drvdata->regmap, reg, msk, val);
+	regmap_update_bits(drvdata->regmap, reg, msk, val);
 #else
+	if (msk == 0xff) tmp = val;
+	else {
 		ret = regmap_read(drvdata->regmap, reg, &tmp);
 		if (ret) {
+			dev_err(&drvdata->client->dev, "regmap_read: [0x%x] -> 0x%x\n",
+				reg, tmp);
 			return -ENODEV;
 		}
 		tmp &= ~msk;
 		tmp |= val & msk;
-	 	ret = regmap_write(drvdata->regmap, reg, tmp);
-		dev_dbg(&drvdata->client->dev, "i2cset -y 0 0x71 %d %d\n",
-			reg<256 ? reg: reg-256, val);
-		if (ret < 0) {
-			return -ENODEV;
-		}
-#endif
 	}
+
+	ret = regmap_write(drvdata->regmap, reg, tmp);
+	if (ret < 0) {
+		dev_err(&drvdata->client->dev, "regmap_write: [0x%x] <- 0x%x\n",
+			reg, tmp);
+		return -ENODEV;
+	}
+#endif
+	dev_dbg(&drvdata->client->dev, "i2cset -y 0 0x71 %d %d\n",
+		reg, tmp);
+	return 0;
+}
+
+/*
+ * Si5351 i2c probe and device tree parsing
+ */
+
+#ifdef CONFIG_OF
+static int si5338simple_dt_parse(struct i2c_client *client)
+{
+	struct device_node *np = client->dev.of_node;
+
+	if (np == NULL)
+		return 0;
 
 	return 0;
 }
 
-static int si5338_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id)
+static const struct of_device_id si5338simple_dt_ids[] = {
+	{ .compatible = "silabs,si5338" },
+	{ }
+};
+MODULE_DEVICE_TABLE(of, si5338simple_dt_ids);
+#else
+static int si5338simple_dt_parse(struct i2c_client *client)
+{
+	return 0;
+}
+#endif /* CONFIG_OF */
+
+static int si5338simple_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	int ret, i;
-	unsigned int reg, pag, val, msk;
-	struct si5338_t *drvdata;
+	u8 val;
+	struct si5338simple_t *drvdata;
 
-	pr_info("%s: enter", __func__);
+	dev_info(&client->dev, "%s: enter", __func__);
 
 	drvdata = devm_kzalloc(&client->dev, sizeof(*drvdata), GFP_KERNEL);
 	if (!drvdata)
 		return -ENOMEM;
 
-	si5338_dt_parse(client);
+	si5338simple_dt_parse(client);
 
 	i2c_set_clientdata(client, drvdata);
 	drvdata->client = client;
-
-	dev_info(&drvdata->client->dev, "%s: enter", __func__);
 
 	/* Register regmap */
 	drvdata->regmap = devm_regmap_init_i2c(client, &si5338_regmap_config);
@@ -617,168 +766,134 @@ static int si5338_i2c_probe(struct i2c_client *client, const struct i2c_device_i
 		return PTR_ERR(drvdata->regmap);
 	}
 
-	ret = regmap_read(drvdata->regmap, REG5338_DEV_CONFIG2, &val);
-	if (ret) {
-		dev_err(&client->dev, "regmap_read failed %d\n", ret);
-		return -ENODEV;
-	}
-
-	// Check if si5338 exists 
+	/* Check if si5338 exists */ 
+	ret = si5338simple_reg_read(drvdata, REG5338_DEV_CONFIG2, &val);
+	if (ret < 0) return -ENODEV;
 	if ((val & REG5338_DEV_CONFIG2_MASK) != REG5338_DEV_CONFIG2_VAL) {
 		dev_err(&client->dev, "[%d] -> 0x%x but expected 0x%x\n",
 			REG5338_DEV_CONFIG2, val, REG5338_DEV_CONFIG2_VAL);
 		return -ENODEV;
 	}
-	ret = regmap_read(drvdata->regmap, 0, &val);
-	if (ret) {
-		dev_err(&client->dev, "regmap_read failed %d\n", ret);
-		return -ENODEV;
-	}
+	ret = si5338simple_reg_read(drvdata, 0, &val);
+	if (ret < 0) return -ENODEV;
 	dev_info(&client->dev, "si5338 Rev.%d detected\n", val & 0x7);
 
 	dev_dbg(&client->dev, "Disabling si5338 outputs\n");
-	ret = si5338_reg_write(drvdata, 0x10, 230, 0x10);
-	if (ret < 0)
-		return -ENODEV;
-	val = si5338_reg_read(drvdata, 230, 0x1f);
-	if (val < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x10, 230, 0x10);
+	if (ret < 0) return -ENODEV;
 
 	dev_dbg(&client->dev, "Pausing LOL\n");
-	ret = si5338_reg_write(drvdata, 0x80, 241, 0x80);
-	if (ret < 0)
-		return -ENODEV;
-	val = si5338_reg_read(drvdata, 241, 0xff);
-	if (val < 0)
-		return -ENODEV;
-	ret = si5338_reg_write(drvdata, 0x00, 255, 0xFF);
-	if (ret < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x80, 241, 0x80);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x00, 255, 0xff);
+	if (ret < 0) return -ENODEV;
 
-	pag = 0;
 	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
-		reg = ad9548_regs[i][0];
-		val = ad9548_regs[i][1];
-		msk = ad9548_regs[i][2];
-
-		if ((reg == 255) && (val == 0)) 
-            pag = 0;
-		if (pag == 1)
-			reg += 256;
-		ret = si5338_reg_write(drvdata, val, reg, msk);
-		if (ret < 0) {
-			dev_err(&client->dev, "write failed [%d] <- 0x%x & 0x%x\n",
-				reg, val, msk);
-			return -ENODEV;
-		}
-		if ((reg == 255) && (val == 1))
-			pag = 1;
-		/*
-		if(ad9548_regs[i][0] == 29) {
-			dev_err(&client->dev, "write failed [%d] <- %x & %x\n",
-				reg, val, msk); 
-			val = si5338_reg_read(drvdata,29,0xff);
-			if (val < 0)
-				return -ENODEV;
-			dev_err(&client->dev, "read status reg = %d ,val = %x\n",
-				ad9548_regs[i][0],val); 
-		}*/
+		ret = si5338simple_reg_write(drvdata, ad9548_regs[i][1], ad9548_regs[i][0], ad9548_regs[i][2]);
+		if (ret < 0) return -ENODEV;
 	}
 
 	dev_dbg(&client->dev, "Confirming PLL locked status\n");
-	i = 0;
+	i = PLL_POLLING_TMOUT;
 	do {
 		msleep(1);
-		val = si5338_reg_read(drvdata, 218, 0xff);
-	    if (val < 0) return -ENODEV;
-		if ((val & 0x04) == 0) break;
-		if ((0 == i) || (PLL_POLLING_TMOUT-1 == i))
-			dev_dbg(&drvdata->client->dev, "i2cget -y 0 0x71 [218] -> %d\n", val);
-	} while (i++ < PLL_POLLING_TMOUT);
-	if (i == PLL_POLLING_TMOUT) 
-		dev_err(&client->dev, "Timeout(%d ms): polling [218] for 0x04\n", PLL_POLLING_TMOUT); 
+		ret = si5338simple_reg_read(drvdata, 218, &val);
+	    if (ret < 0) return -ENODEV;
+		if (!(val & 0x04)) break;
+	} while (i--);
+	if (0 == i) {
+		dev_err(&client->dev, "Timeout(%d ms): polling [218] for 0x04 but 0x%x\n",
+			PLL_POLLING_TMOUT, val); 
+		return -ETIMEDOUT;
+	}
 
 	dev_dbg(&client->dev, "Configuring PLL for locking\n");
-	ret = si5338_reg_write(drvdata, 0x00,49, 0xFF);
-	if (ret < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x00, 49, 0xFF);
+	if (ret < 0) return -ENODEV;
 
 	dev_dbg(&client->dev, "Initiating PLL lock sequence\n");
-	ret = si5338_reg_write(drvdata,  0x02, 246, 0x02);
-	if (ret < 0)
-		return -ENODEV;
-	msleep(50); //# NOTE: Only need 25 ms
+	ret = si5338simple_reg_write(drvdata,  0x02, 246, 0x02);
+	if (ret < 0) return -ENODEV;
+	msleep(25); /* NOTE: need 25 ms per datasheet */
 	dev_info(&client->dev, "Restarting LOL\n");
-
-	ret = si5338_reg_write(drvdata, 0x65, 241, 0xFF);
-	if (ret < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x65, 241, 0xFF);
+	if (ret < 0) return -ENODEV;
 
 	dev_info(&client->dev, "Confirming PLL locked status\n");
-	i = 0;
+	i = PLL_POLLING_TMOUT;
 	do {
 		msleep(1);
-		val = si5338_reg_read(drvdata, 218, 0x1f);
-	    if (val < 0) return -ENODEV;
-		if ((val & 0x15) == 0) break;
-		if ((0 == i) || (PLL_POLLING_TMOUT-1 == i))
-			dev_dbg(&drvdata->client->dev, "i2cget -y 0 0x71 [218] -> %d\n", val);
-	} while (i++ < PLL_POLLING_TMOUT);
-	if (i == PLL_POLLING_TMOUT)
-		dev_err(&client->dev, "Timeout(%d ms): polling [218] for 0x15\n", PLL_POLLING_TMOUT); 
+		ret = si5338simple_reg_read(drvdata, 218, &val);
+	    if (ret < 0) return -ENODEV;
+		if (!(val & 0x15)) break;
+	} while (i--);
+	if (0 == i) {
+		dev_err(&client->dev, "Timeout(%d ms): polling [218] for 0x15 but 0x%x\n",
+			PLL_POLLING_TMOUT, val); 
+		return -ETIMEDOUT;
+	}
 
-	dev_info(&client->dev, "Copying FCAL values to active reg\n");
-	val = si5338_reg_read(drvdata, 237, 0x03);
-	if (val < 0)
-		return -ENODEV;
-	ret = si5338_reg_write(drvdata, val, 47,  0x03);
-	if (ret < 0)
-		return -ENODEV;
-	val = si5338_reg_read(drvdata, 236, 0xff);
-	if (val < 0)
-		return -ENODEV;
-	ret = si5338_reg_write(drvdata, val, 46, 0xFF);
-	if (ret < 0)
-		return -ENODEV;
-	val = si5338_reg_read(drvdata, 235, 0xff);
-	if (val < 0)
-		return -ENODEV;
-	ret = si5338_reg_write(drvdata, val, 45, 0xFF);
-	if (ret < 0)
-		return -ENODEV;
-	ret = si5338_reg_write(drvdata, 0x14, 47, 0xFC);
-	if (ret < 0)
-		return -ENODEV;
+	dev_info(&client->dev, "Copying FCAL values to active/[47]\n");
+	ret = si5338simple_reg_read(drvdata, 237, &val);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, val, 47,  0x03);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_read(drvdata, 236, &val);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, val, 46, 0xFF);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_read(drvdata, 235, &val);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, val, 45, 0xFF);
+	if (ret < 0) return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x14, 47, 0xFC);
+	if (ret < 0) return -ENODEV;
 
 	dev_dbg(&client->dev, "Setting PLL to use FCAL values\n");
-	ret = si5338_reg_write(drvdata , 0x80, 49, 0x80);
-	if (ret < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata , 0x80, 49, 0x80);
+	if (ret < 0) return -ENODEV;
 	dev_dbg(&client->dev, "Enabling outputs\n");
-	ret = si5338_reg_write(drvdata, 0x00,230, 0x10);
-	if (ret < 0)
-		return -ENODEV;
+	ret = si5338simple_reg_write(drvdata, 0x00, 230, 0x10);
+	if (ret < 0) return -ENODEV;
 
-	dev_info(&drvdata->client->dev, "%s: exit", __func__);
+	dev_info(&client->dev, "%s: succeed", __func__);
 	return 0;
 }
 
-static const struct i2c_device_id si5338_i2c_ids[] = {
+static int si5338simple_remove(struct i2c_client *client)
+{
+	struct si5338simple_t *drvdata = i2c_get_clientdata(client);
+
+#ifdef CONFIG_OF
+	of_clk_del_provider(client->dev.of_node);
+#endif
+    //misc_deregister(&drvdata->misc_dev);
+	kfree(drvdata);
+
+	dev_info(&client->dev, "Removed\n");
+	return 0;
+}
+
+static const struct i2c_device_id si5338_hw_ids[] = {
 	{ "si5338", 0 },
 	{ }
 };
+MODULE_DEVICE_TABLE(i2c, si5338_hw_ids);
 
-MODULE_DEVICE_TABLE(i2c, si5338_i2c_ids);
-
-static struct i2c_driver si5338_driver = {
+static struct i2c_driver si5338simple_driver = {
 	.driver = {
-		.name	= "si5338",
-		.of_match_table = of_match_ptr(si5338_dt_ids),//	.owner	= THIS_MODULE,
+		.name	= "si5338simple",
+		.owner	= THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(si5338simple_dt_ids),
+#endif
 	},
-	.probe		= si5338_i2c_probe,
-	.id_table	= si5338_i2c_ids,
+	.probe		= si5338simple_probe,
+	.remove		= si5338simple_remove,
+	.id_table	= si5338_hw_ids,
 };
-module_i2c_driver(si5338_driver);
-MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
-MODULE_DESCRIPTION("Analog Devices AD9548");
+module_i2c_driver(si5338simple_driver);
+
+MODULE_AUTHOR("David Koltak, Intel PSG");
+MODULE_DESCRIPTION("si5338simple based on 'si5338_cfg' from Altera");
 MODULE_LICENSE("GPL v2");
