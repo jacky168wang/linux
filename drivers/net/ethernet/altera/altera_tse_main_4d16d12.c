@@ -27,13 +27,7 @@
  * You should have received a copy of the GNU General Public License along with
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/*
- * 2018-05-28: upgrade with kernel 4.16.12
- *   https://elixir.bootlin.com/linux/latest/source/drivers/net/ethernet/altera
- */
 
-#define A10AD9371FOXCONN_TSEMAC_DBG
-#define DEBUG 1
 #include <linux/atomic.h>
 #include <linux/delay.h>
 #include <linux/etherdevice.h>
@@ -43,6 +37,7 @@
 #include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/mii.h>
 #include <linux/netdevice.h>
 #include <linux/of_device.h>
 #include <linux/of_mdio.h>
@@ -106,10 +101,6 @@ static inline u32 tse_tx_avail(struct altera_tse_private *priv)
  */
 static u16 sgmii_pcs_read(struct altera_tse_private *priv, int regnum)
 {
-	/* set MDIO address */
-    csrwr32(0,               priv->mac_dev, tse_csroffs(mdio_phy0_addr));
-	//csrwr32((mii_id & 0x1f), priv->mac_dev, tse_csroffs(mdio_phy0_addr));
-
 	return csrrd32(priv->mac_dev,
 		       tse_csroffs(mdio_phy0) + regnum * 4) & 0xffff;
 }
@@ -117,10 +108,6 @@ static u16 sgmii_pcs_read(struct altera_tse_private *priv, int regnum)
 static void sgmii_pcs_write(struct altera_tse_private *priv, int regnum,
 				u16 value)
 {
-	/* set MDIO address */
-    csrwr32(0,               priv->mac_dev, tse_csroffs(mdio_phy0_addr));
-	//csrwr32((mii_id & 0x1f), priv->mac_dev, tse_csroffs(mdio_phy0_addr));
-
 	csrwr32(value, priv->mac_dev, tse_csroffs(mdio_phy0) + regnum * 4);
 }
 
@@ -526,7 +513,7 @@ static int tse_poll(struct napi_struct *napi, int budget)
 
 	if (rxcomplete < budget) {
 
-		napi_complete(napi);
+		napi_complete_done(napi, rxcomplete);
 
 		netdev_dbg(priv->dev,
 			   "NAPI Complete, did %d packets with budget %d\n",
@@ -639,7 +626,6 @@ out:
 	return ret;
 }
 
-static int init_sgmii_pcs(struct net_device *dev);
 /* Called every time the controller might need to be made
  * aware of new link state.  The PHY code conveys this
  * information through variables in the phydev structure, and this
@@ -657,9 +643,6 @@ static void altera_tse_adjust_link(struct net_device *dev)
 	if (phydev->link) {
 		/* Read old config */
 		u32 cfg_reg = ioread32(&priv->mac_dev->command_config);
-
-        pr_info("%s: duplex (%d, %d) speed (%d, %d)\n",
-			__func__, phydev->duplex, priv->oldduplex, phydev->speed,priv->oldspeed);
 
 		/* Check duplex */
 		if (phydev->duplex != priv->oldduplex) {
@@ -704,9 +687,6 @@ static void altera_tse_adjust_link(struct net_device *dev)
 		if (!priv->oldlink) {
 			new_state = 1;
 			priv->oldlink = 1;
-#if 0
-            init_sgmii_pcs(dev);
-#endif
 		}
 	} else if (priv->oldlink) {
 		new_state = 1;
@@ -973,7 +953,7 @@ static int init_mac(struct altera_tse_private *priv)
 	/* Disable RX/TX shift 16 for alignment of all received frames on 16-bit
 	 * start address
 	 */
-	tse_clear_bit(priv->mac_dev, tse_csroffs(rx_cmd_stat),
+	tse_set_bit(priv->mac_dev, tse_csroffs(rx_cmd_stat),
 		    ALTERA_TSE_RX_CMD_STAT_RX_SHIFT16);
 
 	tse_clear_bit(priv->mac_dev, tse_csroffs(tx_cmd_stat),
@@ -1026,18 +1006,9 @@ static void tse_set_mac(struct altera_tse_private *priv, bool enable)
  */
 static int tse_change_mtu(struct net_device *dev, int new_mtu)
 {
-	struct altera_tse_private *priv = netdev_priv(dev);
-	unsigned int max_mtu = priv->max_mtu;
-	unsigned int min_mtu = ETH_ZLEN + ETH_FCS_LEN;
-
 	if (netif_running(dev)) {
 		netdev_err(dev, "must be stopped to change its MTU\n");
 		return -EBUSY;
-	}
-
-	if ((new_mtu < min_mtu) || (new_mtu > max_mtu)) {
-		netdev_err(dev, "invalid MTU, max MTU is: %u\n", max_mtu);
-		return -EINVAL;
 	}
 
 	dev->mtu = new_mtu;
@@ -1125,21 +1096,6 @@ static void tse_set_rx_mode(struct net_device *dev)
 }
 
 /* Initialise (if necessary) the SGMII PCS component
-  1. External PHY Initialization using MDIO
-  2. PCS Configuration Register Initialization
-  a. Set Auto Negotiation Link Timer to 1.6ms for SGMII
-    link_timer (address 0x12) = 0x0D40
-    Link_timer (address 0x13) = 0x03
-  b. Enable SGMII Interface and Enable SGMII Auto Negotiation
-    SGMII_ENA = 1, USE_SGMII_AN = 1
-    if_mode = 0x0003
-  c. Enable PCS Auto Negotiation
-    AUTO_NEGOTIATION_ENA = 1, Bit 6,8,13 can be ignore
-    PCS Control Register = 0x1140
-  d. PCS SW-Reset/Bit15 is recommended after any confguration changed
-    PCS Control Register = 0x1140 | 0x8000;
-    Wait PCS Control Register RESET bit is clear
-  3, MAC configuration Register Initialization
  */
 static int init_sgmii_pcs(struct net_device *dev)
 {
@@ -1186,18 +1142,13 @@ static int init_sgmii_pcs(struct net_device *dev)
 	/* Reset PCS block */
 	tmp_reg |= BMCR_RESET;
 	sgmii_pcs_write(priv, MII_BMCR, tmp_reg);
-	n = SGMII_PCS_SW_RESET_TIMEOUT;
-	do {
-#if 0
-		if (tse_bit_is_clear(priv->mac_dev, tse_csroffs(mdio_phy0.control), BIT(15))) {
-#else
+	for (n = 0; n < SGMII_PCS_SW_RESET_TIMEOUT; n++) {
 		if (!(sgmii_pcs_read(priv, MII_BMCR) & BMCR_RESET)) {
-#endif
 			netdev_info(dev, "SGMII PCS block initialised OK\n");
 			return 0;
 		}
 		udelay(1);
-	} while (n--);
+	}
 
 	/* We failed to reset the block, return a timeout */
 	netdev_err(dev, "SGMII PCS block reset failed.\n");
@@ -1228,7 +1179,6 @@ static int tse_open(struct net_device *dev)
 		netdev_warn(dev, "TSE revision %x\n", priv->revision);
 
 	spin_lock(&priv->mac_cfg_lock);
-
 	/* no-op if MAC not operating in SGMII mode*/
 	ret = init_sgmii_pcs(dev);
 	if (ret) {
@@ -1285,10 +1235,8 @@ static int tse_open(struct net_device *dev)
 
 	/* Enable DMA interrupts */
 	spin_lock_irqsave(&priv->rxdma_irq_lock, flags);
-#if !defined(A10AD9371FOXCONN_TSEMAC_DBG)
 	priv->dmaops->enable_rxirq(priv);
 	priv->dmaops->enable_txirq(priv);
-#endif
 
 	/* Setup RX descriptor chain */
 	for (i = 0; i < priv->rx_ring_size; i++)
@@ -1370,7 +1318,7 @@ static int tse_shutdown(struct net_device *dev)
 static struct net_device_ops altera_tse_netdev_ops = {
 	.ndo_open		= tse_open,
 	.ndo_stop		= tse_shutdown,
-	//.ndo_start_xmit		= tse_start_xmit,
+	.ndo_start_xmit		= tse_start_xmit,
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_set_rx_mode	= tse_set_rx_mode,
 	.ndo_change_mtu		= tse_change_mtu,
@@ -1385,7 +1333,7 @@ static int request_and_map(struct platform_device *pdev, const char *name,
 
 	*res = platform_get_resource_byname(pdev, IORESOURCE_MEM, name);
 	if (*res == NULL) {
-		dev_err(device, "devicetree: resource %s not defined\n", name);
+		dev_err(device, "resource %s not defined\n", name);
 		return -ENODEV;
 	}
 
@@ -1419,12 +1367,7 @@ static int altera_tse_probe(struct platform_device *pdev)
 	void __iomem *descmap;
 	const struct of_device_id *of_id = NULL;
 
-	dev_info(&pdev->dev, "%s: enter", __func__);
-#if 0
-	ndev = alloc_etherdev_ethid(sizeof(struct altera_tse_private), 0);
-#else
 	ndev = alloc_etherdev(sizeof(struct altera_tse_private));
-#endif
 	if (!ndev) {
 		dev_err(&pdev->dev, "Could not allocate network device\n");
 		return -ENODEV;
@@ -1577,15 +1520,16 @@ static int altera_tse_probe(struct platform_device *pdev)
 		of_property_read_bool(pdev->dev.of_node,
 				      "altr,has-supplementary-unicast");
 
+	priv->dev->min_mtu = ETH_ZLEN + ETH_FCS_LEN;
 	/* Max MTU is 1500, ETH_DATA_LEN */
-	priv->max_mtu = ETH_DATA_LEN;
+	priv->dev->max_mtu = ETH_DATA_LEN;
 
 	/* Get the max mtu from the device tree. Note that the
 	 * "max-frame-size" parameter is actually max mtu. Definition
 	 * in the ePAPR v1.1 spec and usage differ, so go with usage.
 	 */
 	of_property_read_u32(pdev->dev.of_node, "max-frame-size",
-			     &priv->max_mtu);
+			     &priv->dev->max_mtu);
 
 	/* The DMA buffer size already accounts for an alignment bias
 	 * to avoid unaligned access exceptions for the NIOS processor,
@@ -1659,18 +1603,6 @@ static int altera_tse_probe(struct platform_device *pdev)
 		netdev_err(ndev, "Cannot attach to PHY (error: %d)\n", ret);
 		goto err_init_phy;
 	}
-
-#if defined(A10AD9371FOXCONN_TSEMAC_DBG)
-    ndev->flags |= IFF_PROMISC;
-    tse_open(ndev);
-    if (priv->hash_filter) {
-        tse_set_rx_mode_hashfilter(ndev);
-    } else {
-        tse_set_rx_mode(ndev);
-    }
-#endif
-
-	dev_info(&pdev->dev, "%s: succeed", __func__);
 	return 0;
 
 err_init_phy:
@@ -1689,10 +1621,6 @@ static int altera_tse_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct altera_tse_private *priv = netdev_priv(ndev);
-
-#if defined(A10AD9371FOXCONN_TSEMAC_DBG)
-    tse_shutdown(ndev);
-#endif
 
 	if (ndev->phydev) {
 		phy_disconnect(ndev->phydev);

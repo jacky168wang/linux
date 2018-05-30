@@ -40,11 +40,7 @@ Required properties:
 	- #address-cells: Must be <1>.
 	- #size-cells: Must be <0>.
 
-	For each phy on the mdio bus, there must be a node with the following
-	fields:
-
-	- reg: phy id used to communicate to phy.
-	- device_type: Must be "ethernet-phy".
+	For each phy on the mdio bus, see phy.txt
 
 Optional properties:
 - local-mac-address: See ethernet.txt in the same directory.
@@ -52,7 +48,7 @@ Optional properties:
 
 Example:
 
-	tse_sub_0_eth_tse_0: ethernet@0x1,00000000 {
+	tse_sub_0_eth_tse_0: ethernet@1,00000000 {
 		compatible = "altr,tse-msgdma-1.0";
 		reg =	<0x00000001 0x00000000 0x00000400>,
 			<0x00000001 0x00000460 0x00000020>,
@@ -79,18 +75,18 @@ Example:
 			#size-cells = <0>;
 			phy0: ethernet-phy@0 {
 				reg = <0x0>;
-				device_type = "ethernet-phy";
+				compatible = "ethernet-phy-ieee802.3-c22";
 			};
 
 			phy1: ethernet-phy@1 {
 				reg = <0x1>;
-				device_type = "ethernet-phy";
+				compatible = "ethernet-phy-ieee802.3-c22";
 			};
 
 		};
 	};
 
-	tse_sub_1_eth_tse_0: ethernet@0x1,00001000 {
+	tse_sub_1_eth_tse_0: ethernet@1,00001000 {
 		compatible = "altr,tse-msgdma-1.0";
 		reg = 	<0x00000001 0x00001000 0x00000400>,
 			<0x00000001 0x00001460 0x00000020>,

@@ -49,7 +49,7 @@
 				compatible = "altr,spi-1.0";
 				reg = <0x00000040 0x00000020>;
 				interrupt-parent = <&intc>;
-				interrupts = <0 26 4>;
+				interrupts = <0 26 IRQ_TYPE_LEVEL_HIGH>;
 				#address-cells = <0x1>;
 				#size-cells = <0x0>;
 			};
@@ -69,48 +69,17 @@
 				gpios = <&sys_gpio_in 31 0>;
 				/* irq-type irq-number low-to-high-edge */
 				/* irq-number = 24(FPGA_IRQ_BASE) + specific irq vector */
-	   			interrupts = <0 24 1>;
+	   			interrupts = <0 24 IRQ_TYPE_EDGE_RISING>;
 	   			#interrupt-cells = <1>;
 	   			altr,interrupt-type = <IRQ_TYPE_EDGE_RISING>;
 			};
 
 			/* Documentation/devicetree/bindings/pps/pps-gpio.txt  */
-			pps_gpioin31: pps-gpio@31 {
+			pps_gpioin31: pps_gpio@31 {
 				compatible = "pps-gpio";
 				gpios = <&sys_gpio_in 31 0>;
 				/* comment means assert is indicated by a rising edge */
 				assert-rising-edge;
-			};
-
-			fpga_tse_gemac: tse_gemac@ff250000 {
-				compatible = "altr,tse-1.0";
-				reg = <0xff250000 0x800>;
-				reg-names = "control_port";
-				clocks = <&sys_clk>;
-				clock-names = "dgmaceth";
-				//resets = <&rst EMAC0_RESET>;
-				//reset-names = "stmmaceth";
-				//interrupts = <0 92 IRQ_TYPE_LEVEL_HIGH>;
-				//interrupt-names = "macirq";
-				address-bits = <48>;
-				max-frame-size = <1518>;
-				/* Filled in by bootloader */
-				//mac-address = [00 00 00 00 00 00];
-				local-mac-address = [00 00 00 00 00 00];
-				//snps,multicast-filter-bins = <256>;
-				//snps,perfect-filter-entries = <128>;
-				tx-fifo-depth = <8192>;
-				rx-fifo-depth = <32768>;
-				altr,enable-sup-addr = <0>;
-				altr,enable-hash = <0>;
-				phy-mode = "sgmii";
-				phy-addr = <0>;
-				pcs-addr = <0>;
-				fpga_tse_gemac_mdio: mdio@ff22e400 {
-					compatible = "altr,tse-mdio";
-					#address-cells = <1>;
-					#size-cells = <0>;
-				};
 			};
 		};
 	};
@@ -144,3 +113,4 @@
 //#include "a10ad9371foxconn_ad9371n2.dtsi"
 //#include "a10ad9371foxconn_ad9371n3.dtsi"
 //#include "a10ad9371foxconn_ad9371n4.dtsi"
+#include "eth_altr_tse.dtsi"

@@ -1,0 +1,62 @@
+/* Documentation/devicetree/bindings/net/altera_tse.txt */
+/* Documentation/devicetree/bindings/interrupt-controller/arm,gic.txt */
+
+/ {
+soc {
+	gemac_tse: ethernet@ff2c0000 {
+		compatible = "altr,tse-msgdma-1.0";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0xff2c0000 0x00000400>,
+			<0xff2c0460 0x00000020>,
+			<0xff2c0480 0x00000020>,
+			<0xff2c04A0 0x00000008>,
+			<0xff2c0400 0x00000020>,
+			<0xff2c0420 0x00000020>;
+		reg-names = "control_port", "rx_csr", "rx_desc", "rx_resp", "tx_csr", "tx_desc";
+		interrupt-parent = <&intc>;
+		interrupts = <0 81 IRQ_TYPE_LEVEL_HIGH>, <0 80 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "rx_irq", "tx_irq";
+		tx-fifo-depth = <2048>; //<8192>;
+		rx-fifo-depth = <2048>; //<32768>;
+		/* copy from stmmac but unused here
+		clocks = <&sys_clk>;
+		clock-names = "gemac_tse_clk";
+		resets = <&rst EMAC0_RESET>;
+		reset-names = "gemac_tse_rst";*/
+		address-bits = <48>;
+		max-frame-size = <1500>;
+		local-mac-address = [ 00 00 00 00 00 00 ];
+		phy-mode = "sgmii";
+		altr,has-supplementary-unicast;
+		altr,has-hash-multicast-filter;
+		/* mdio-bus[0] + phy[0]/pcs;
+		   unused for now as current driver support one mdio only!
+		pcs-mdio = <0>;
+		mdio0: mdio@0 {
+			compatible = "altr,tse-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			sgmii_pcs: sgmii-pcs@0 {
+				reg = <0x0>;
+				device_type = "sgmii-pcs";
+				//compatible = "altr-pcs";
+			};
+		};*/
+		phy-handle = <&tse_mdio1_phy0>;
+		//phy-addr = <0>; /* -1 for auto-probing, to be debugged */
+		mdio1: mdio@1 {
+			compatible = "altr,tse-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			/* #define MARVELL_PHY_ID_88E1111 0x01410cc0 */
+			tse_mdio1_phy0: ethernet-phy@0 {
+				reg = <0x0>;
+				compatible = "ethernet-phy-id0141.0cc0", "ethernet-phy-ieee802.3-c22";
+				//interrupt-parent = <40000>;
+				//interrupts = <35 1>;
+			};
+		};
+	};
+};
+};

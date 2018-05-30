@@ -5,7 +5,7 @@
 		reg = <0x000e0000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 23 0>;
+		interrupts = <0 23 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&n3_tx_device_clk_pll>, <&n3_axi_ad9371_tx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -26,7 +26,7 @@
 		reg = <0x000f0000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 51 0>;
+		interrupts = <0 51 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&n3_rx_device_clk_pll>, <&n3_axi_ad9371_rx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -46,7 +46,7 @@
 		reg = <0x00100000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 25 0>;  //no  connected
+		interrupts = <0 25 IRQ_TYPE_NONE>; //disconnected
 
 		clocks = <&sys_clk>, <&n3_rx_os_device_clk_pll>, <&n3_axi_ad9371_rx_os_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -110,7 +110,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x000ec000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 40 4>;
+		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -126,7 +126,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x000fc000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 41 4>;
+		interrupts = <0 41 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -141,7 +141,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x0010c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 42 4>;
+		interrupts = <0 42 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -211,7 +211,7 @@
 		compatible = "altr,spi-1.0";
 		reg = <0x000c0040 0x00000020>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 44 4>;
+		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
 		#address-cells = <0x1>;
 		#size-cells = <0x0>;
 	};

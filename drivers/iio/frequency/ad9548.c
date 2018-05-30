@@ -18,8 +18,9 @@
 
 #include <linux/iio/iio.h>
 
-/* enable/disable: 76.8/10M sys_clk_in */
-#define SYS_CLK_10M
+/* enable: sys_clk_in with 10.0 MHz from external GPRS
+  disable: sys_clk_in with 76.8 MHz from lmk04828 */
+//#define SYS_CLK_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
@@ -116,7 +117,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x031A, 0x00},
 	{0x031B, 0x00},
 	{0x0306, 0x01}, /* Update TW */
-	{0x0400, 0x0D}, /* Clock distribution output *//*03-13 0x0C->0x0D*/
+	{0x0400, 0x0D}, /* Clock distribution output */
 	{0x0401, 0x02},
 	{0x0402, 0x0D},
 	{0x0403, 0x00},
@@ -198,7 +199,6 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x062F, 0x00},
 	{0x0630, 0x20},
 	{0x0631, 0x44},
-	
 	{0x0005, 0x01}, /* I/O Update */
 	{0x0A01, 0x38},
 	{0x0A0D, 0x01},
@@ -262,13 +262,12 @@ static int ad9548_probe(struct spi_device *spi)
     }*/
 #endif
 
-#if 1
 	ret = ad9548_write(spi, 0x0, 0x20);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Failed to write for reset\n");
  		return -ENODEV;
 	}
-	mdelay(1);
+	mdelay(100);
 	ret = ad9548_read(spi, 0x3);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Failed to read [3] for ID\n");
@@ -280,7 +279,7 @@ static int ad9548_probe(struct spi_device *spi)
 			dev_err(&spi->dev, "Failed to change default 3-wire mode into 4-wire\n");
  			return -ENODEV;
 		}
-		mdelay(1);
+		mdelay(100);
 		ret = ad9548_read(spi, 0x3);
 		if (ret < 0) {
 			dev_err(&spi->dev, "Failed to read [3] for ID\n");
@@ -292,7 +291,7 @@ static int ad9548_probe(struct spi_device *spi)
 		}
 	}
 	dev_info(&spi->dev, "Rev.0x%X probed\n", ad9548_read(spi, 0x2));
-#endif
+
 	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
 		switch (ad9548_regs[i][0]) {
 		case WAIT_B:

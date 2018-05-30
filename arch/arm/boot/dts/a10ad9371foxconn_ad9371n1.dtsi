@@ -5,7 +5,7 @@
 		reg = <0x00020000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 28 0>;
+		interrupts = <0 28 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&tx_device_clk_pll>, <&axi_ad9371_tx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -26,7 +26,7 @@
 		reg = <0x00030000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 27 0>;
+		interrupts = <0 27 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&rx_device_clk_pll>, <&axi_ad9371_rx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -46,7 +46,7 @@
 		reg = <0x00040000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 29 0>;
+		interrupts = <0 29 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&rx_os_device_clk_pll>, <&axi_ad9371_rx_os_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -110,7 +110,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x0002c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 30 4>;
+		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -126,7 +126,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x0003c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 31 4>;
+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -141,7 +141,7 @@
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x0004c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 32 4>;
+		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -228,8 +228,9 @@
 		tx2_enable-gpios = <&sys_gpio_out 24 0>;
 		tx1_enable-gpios = <&sys_gpio_out 25 0>;
 
-		interrupt-parent = <&intc>;                                      
-        interrupts = <0 31 4>;
+		//repeated with 'axi-ad9371-rx-dma@03c000'
+		//interrupt-parent = <&intc>;                                      
+        //interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 
 		/* Clocks */
 		clocks = <&axi_ad9371_rx_jesd>, <&axi_ad9371_tx_jesd>, <&axi_ad9371_rx_os_jesd>, <&clk0_ad9528 6>, <&clk0_ad9528 3>;
