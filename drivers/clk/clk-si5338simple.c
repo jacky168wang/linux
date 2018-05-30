@@ -170,7 +170,8 @@ sub write_reg
 }
 */
 
-#define DEBUG 1
+/* NOTICE: on A10DK board, SW1.I2C_Flag should be LOW */
+//#define DEBUG 1
 #include <linux/bsearch.h>
 #include <linux/clk.h>
 #include <linux/clkdev.h>
@@ -672,7 +673,7 @@ static inline int si5338simple_reg_read(struct si5338simple_t *drvdata, u16 reg,
 
 	ret = regmap_read(drvdata->regmap, reg, &tmp);
 	if (ret) {
-		dev_err(&drvdata->client->dev, "regmap_read: [0x%x] -> 0x%x\n",
+		dev_err(&drvdata->client->dev, "regmap_read failed: [0x%x] -> 0x%x\n",
 			reg, tmp);
 		return -ENODEV;
 	}
@@ -695,7 +696,7 @@ static inline int si5338simple_reg_write(struct si5338simple_t *drvdata, u8 val,
 	else {
 		ret = regmap_read(drvdata->regmap, reg, &tmp);
 		if (ret) {
-			dev_err(&drvdata->client->dev, "regmap_read: [0x%x] -> 0x%x\n",
+			dev_err(&drvdata->client->dev, "regmap_read failed: [0x%x] -> 0x%x\n",
 				reg, tmp);
 			return -ENODEV;
 		}
@@ -705,7 +706,7 @@ static inline int si5338simple_reg_write(struct si5338simple_t *drvdata, u8 val,
 
 	ret = regmap_write(drvdata->regmap, reg, tmp);
 	if (ret < 0) {
-		dev_err(&drvdata->client->dev, "regmap_write: [0x%x] <- 0x%x\n",
+		dev_err(&drvdata->client->dev, "regmap_write failed: [0x%x] <- 0x%x\n",
 			reg, tmp);
 		return -ENODEV;
 	}
@@ -762,7 +763,7 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 	/* Register regmap */
 	drvdata->regmap = devm_regmap_init_i2c(client, &si5338_regmap_config);
 	if (IS_ERR(drvdata->regmap)) {
-		dev_err(&client->dev, "devm_regmap_init_i2c failed\n");
+		dev_err(&client->dev, "devm_regmap_init_i2c failed 0x%x\n", drvdata->regmap);
 		return PTR_ERR(drvdata->regmap);
 	}
 
@@ -788,8 +789,10 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 	ret = si5338simple_reg_write(drvdata, 0x00, 255, 0xff);
 	if (ret < 0) return -ENODEV;
 
+	dev_dbg(&client->dev, "Writing registers table produced by CLOCKBUILDER DESKTOP\n");
 	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
-		ret = si5338simple_reg_write(drvdata, ad9548_regs[i][1], ad9548_regs[i][0], ad9548_regs[i][2]);
+		ret = si5338simple_reg_write(drvdata, ad9548_regs[i][1],
+			ad9548_regs[i][0], ad9548_regs[i][2]);
 		if (ret < 0) return -ENODEV;
 	}
 
@@ -806,6 +809,7 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 			PLL_POLLING_TMOUT, val); 
 		return -ETIMEDOUT;
 	}
+	dev_info(&client->dev, "PLL locked without LOL\n");
 
 	dev_dbg(&client->dev, "Configuring PLL for locking\n");
 	ret = si5338simple_reg_write(drvdata, 0x00, 49, 0xFF);
@@ -814,12 +818,14 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 	dev_dbg(&client->dev, "Initiating PLL lock sequence\n");
 	ret = si5338simple_reg_write(drvdata,  0x02, 246, 0x02);
 	if (ret < 0) return -ENODEV;
+
 	msleep(25); /* NOTE: need 25 ms per datasheet */
-	dev_info(&client->dev, "Restarting LOL\n");
+
+	dev_dbg(&client->dev, "Restarting LOL\n");
 	ret = si5338simple_reg_write(drvdata, 0x65, 241, 0xFF);
 	if (ret < 0) return -ENODEV;
 
-	dev_info(&client->dev, "Confirming PLL locked status\n");
+	dev_dbg(&client->dev, "Confirming PLL locked status\n");
 	i = PLL_POLLING_TMOUT;
 	do {
 		msleep(1);
@@ -832,8 +838,9 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 			PLL_POLLING_TMOUT, val); 
 		return -ETIMEDOUT;
 	}
+	dev_info(&client->dev, "PLL locked with LOL\n");
 
-	dev_info(&client->dev, "Copying FCAL values to active/[47]\n");
+	dev_dbg(&client->dev, "Copying FCAL values to active\n");
 	ret = si5338simple_reg_read(drvdata, 237, &val);
 	if (ret < 0) return -ENODEV;
 	ret = si5338simple_reg_write(drvdata, val, 47,  0x03);
@@ -848,7 +855,6 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 	if (ret < 0) return -ENODEV;
 	ret = si5338simple_reg_write(drvdata, 0x14, 47, 0xFC);
 	if (ret < 0) return -ENODEV;
-
 	dev_dbg(&client->dev, "Setting PLL to use FCAL values\n");
 	ret = si5338simple_reg_write(drvdata , 0x80, 49, 0x80);
 	if (ret < 0) return -ENODEV;
@@ -864,11 +870,8 @@ static int si5338simple_remove(struct i2c_client *client)
 {
 	struct si5338simple_t *drvdata = i2c_get_clientdata(client);
 
-#ifdef CONFIG_OF
-	of_clk_del_provider(client->dev.of_node);
-#endif
     //misc_deregister(&drvdata->misc_dev);
-	kfree(drvdata);
+	//kfree(drvdata);
 
 	dev_info(&client->dev, "Removed\n");
 	return 0;
