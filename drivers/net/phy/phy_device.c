@@ -14,6 +14,7 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
+#define DEBUG 1
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/errno.h>

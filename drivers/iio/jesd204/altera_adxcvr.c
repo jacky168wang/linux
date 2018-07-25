@@ -439,9 +439,9 @@ static void adxcvr_link_clk_work(struct work_struct *work)
 
 	dev_info(st->dev, "Setting link rate to %u (lane rate: %u)\n",
 		link_rate, st->lane_rate);
-
+#if 1 /* failed for RX and RX-OBS, to be debug */
 	clk_disable_unprepare(st->link_clk);
-
+#endif
 	ret = clk_set_rate(st->link_clk, link_rate);
 	if (ret < 0)
 		dev_err(st->dev, "Setting link rate failed: %d\n", ret);

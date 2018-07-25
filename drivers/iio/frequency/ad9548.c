@@ -20,7 +20,7 @@
 
 /* enable: sys_clk_in with 10.0 MHz from external GPRS
   disable: sys_clk_in with 76.8 MHz from lmk04828 */
-//#define SYS_CLK_10M
+#define SYS_CLK_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
