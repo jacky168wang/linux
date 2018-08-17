@@ -20,7 +20,7 @@
 
 /* enable: sys_clk_in with 10.0 MHz from external GPRS
   disable: sys_clk_in with 76.8 MHz from lmk04828 */
-#define SYS_CLK_10M
+#define EXT_CLKIN_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
@@ -45,16 +45,26 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0000, 0x90},
 	{0x0000, 0x90},
 #endif
+#if 0
 	{0x0100, 0x18}, /* System clock */
-#if defined(SYS_CLK_10M)
+#else
+	/*	Date: 20180817
+		Change: bit6: Charge pump mode automatic/0->manual/1
+				bit[5:3]: charge pump current 500->1000 μA 
+		Result: TO BE Verified by RF team */
+	{0x0100, 0x78},
+#endif
+#if defined(EXT_CLKIN_10M)
 	{0x0101, 0x4D},
-	{0x0102, 0x05},/*03-13 0x45->0x05*/
+	/*0x45->0x05*/
+	{0x0102, 0x05},
 	{0x0103, 0x0D},
 	{0x0104, 0xD1},
 	{0x0105, 0x13},
 #else
 	{0x0101, 0x0A},
-	{0x0102, 0x05},/*03-13 0x45->0x05*/
+	/*0x45->0x05*/
+	{0x0102, 0x05},
 	{0x0103, 0x9E},
 	{0x0104, 0xAE},
 	{0x0105, 0xC6},
@@ -81,7 +91,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0212, 0x00},
 	{0x0213, 0xFF}, /* Auxiliary DAC */
 	{0x0214, 0x01},
-#if defined(SYS_CLK_10M)
+#if defined(EXT_CLKIN_10M)
 	{0x0300, 0xE7}, /* DPLL */
 	{0x0301, 0xE2},
 	{0x0302, 0x35},
@@ -122,7 +132,14 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0402, 0x0D},
 	{0x0403, 0x00},
 	{0x0404, 0x03},
+#if 1
 	{0x0405, 0x0A},
+#else
+	/*	Change: bit4: OUT1 Invert the polarity;
+				bit3: OUT1 low->normal drive strength
+		Result: AD9528 PLL2 ***UNCLOCK*** */
+	{0x0405, 0x12},
+#endif
 	{0x0406, 0x03},
 	{0x0407, 0x03},
 	{0x0408, 0x00},
@@ -250,44 +267,45 @@ static int ad9548_probe(struct spi_device *spi)
 
 #ifdef CONFIG_OF
 	/*
-    np = of_find_node_by_name(NULL, "clksyn_ad9548");
-    if (NULL == np) {
-        dev_err(&spi->dev, "device-tree: node 'ad9548-spi' not find\n");
- 		return -EINVAL;
-    }
+	struct device_node *np;
+	np = of_find_node_by_name(NULL, "clksyn");
+	if (NULL == np) {
+		dev_err(&spi->dev, "device-tree: node 'ad9548-spi' not find\n");
+		return -EINVAL;
+	}
 	ret = of_property_read_u32_index(np, "pl-cs-val", 0, &pl_cs_val);
-    if (ret < 0) {
-        dev_err(&spi->dev, "device-tree: property 'pl-cs-val' not find\n");
- 		return -EINVAL;
-    }*/
+	if (ret < 0) {
+		dev_err(&spi->dev, "device-tree: property 'pl-cs-val' not find\n");
+		return -EINVAL;
+	}*/
 #endif
 
 	ret = ad9548_write(spi, 0x0, 0x20);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Failed to write for reset\n");
- 		return -ENODEV;
+		return -ENODEV;
 	}
 	mdelay(100);
 	ret = ad9548_read(spi, 0x3);
 	if (ret < 0) {
 		dev_err(&spi->dev, "Failed to read [3] for ID\n");
- 		return -ENODEV;
+		return -ENODEV;
 	}
 	if (ret != CHIPID_AD9548) {
 		ret = ad9548_write(spi, 0x0, 0xB0);
 		if (ret < 0) {
 			dev_err(&spi->dev, "Failed to change default 3-wire mode into 4-wire\n");
- 			return -ENODEV;
+			return -ENODEV;
 		}
 		mdelay(100);
 		ret = ad9548_read(spi, 0x3);
 		if (ret < 0) {
 			dev_err(&spi->dev, "Failed to read [3] for ID\n");
- 			return -ENODEV;
+			return -ENODEV;
 		}
 		if (ret != CHIPID_AD9548) {
 			dev_err(&spi->dev, "Unrecognized CHIP_ID 0x%X\n", ret);
- 			return -ENODEV;
+			return -ENODEV;
 		}
 	}
 	dev_info(&spi->dev, "Rev.0x%X probed\n", ad9548_read(spi, 0x2));
@@ -295,7 +313,7 @@ static int ad9548_probe(struct spi_device *spi)
 	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
 		switch (ad9548_regs[i][0]) {
 		case WAIT_B:
-			timeout = 100;
+			timeout = 1000;
 			do {
 				ret = ad9548_read(spi, 0xD01);
 				if (ret < 0) return ret;
@@ -303,7 +321,7 @@ static int ad9548_probe(struct spi_device *spi)
 				mdelay(1);
 			} while (timeout--);
 			if (timeout <= 0) {
-				dev_info(&spi->dev, "system clock PLL unlock in 100ms\n");
+				dev_info(&spi->dev, "system clock PLL unlock in 1000ms\n");
 				return -ETIMEDOUT;
 			}
 			break;
@@ -320,8 +338,8 @@ static int ad9548_probe(struct spi_device *spi)
 
 #ifdef CONFIG_OF
 static const struct of_device_id ad9548_dt_ids[] = {
-    { .compatible = "adi,ad9548" },
-    { }
+	{ .compatible = "adi,ad9548" },
+	{ }
 };
 #endif
 
@@ -329,7 +347,7 @@ static const struct spi_device_id ad9548_hw_ids[] = {
 	{ "ad9548", CHIPID_AD9548 },
 	{ }
 };
-MODULE_DEVICE_TABLE(spi, ad9548_ids);
+MODULE_DEVICE_TABLE(spi, ad9548_hw_ids);
 
 static struct spi_driver ad9548_driver = {
 	.driver = {

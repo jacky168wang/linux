@@ -86,20 +86,20 @@
 };
 
 &sys_spi {
-	clksyn_ad9548: clksyn_ad9548@2 {
+	clksyn_ad9548: clksyn@2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "adi,ad9548";
+		compatible = "adi,ad9548","spidev";
 
 		reg = <2>;
 		//spi-3wire; HW design is 4wire mode
 		spi-max-frequency = <10000000>;
 	};
 
-	clkgen_lmk04828: clkgen_lmk04828@3 {
+	clkgen_lmk04828: clkgen@3 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "ti,lmk04828";
+		compatible = "ti,lmk04828","spidev";
 
 		reg = <3>;
 		//spi-3wire; HW design is 4wire mode
