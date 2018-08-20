@@ -285,7 +285,7 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
-
+#if 0
 		/* Jacky:2018/07/25: enable pin-mode 
 		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
 		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
@@ -308,5 +308,6 @@
 			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
 			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
 		adi,arm-gpio-enable-mask = <0>;
+#endif
 	};
 };

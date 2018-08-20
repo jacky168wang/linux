@@ -1158,7 +1158,7 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 	sysref_ctrl |= AD9528_SYSREF_PATTERN_REQ;
 	ret = ad9528_write(indio_dev, AD9528_SYSREF_CTRL, sysref_ctrl);
 	if (ret < 0) {
-		dev_err(&indio_dev->dev, "ERR: write AD9528_SYSREF_PATTERN_REQ\n");
+		dev_err(&indio_dev->dev, "ERR: Software trigger SYSREF by writing [0403].bit0\n");
 		return ret;
 	}
 

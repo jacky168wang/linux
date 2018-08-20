@@ -1,13 +1,13 @@
 
 &sys_hps_bridges {
-	n2_axi_ad9371_tx_jesd: axi-jesd204-tx@e0000 {
+	axi_ad9371_tx_jesd: axi-jesd204-tx@20000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
-		reg = <0x000e0000 0x4000>;
+		reg = <0x00020000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 23 IRQ_TYPE_NONE>;
+		interrupts = <0 28 IRQ_TYPE_NONE>;
 
-		clocks = <&sys_clk>, <&n2_tx_device_clk_pll>, <&n2_axi_ad9371_tx_xcvr>;
+		clocks = <&sys_clk>, <&tx_device_clk_pll>, <&axi_ad9371_tx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		adi,octets-per-frame = <2>;
@@ -18,17 +18,17 @@
 		adi,control-bits-per-sample = <2>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd_tx_lane_clk";
+		clock-output-names = "jesd_tx_lane_clk";
 	};
 
-	n2_axi_ad9371_rx_jesd: axi-jesd204-rx@f0000 {
+	axi_ad9371_rx_jesd: axi-jesd204-rx@30000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x000f0000 0x4000>;
+		reg = <0x00030000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 51 IRQ_TYPE_NONE>;
+		interrupts = <0 27 IRQ_TYPE_NONE>;
 
-		clocks = <&sys_clk>, <&n2_rx_device_clk_pll>, <&n2_axi_ad9371_rx_xcvr>;
+		clocks = <&sys_clk>, <&rx_device_clk_pll>, <&axi_ad9371_rx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		adi,octets-per-frame = <4>;
@@ -38,17 +38,17 @@
 		adi,converters-per-device = <4>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd_rx_lane_clk";
+		clock-output-names = "jesd_rx_lane_clk";
 	};
 
-	n2_axi_ad9371_rx_os_jesd: axi-jesd204-rx@100000 {
+	axi_ad9371_rx_os_jesd: axi-jesd204-rx@40000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x00100000 0x4000>;
+		reg = <0x00040000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 25 IRQ_TYPE_NONE>;
+		interrupts = <0 29 IRQ_TYPE_NONE>;
 
-		clocks = <&sys_clk>, <&n2_rx_os_device_clk_pll>, <&n2_axi_ad9371_rx_os_xcvr>;
+		clocks = <&sys_clk>, <&rx_os_device_clk_pll>, <&axi_ad9371_rx_os_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		adi,octets-per-frame = <2>;
@@ -58,59 +58,59 @@
 		adi,converters-per-device = <4>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd_rx_os_lane_clk";
+		clock-output-names = "jesd_rx_os_lane_clk";
 	};
 
-	 n2_axi_ad9371_tx_xcvr: axi-ad9371-tx-xcvr@e4000 {
+	axi_ad9371_tx_xcvr: axi-ad9371-tx-xcvr@24000 {
 		compatible = "adi,altera-adxcvr-1.00.a";
-		reg = <0x000e4000 0x00001000>,
-			<0x000e6000 0x00001000>,
-			<0x000e8000 0x00001000>,
-			<0x000e9000 0x00001000>,
-			<0x000ea000 0x00001000>,
-			<0x000eb000 0x00001000>;
+		reg = <0x00024000 0x00001000>,
+			<0x00026000 0x00001000>,
+			<0x00028000 0x00001000>,
+			<0x00029000 0x00001000>,
+			<0x0002a000 0x00001000>,
+			<0x0002b000 0x00001000>;
 		reg-names = "adxcvr", "atx-pll", "adxcfg-0", "adxcfg-1", "adxcfg-2", "adxcfg-3";
 
-		clocks = <&clk0_ad9528 3>, <&n2_tx_device_clk_pll>;
+		clocks = <&clk0_ad9528 3>, <&tx_device_clk_pll>;
 		clock-names = "ref", "link";
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_tx_lane_clock";
+		clock-output-names = "jesd204_tx_lane_clock";
 	};
 
-	n2_axi_ad9371_rx_xcvr: axi-ad9371-rx-xcvr@f4000 {
+	axi_ad9371_rx_xcvr: axi-ad9371-rx-xcvr@34000 {
 		compatible = "adi,altera-adxcvr-1.00.a";
-		reg = <0x000f4000 0x00001000>,
-			<0x000f8000 0x00001000>,
-			<0x000f9000 0x00001000>;
+		reg = <0x00034000 0x00001000>,
+			<0x00038000 0x00001000>,
+			<0x00039000 0x00001000>;
 		reg-names = "adxcvr", "adxcfg-0", "adxcfg-1";
 
-		clocks = <&clk0_ad9528 3>, <&n2_rx_device_clk_pll>;
+		clocks = <&clk0_ad9528 3>, <&rx_device_clk_pll>;
 		clock-names = "ref", "link";
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_rx_lane_clock";
+		clock-output-names = "jesd204_rx_lane_clock";
 	};
 
-	n2_axi_ad9371_rx_os_xcvr: axi-ad9371-rx-os-xcvr@104000 {
+	axi_ad9371_rx_os_xcvr: axi-ad9371-rx-os-xcvr@44000 {
 		compatible = "adi,altera-adxcvr-1.00.a";
-		reg = <0x00104000 0x00001000>,
-			<0x00108000 0x00001000>,
-			<0x00109000 0x00001000>;
+		reg = <0x00044000 0x00001000>,
+			<0x00048000 0x00001000>,
+			<0x00049000 0x00001000>;
 		reg-names = "adxcvr", "adxcfg-0", "adxcfg-1";
 
-		clocks = <&clk0_ad9528 3>, <&n2_rx_os_device_clk_pll>;
+		clocks = <&clk0_ad9528 3>, <&rx_os_device_clk_pll>;
 		clock-names = "ref", "link";
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_rx_os_lane_clock";
+		clock-output-names = "jesd204_rx_os_lane_clock";
 	};
 
-	n2_axi_ad9371_tx_dma: axi-ad9371-tx-dma@ec000 {
+	axi_ad9371_tx_dma: axi-ad9371-tx-dma@2c000 {
 		compatible = "adi,axi-dmac-1.00.a";
-		reg = <0x000ec000 0x00004000>;
+		reg = <0x0002c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 40 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <0 30 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -122,11 +122,11 @@
 		};
 	};
 
-	n2_axi_ad9371_rx_dma: axi-ad9371-rx-dma@fc000 {
+	axi_ad9371_rx_dma: axi-ad9371-rx-dma@3c000 {
 		compatible = "adi,axi-dmac-1.00.a";
-		reg = <0x000fc000 0x00004000>;
+		reg = <0x0003c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 41 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -137,11 +137,11 @@
 		};
 	};
 
-	n2_axi_ad9371_rx_os_dma: axi-ad9371-rx-os-dma@10c000 {
+	axi_ad9371_rx_os_dma: axi-ad9371-rx-os-dma@4c000 {
 		compatible = "adi,axi-dmac-1.00.a";
-		reg = <0x0010c000 0x00004000>;
+		reg = <0x0004c000 0x00004000>;
 		interrupt-parent = <&intc>;
-		interrupts = <0 42 IRQ_TYPE_LEVEL_HIGH>;
+		interrupts = <0 32 IRQ_TYPE_LEVEL_HIGH>;
 		#dma-cells = <1>;
 		clocks = <&dma_clk>;
 
@@ -152,73 +152,65 @@
 		};
 	};
 
-	n2_axi_ad9371_rx: axi-ad9371-rx-hpc-n2@110000 {
+	axi_ad9371_rx: axi-ad9371-rx-hpc@50000 {
 		compatible = "adi,axi-ad9371-rx-1.0";
-		reg = <0x00110000 0x00008000>;
-		dmas = <&n2_axi_ad9371_rx_dma 0>;
+		reg = <0x00050000 0x00008000>;
+		dmas = <&axi_ad9371_rx_dma 0>;
 		dma-names = "rx";
-		spibus-connected = <&n2_trx0_ad9371>;
+		spibus-connected = <&trx0_ad9371>;
 	};
 
-	n2_axi_ad9371_tx: axi-ad9371-tx-hpc-n2@114000 {
+	axi_ad9371_tx: axi-ad9371-tx-hpc@54000 {
 		compatible = "adi,axi-ad9371-tx-1.0";
-		reg = <0x00114000 0x00004000>;
-		dmas = <&n2_axi_ad9371_tx_dma 0>;
+		reg = <0x00054000 0x00004000>;
+		dmas = <&axi_ad9371_tx_dma 0>;
 		dma-names = "tx";
-		clocks = <&n2_trx0_ad9371 2>;
+		clocks = <&trx0_ad9371 2>;
 		clock-names = "sampl_clk";
-		spibus-connected = <&n2_trx0_ad9371>;
+		spibus-connected = <&trx0_ad9371>;
+		//adi,axi-pl-fifo-enable; // RXDMA fifo mode
 		adi,axi-pl-fifo-disable;
 	};
 
-	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc-n2@118000 {
+	xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@58000 {
 		compatible = "adi,axi-ad9371-obs-1.0";
-		reg = <0x00118000 0x00001000>;
-		dmas = <&n2_axi_ad9371_rx_os_dma 0>;
+		reg = <0x00058000 0x00001000>;
+		dmas = <&axi_ad9371_rx_os_dma 0>;
 		dma-names = "rx";
-		clocks = <&n2_trx0_ad9371 1>;
+		clocks = <&trx0_ad9371 1>;
 		clock-names = "sampl_clk";
 	};
 
-	n2_tx_device_clk_pll: altera-a10-fpll@e5000 {
+	tx_device_clk_pll: altera-a10-fpll@25000 {
 		compatible = "altr,a10-fpll";
-		reg = <0x000e5000 0x1000>;
+		reg = <0x00025000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_tx_link_clock";
+		clock-output-names = "jesd204_tx_link_clock";
 	};
 
-	n2_rx_device_clk_pll: altera-a10-fpll@f5000 {
+	rx_device_clk_pll: altera-a10-fpll@35000 {
 		compatible = "altr,a10-fpll";
-		reg = <0x000f5000 0x1000>;
+		reg = <0x00035000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_rx_link_clock";
+		clock-output-names = "jesd204_rx_link_clock";
 	};
 
-	n2_rx_os_device_clk_pll: altera-a10-fpll@105000 {
+	rx_os_device_clk_pll: altera-a10-fpll@45000 {
 		compatible = "altr,a10-fpll";
-		reg = <0x00105000 0x1000>;
+		reg = <0x00045000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
 
 		#clock-cells = <0>;
-		clock-output-names = "n2_jesd204_rx_os_link_clock";
-	};
-
-	n2_fmc_spi: spi@60040 {
-		compatible = "altr,spi-1.0";
-		reg = <0x00060040 0x00000020>;
-		interrupt-parent = <&intc>;
-		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
-		#address-cells = <0x1>;
-		#size-cells = <0x0>;
+		clock-output-names = "jesd204_rx_os_link_clock";
 	};
 };
 
-&n2_fmc_spi {
-	n2_trx0_ad9371: ad9371-phy-n2@1 {
+&sys_spi {
+	trx0_ad9371: ad9371-phy@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		#clock-cells = <1>;
@@ -228,18 +220,22 @@
 		reg = <1>;
 		spi-max-frequency = <25000000>;
 
-		reset-gpios = <&sys_gpio_out 13 0>;
-		test-gpios = <&sys_gpio_out 14 0>;
+		reset-gpios = <&sys_gpio_out 20 0>;
+		test-gpios = <&sys_gpio_out 21 0>;
 		sysref_req-gpios = <&sys_gpio_out 26 0>;
-		rx2_enable-gpios = <&sys_gpio_out 15 0>;
-		rx1_enable-gpios = <&sys_gpio_out 16 0>;
-		tx2_enable-gpios = <&sys_gpio_out 17 0>;
-		tx1_enable-gpios = <&sys_gpio_out 18 0>;
+		rx2_enable-gpios = <&sys_gpio_out 22 0>;
+		rx1_enable-gpios = <&sys_gpio_out 23 0>;
+		tx2_enable-gpios = <&sys_gpio_out 24 0>;
+		tx1_enable-gpios = <&sys_gpio_out 25 0>;
+
+		//repeated with 'axi-ad9371-rx-dma@03c000'
+		//interrupt-parent = <&intc>;                                      
+        //interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 
 		/* Clocks */
-		clocks = <&n2_axi_ad9371_rx_jesd>, <&n2_axi_ad9371_tx_jesd>, <&n2_axi_ad9371_rx_os_jesd>, <&clk0_ad9528 1>, <&clk0_ad9528 3>;
+		clocks = <&axi_ad9371_rx_jesd>, <&axi_ad9371_tx_jesd>, <&axi_ad9371_rx_os_jesd>, <&clk0_ad9528 6>, <&clk0_ad9528 3>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk", "dev_clk", "fmc_clk";
-		clock-output-names = "n2_rx_sampl_clk", "n2_rx_os_sampl_clk", "n2_tx_sampl_clk";
+		clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";
 
 		adi,clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,clocks-device-clock_khz = <122880>;
@@ -285,7 +281,7 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
-
+#if 0
 		/* Jacky:2018/07/25: enable pin-mode 
 		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
 		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
@@ -308,5 +304,6 @@
 			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
 			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
 		adi,arm-gpio-enable-mask = <0>;
+#endif
 	};
 };

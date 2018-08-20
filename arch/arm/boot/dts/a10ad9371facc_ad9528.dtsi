@@ -44,10 +44,11 @@
 		adi,pll2-charge-pump-current-nA = <805000>;
 
 		/* SYSREF config */
-		adi,sysref-src = <SYSREF_SRC_INTERNAL>;
+		adi,sysref-src = <SYSREF_SRC_INTERNAL>;/* SYSREF Mode3: Internal */
 		adi,sysref-pattern-mode = <SYSREF_PATTERN_CONTINUOUS>;
 		adi,sysref-k-div = <512>;
-		adi,sysref-request-enable;
+		/* [0x0402]bit7: SYSREF request method: 1/hardware(SYSREF_REQ), 0/software(SPI-interface) */
+		//adi,sysref-request-enable;
 		adi,sysref-nshot-mode = <SYSREF_NSHOT_4_PULSES>;
 		adi,sysref-request-trigger-mode = <SYSREF_LEVEL_HIGH>;
 

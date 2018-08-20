@@ -45,7 +45,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0000, 0x90},
 	{0x0000, 0x90},
 #endif
-#if 0
+#if 1
 	{0x0100, 0x18}, /* System clock */
 #else
 	/*	Date: 20180817

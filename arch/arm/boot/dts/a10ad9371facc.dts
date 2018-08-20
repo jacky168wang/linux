@@ -108,9 +108,9 @@
 };
 
 #include "i2c_dev_si5338.dtsi"
-#include "a10ad9371foxconn_ad9528.dtsi"
-#include "a10ad9371foxconn_ad9371n1.dtsi"
-#include "a10ad9371foxconn_ad9371n2.dtsi"
-//#include "a10ad9371foxconn_ad9371n3.dtsi"
-//#include "a10ad9371foxconn_ad9371n4.dtsi"
+#include "a10ad9371facc_ad9528.dtsi"
+#include "a10ad9371facc_ad9371n1.dtsi"
+#include "a10ad9371facc_ad9371n2.dtsi"
+//#include "a10ad9371facc_ad9371n3.dtsi"
+//#include "a10ad9371facc_ad9371n4.dtsi"
 #include "eth_altr_tse.dtsi"
