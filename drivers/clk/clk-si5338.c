@@ -1327,8 +1327,7 @@ static int ms_to_p(u64 *ms, u32 *p)
 /*
  * Calculate MultiSynth divider (MS0..MS3) for specified output frequency
  */
-static void cal_ms_p(struct si5338_driver_data *drvdata,
-			unsigned long numerator,
+static void cal_ms_p(unsigned long numerator,
 			unsigned long denominator,
 			u32 *p)
 {
@@ -1345,18 +1344,18 @@ static void cal_ms_p(struct si5338_driver_data *drvdata,
 	remove_common_factor(&ms[1]);
 
 	if (ms[0] < MSINT_MIN) {
-		dev_warn(&drvdata->client->dev, "Calculated MSN ratio is too low: %llu < %u\n",
+		pr_warn("Calculated MSN ratio is too low: %llu < %u\n",
 			ms[0], MSINT_MIN);
 		ms[0] = MSINT_MIN;
 	} else if (ms[0] == 5 || ms[0] == 7) {
-		dev_warn(&drvdata->client->dev, "MSN ratio %llu is invalid\n", ms[0]);
+		pr_warn("MSN ratio %llu is invalid\n", ms[0]);
 		ms[0] += 1;
 	} else if (ms[0] > MSINT_MAX) {
-		dev_warn(&drvdata->client->dev, "Calculated MSN ratio is too high: %llu > %u\n",
+		pr_warn("Calculated MSN ratio is too high: %llu > %u\n",
 			ms[0], MSINT_MAX);
 		ms[0] = MSINT_MAX;
 	}
-	dev_dbg(&drvdata->client->dev, "MS divider: %llu+%llu/%llu\n", ms[0], ms[1], ms[2]);
+	pr_debug("MS divider: %llu+%llu/%llu\n", ms[0], ms[1], ms[2]);
 
 	ms_to_p(ms, p);
 }
@@ -1411,7 +1410,7 @@ static int si5338_pll_prepare(struct clk_hw *hw)
 	pll_kphi = (int)div64_u64(kphi_num + (kphi_denom >> 1), kphi_denom);
 	if (pll_kphi < 1 || pll_kphi > 127) {
 		dev_warn(&drvdata->client->dev,
-			"warn: Calculated PLL_KPHI does not fit 1<=%d<=127\n",
+			"Calculated PLL_KPHI does not fit 1<=%d<=127\n",
 			pll_kphi);
 		if (pll_kphi < 1)
 			pll_kphi = 1;
@@ -1421,7 +1420,7 @@ static int si5338_pll_prepare(struct clk_hw *hw)
 	mscal = (int)div64_u64(2067000 - 667 * fvco_mhz + 50000, 100000ll);
 	if (mscal < 0 || mscal > 63) {
 		dev_warn(&drvdata->client->dev,
-			"warn: Calculated MSCAL does not fit 0<=%d<=63\n",
+			"Calculated MSCAL does not fit 0<=%d<=63\n",
 			mscal);
 		if (mscal < 0)
 			mscal = 0;
@@ -1541,7 +1540,7 @@ static unsigned long si5338_pll_recalc_rate(struct clk_hw *hw,
 		 * set divisor to 1 and let the calculation continue.
 		 */
 		dev_warn(&drvdata->client->dev,
-			"warn: Error %s calculating pll\n", __func__);
+			"Error %s calculating pll\n", __func__);
 		ms[2] = 1;
 	}
 	ms_scaled = ms[0] * ms[2] + ms[1];
@@ -1573,7 +1572,7 @@ static long si5338_pll_round_rate(struct clk_hw *hw, unsigned long rate,
 	else if (unlikely(rate > FVCOMAX))
 		rate = FVCOMAX;
 
-	cal_ms_p(drvdata, rate, *parent_rate, hwdata->params.p);
+	cal_ms_p(rate, *parent_rate, hwdata->params.p);
 	hwdata->params.valid = true;
 
 	p_to_ms(ms, hwdata->params.p);
@@ -1601,7 +1600,7 @@ static int si5338_pll_set_rate(struct clk_hw *hw, unsigned long rate,
 		rate = FVCOMIN;
 	else if (unlikely(rate > FVCOMAX))
 		rate = FVCOMAX;
-	cal_ms_p(drvdata, rate, parent_rate, hwdata->params.p);
+	cal_ms_p(rate, parent_rate, hwdata->params.p);
 	hwdata->params.valid = true;
 
 	return set_ms_p(drvdata, hwdata->params.p, 4);
@@ -1671,7 +1670,7 @@ static unsigned long si5338_msynth_recalc_rate(struct clk_hw *hw,
 	if (unlikely(!ms[2])) {
 		/* This should not happen */
 		dev_warn(&drvdata->client->dev,
-			"warn: Error %s calculating MS%d\n", __func__, hwdata->num);
+			"Error %s calculating MS%d\n", __func__, hwdata->num);
 		ms[2] = 1;
 	}
 	/* trim MS divider fraction */
@@ -1766,7 +1765,7 @@ static long si5338_msynth_round_rate(struct clk_hw *hw, unsigned long rate,
 		}
 		if (!best_in_div) {
 			dev_warn(&drvdata->client->dev,
-				 "warn: Failed to find suitable integer coefficients for pll input %lld Hz\n",
+				 "Failed to find suitable integer coefficients for pll input %lld Hz\n",
 				 pll_in_freq);
 		}
 		*parent_rate = pll_in_freq * best_in_div;
@@ -1793,7 +1792,7 @@ static long si5338_msynth_round_rate(struct clk_hw *hw, unsigned long rate,
 			rate, ms[0], ms[1], ms[2]);
 	}
 
-	cal_ms_p(drvdata, *parent_rate, rate, hwdata->params.p);
+	cal_ms_p(*parent_rate, rate, hwdata->params.p);
 	hwdata->params.valid = true;
 
 	return rate;
@@ -1811,7 +1810,7 @@ static int si5338_msynth_set_rate(struct clk_hw *hw, unsigned long rate,
 	if (!rate)
 		rate = div64_u64(parent_rate + MSINT_MAX - 1, MSINT_MAX);
 
-	cal_ms_p(drvdata, parent_rate, rate, hwdata->params.p);
+	cal_ms_p(parent_rate, rate, hwdata->params.p);
 	hwdata->params.valid = true;
 
 	return set_ms_p(drvdata, hwdata->params.p, hwdata->num);
@@ -2503,8 +2502,6 @@ static int post_init(struct si5338_driver_data *drvdata)
 	if (rc)
 		return rc;
 
-//return 0;
-
 	/* Clearing */
 	write_field(drvdata, 0, AWE_SOFT_RESET);
 
@@ -2601,7 +2598,7 @@ static unsigned long si5338_clkout_recalc_rate(struct clk_hw *hw,
 	if (rc <= 0) {
 		rate = 0;
 		dev_warn(&drvdata->client->dev,
-			"warn: Error recalculating rate for clk%d\n", hwdata->num);
+			"Error recalculating rate for clk%d\n", hwdata->num);
 	} else {
 		rate /= rc;
 	}
@@ -2630,7 +2627,7 @@ static long si5338_clkout_round_rate(struct clk_hw *hw, unsigned long rate,
 		}
 		if (out_freq_scaled < scaled_max) {
 			dev_warn(&drvdata->client->dev,
-				 "warn: Specified output frequency is too low: %lu < %lld\n",
+				 "Specified output frequency is too low: %lu < %lld\n",
 				 rate, scaled_max >> 5);
 			r_div = 32;
 			*parent_rate = scaled_max;
@@ -2965,18 +2962,16 @@ static int register_debugfs_status(struct si5338_hw_data *clkout)
 }
 
 #else
-
 static int register_debugfs_status(struct si5338_hw_data *clkout)
 {
 	return 0;
 }
-
 #endif /* CONFIG_DEBUG_FS */
 
-#ifdef CONFIG_OF
 /*
  * Si5351 i2c probe and device tree parsing
  */
+#ifdef CONFIG_OF
 static const struct of_device_id si5338_dt_ids[] = {
 	{ .compatible = "silabs,si5338" },
 	{ }
@@ -3059,7 +3054,7 @@ static int si5338_dt_parse(struct i2c_client *client)
 			return -EINVAL;
 		}
 		pdata->pll_vco = val;
-		dev_dbg(&client->dev, "pll-vco = %u\n", val/1000000);
+		dev_dbg(&client->dev, "pll-vco = %u M\n", val/1000000);
 	}
 
 	if (!of_property_read_u32(np, "silabs,pll-master", &val)) {
@@ -3138,7 +3133,7 @@ static int si5338_dt_parse(struct i2c_client *client)
 		}
 		if (!of_property_read_u32(child, "clock-frequency", &val)) {
 			pdata->clkout[num].rate = val;
-			dev_dbg(&client->dev, "clock-frequency = %u\n", val/1000000);
+			dev_dbg(&client->dev, "clock-frequency = %u M\n", val/1000000);
 		}
 		if (of_find_property(child, "enabled", NULL))
 			pdata->clkout[num].enabled = true;
@@ -3148,14 +3143,11 @@ static int si5338_dt_parse(struct i2c_client *client)
 
 	return 0;
 }
-
 #else
-
 static int si5338_dt_parse(struct i2c_client *client)
 {
 	return 0;
 }
-
 #endif /* CONFIG_OF */
 
 /*
@@ -3190,7 +3182,7 @@ static struct clk *si5338_register_clock(struct device *dev,
 }
 
 #define STRNCAT_LENGTH (MAX_NAME_LENGTH - name_prefix_length)
-static int si5338_probe(struct i2c_client *client,
+static int si5338_i2c_probe(struct i2c_client *client,
 			    const struct i2c_device_id *id)
 {
 	struct si5338_platform_data *pdata;
@@ -3408,7 +3400,7 @@ static int si5338_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
-	dev_info(&client->dev, "Chip %s is found\n", id->name);
+	dev_dbg(&client->dev, "Chip %s is found\n", id->name);
 
 	ret = pre_init(drvdata);		/* Disable all */
 	if (ret)
@@ -3680,7 +3672,7 @@ static int si5338_probe(struct i2c_client *client,
 		if (pdata->clkout[n].name) {
 			if (strlen(pdata->clkout[n].name) >= MAX_NAME_LENGTH) {
 				dev_warn(&client->dev,
-					 "warn: clkout[%d] name %s too long\n",
+					 "clkout[%d] name %s too long\n",
 					 n, pdata->clkout[n].name);
 			}
 			strlcpy(register_name, pdata->clkout[n].name,
@@ -3704,7 +3696,7 @@ static int si5338_probe(struct i2c_client *client,
 
 		if (register_debugfs_status(&drvdata->clkout[n])) {
 			dev_warn(&client->dev,
-				 "warn: Failed to register clkout status in debugfs\n");
+				 "Failed to register clkout status in debugfs\n");
 		}
 
 		drvdata->onecell.clks[n] = clk;
@@ -3750,7 +3742,7 @@ static int si5338_probe(struct i2c_client *client,
 		}
 	}
 
-	dev_info(&client->dev, "%s clocks are registered\n", id->name);
+	dev_dbg(&client->dev, "%s clocks are registered\n", id->name);
 
 #ifdef CONFIG_OF
 	ret = of_clk_add_provider(client->dev.of_node,
@@ -3768,13 +3760,13 @@ static int si5338_probe(struct i2c_client *client,
 						  NULL);
 		if (!drvdata->lookup[n]) {
 			dev_warn(&client->dev,
-				"warn: Unable to add clkout%d to clkdev\n", n);
+				"Unable to add clkout%d to clkdev\n", n);
 			continue;
 		}
 		if (strlen(drvdata->lookup[n]->con_id) !=
 					strlen(__clk_get_name(clk))) {
 			dev_warn(&client->dev,
-				 "warn: clkdev doesn't support name longer than %zu\n",
+				 "Warning: clkdev doesn't support name longer than %zu\n",
 				 strlen(drvdata->lookup[n]->con_id));
 		}
 		clkdev_add(drvdata->lookup[n]);
@@ -3784,7 +3776,7 @@ static int si5338_probe(struct i2c_client *client,
 	return 0;
 }
 
-static int si5338_remove(struct i2c_client *client)
+static int si5338_i2c_remove(struct i2c_client *client)
 {
 	struct si5338_driver_data *drvdata = i2c_get_clientdata(client);
 	int n;
@@ -3798,15 +3790,17 @@ static int si5338_remove(struct i2c_client *client)
 			clkdev_drop(drvdata->lookup[n]);
 	}
 
-	dev_info(&client->dev, "Removed\n");
+	dev_dbg(&client->dev, "Removed\n");
+
 	return 0;
 }
 
-static const struct i2c_device_id si5338_hw_ids[] = {
+
+static const struct i2c_device_id si5338_i2c_ids[] = {
 	{ "si5338", 0 },
 	{ }
 };
-MODULE_DEVICE_TABLE(i2c, si5338_hw_ids);
+MODULE_DEVICE_TABLE(i2c, si5338_i2c_ids);
 
 static struct i2c_driver si5338_driver = {
 	.driver = {
@@ -3815,9 +3809,9 @@ static struct i2c_driver si5338_driver = {
 		.of_match_table = of_match_ptr(si5338_dt_ids),
 #endif
 	},
-	.probe = si5338_probe,
-	.remove = si5338_remove,
-	.id_table = si5338_hw_ids,
+	.probe = si5338_i2c_probe,
+	.remove = si5338_i2c_remove,
+	.id_table = si5338_i2c_ids,
 };
 module_i2c_driver(si5338_driver);
 
