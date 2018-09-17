@@ -89,8 +89,8 @@
 	clksyn_ad9548: clksyn@2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		//compatible = "spidev";
-		compatible = "adi,ad9548";
+		compatible = "spidev";
+		//compatible = "adi,ad9548";
 
 		reg = <2>;
 		//spi-3wire; /* HW design is 4wire mode */
@@ -100,8 +100,8 @@
 	clkgen_lmk04828: clkgen@3 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		//compatible = "spidev";
-		compatible = "ti,lmk04828";
+		compatible = "spidev";
+		//compatible = "ti,lmk04828";
 
 		reg = <3>;
 		//spi-3wire; /* HW design is 4wire mode */
@@ -111,8 +111,8 @@
 
 #include "i2c_dev_si5338.dtsi"
 #include "a10ad9371facc_ad9528.dtsi"
-#include "a10ad9371facc_ad9371n1.dtsi"
-#include "a10ad9371facc_ad9371n2.dtsi"
-//#include "a10ad9371facc_ad9371n3.dtsi"
-//#include "a10ad9371facc_ad9371n4.dtsi"
-#include "eth_altr_tse.dtsi"
+#include "a10ad9371facc-dbg_ad9371n1.dtsi"
+#include "a10ad9371facc-dbg_ad9371n2.dtsi"
+//#include "a10ad9371facc-dbg_ad9371n3.dtsi"
+//#include "a10ad9371facc-dbg_ad9371n4.dtsi"
+//#include "eth_altr_tse.dtsi" /* no TSE in this FPGA-design version */

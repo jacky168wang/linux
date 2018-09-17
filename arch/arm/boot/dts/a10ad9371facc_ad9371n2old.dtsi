@@ -5,7 +5,7 @@
 		reg = <0x00080000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 20 IRQ_TYPE_NONE>; //disconnected
+		interrupts = <0 20 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&n2_tx_device_clk_pll>, <&n2_axi_ad9371_tx_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -168,6 +168,7 @@
 		clocks = <&n2_trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&n2_trx0_ad9371>;
+		//adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 		adi,axi-pl-fifo-disable;
 	};
 

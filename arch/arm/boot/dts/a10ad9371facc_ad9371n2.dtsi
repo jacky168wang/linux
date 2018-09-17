@@ -152,7 +152,7 @@
 		};
 	};
 
-	n2_axi_ad9371_rx: axi-ad9371-rx-hpc-n2@110000 {
+	n2_axi_ad9371_rx: axi-ad9371-rx-hpc@110000 {
 		compatible = "adi,axi-ad9371-rx-1.0";
 		reg = <0x00110000 0x00008000>;
 		dmas = <&n2_axi_ad9371_rx_dma 0>;
@@ -160,7 +160,7 @@
 		spibus-connected = <&n2_trx0_ad9371>;
 	};
 
-	n2_axi_ad9371_tx: axi-ad9371-tx-hpc-n2@114000 {
+	n2_axi_ad9371_tx: axi-ad9371-tx-hpc@114000 {
 		compatible = "adi,axi-ad9371-tx-1.0";
 		reg = <0x00114000 0x00004000>;
 		dmas = <&n2_axi_ad9371_tx_dma 0>;
@@ -168,10 +168,11 @@
 		clocks = <&n2_trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&n2_trx0_ad9371>;
+		//adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 		adi,axi-pl-fifo-disable;
 	};
 
-	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc-n2@118000 {
+	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@118000 {
 		compatible = "adi,axi-ad9371-obs-1.0";
 		reg = <0x00118000 0x00001000>;
 		dmas = <&n2_axi_ad9371_rx_os_dma 0>;
@@ -235,6 +236,10 @@
 		rx1_enable-gpios = <&sys_gpio_out 16 0>;
 		tx2_enable-gpios = <&sys_gpio_out 17 0>;
 		tx1_enable-gpios = <&sys_gpio_out 18 0>;
+
+		// all interrupts in HW design should be reviewed
+		//interrupt-parent = <&intc>;
+		//interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
 
 		/* Clocks */
 		clocks = <&n2_axi_ad9371_rx_jesd>, <&n2_axi_ad9371_tx_jesd>, <&n2_axi_ad9371_rx_os_jesd>, <&clk0_ad9528 1>, <&clk0_ad9528 3>;

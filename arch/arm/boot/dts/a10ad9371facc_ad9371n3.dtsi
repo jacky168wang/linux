@@ -46,7 +46,7 @@
 		reg = <0x00100000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 25 IRQ_TYPE_NONE>; //disconnected
+		interrupts = <0 25 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&n3_rx_os_device_clk_pll>, <&n3_axi_ad9371_rx_os_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -104,7 +104,7 @@
 
 		#clock-cells = <0>;
 		clock-output-names = "n3_jesd204_rx_os_lane_clock";
-	}; 
+	};
 
 	n3_axi_ad9371_tx_dma: axi-ad9371-tx-dma@ec000 {
 		compatible = "adi,axi-dmac-1.00.a";
@@ -152,7 +152,7 @@
 		};
 	};
 
-	n3_axi_ad9371_rx: axi-ad9371-rx-hpc-n3@110000 {
+	n3_axi_ad9371_rx: axi-ad9371-rx-hpc@110000 {
 		compatible = "adi,axi-ad9371-rx-1.0";
 		reg = <0x00110000 0x00008000>;
 		dmas = <&n3_axi_ad9371_rx_dma 0>;
@@ -160,7 +160,7 @@
 		spibus-connected = <&n3_trx0_ad9371>;
 	};
 
-	n3_axi_ad9371_tx: axi-ad9371-tx-hpc-n3@114000 {
+	n3_axi_ad9371_tx: axi-ad9371-tx-hpc@114000 {
 		compatible = "adi,axi-ad9371-tx-1.0";
 		reg = <0x00114000 0x00004000>;
 		dmas = <&n3_axi_ad9371_tx_dma 0>;
@@ -168,10 +168,11 @@
 		clocks = <&n3_trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&n3_trx0_ad9371>;
+		//adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 		adi,axi-pl-fifo-disable;
 	};
 
-	n3_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc-n3@118000 {
+	n3_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@118000 {
 		compatible = "adi,axi-ad9371-obs-1.0";
 		reg = <0x00118000 0x00001000>;
 		dmas = <&n3_axi_ad9371_rx_os_dma 0>;
@@ -236,6 +237,10 @@
 		tx2_enable-gpios = <&sys_gpio_out 10 0>;
 		tx1_enable-gpios = <&sys_gpio_out 11 0>;
 
+		// all interrupts in HW design should be reviewed
+		//interrupt-parent = <&intc>;
+		//interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
+
 		/* Clocks */
 		clocks = <&n3_axi_ad9371_rx_jesd>, <&n3_axi_ad9371_tx_jesd>, <&n3_axi_ad9371_rx_os_jesd>, <&clk0_ad9528 13>, <&clk0_ad9528 11>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk", "dev_clk", "fmc_clk";
@@ -285,29 +290,5 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
-#if 0
-		/* Jacky:2018/07/25: enable pin-mode 
-		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
-		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
-		adi,arm-gpio-use-tx2-enable-pin = <1>;	// 0= TX1_ENABLE controls TX1&TX2, 1= separate TX1/TX2_ENABLE pins
-		adi,arm-gpio-tx-rx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains
-		adi,arm-gpio-orx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up ObsRx receiver
-		// to be tested: enable pin-mode but NOT enable gpio-ack
-		adi,arm-gpio-orx-trigger-pin = <0>;		// Select desired GPIO pin (valid 4-15)
-		adi,arm-gpio-orx-mode2-pin = <0>;		// Select desired GPIO pin (valid 0-18)
-		adi,arm-gpio-orx-mode1-pin = <0>;		// Select desired GPIO pin (valid 0-18)
-		adi,arm-gpio-orx-mode0-pin = <0>;		// Select desired GPIO pin (valid 0-18)
-		adi,arm-gpio-rx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-rx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-tx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-tx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-orx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-orx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-srx-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
-		adi,arm-gpio-tx-obs-select = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable.
-			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
-			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
-		adi,arm-gpio-enable-mask = <0>;
-#endif
 	};
 };

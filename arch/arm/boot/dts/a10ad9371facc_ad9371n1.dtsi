@@ -168,7 +168,7 @@
 		clocks = <&trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&trx0_ad9371>;
-		//adi,axi-pl-fifo-enable; // RXDMA fifo mode
+		//adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 		adi,axi-pl-fifo-disable;
 	};
 
@@ -228,9 +228,9 @@
 		tx2_enable-gpios = <&sys_gpio_out 24 0>;
 		tx1_enable-gpios = <&sys_gpio_out 25 0>;
 
-		//repeated with 'axi-ad9371-rx-dma@03c000'
-		//interrupt-parent = <&intc>;                                      
-        //interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
+		// all interrupts in HW design should be reviewed
+		//interrupt-parent = <&intc>;
+		//interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 
 		/* Clocks */
 		clocks = <&axi_ad9371_rx_jesd>, <&axi_ad9371_tx_jesd>, <&axi_ad9371_rx_os_jesd>, <&clk0_ad9528 6>, <&clk0_ad9528 3>;
