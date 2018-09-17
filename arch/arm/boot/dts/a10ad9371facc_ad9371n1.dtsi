@@ -209,7 +209,7 @@
 	};
 };
 
-&sys_spi {
+&fmc_spi {
 	trx0_ad9371: ad9371-phy@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -228,7 +228,7 @@
 		tx2_enable-gpios = <&sys_gpio_out 24 0>;
 		tx1_enable-gpios = <&sys_gpio_out 25 0>;
 
-		// all interrupts in HW design should be reviewed
+		/* all interrupts in HW design should be reviewed */
 		//interrupt-parent = <&intc>;
 		//interrupts = <0 31 IRQ_TYPE_LEVEL_HIGH>;
 

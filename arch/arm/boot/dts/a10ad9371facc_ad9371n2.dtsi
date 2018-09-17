@@ -237,7 +237,7 @@
 		tx2_enable-gpios = <&sys_gpio_out 17 0>;
 		tx1_enable-gpios = <&sys_gpio_out 18 0>;
 
-		// all interrupts in HW design should be reviewed
+		/* all interrupts in HW design should be reviewed */
 		//interrupt-parent = <&intc>;
 		//interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
 

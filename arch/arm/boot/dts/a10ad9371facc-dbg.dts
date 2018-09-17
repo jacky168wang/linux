@@ -1,5 +1,7 @@
 /dts-v1/;
 #include "socfpga_arria10_socdk.dtsi"
+#include "i2c_dev_si5338.dtsi"
+//#include "eth_altr_tse.dtsi" /* no TSE in this FPGA-design version */
 
 &mmc {
 	status = "okay";
@@ -45,15 +47,6 @@
 				gpio-controller;
 			};
 
-			sys_spi: spi@40 {
-				compatible = "altr,spi-1.0";
-				reg = <0x00000040 0x00000020>;
-				interrupt-parent = <&intc>;
-				interrupts = <0 26 IRQ_TYPE_LEVEL_HIGH>;
-				#address-cells = <0x1>;
-				#size-cells = <0x0>;
-			};
-
 			/* Documentation/devicetree/bindings/interrupt-controller/arm,gic.txt */
 			/* Documentation/devicetree/bindings/gpio/gpio-altera.txt */
 			sys_gpio_in: gpioctrl@0 {
@@ -81,38 +74,47 @@
 				/* comment means assert is indicated by a rising edge */
 				assert-rising-edge;
 			};
+
+			sys_spi: spi@40 {
+				compatible = "altr,spi-1.0";
+				reg = <0x00000040 0x00000020>;
+				interrupt-parent = <&intc>;
+				interrupts = <0 26 IRQ_TYPE_LEVEL_HIGH>;
+				#address-cells = <0x1>;
+				#size-cells = <0x0>;
+
+				clkgen_lmk04828: clkgen@3 {
+					#address-cells = <1>;
+					#size-cells = <0>;
+					//compatible = "spidev";
+					compatible = "ti,lmk04828";
+
+					reg = <3>;
+					//spi-3wire; /* HW design is 4wire mode */
+					spi-max-frequency = <10000000>;
+				};
+			};
 		};
 	};
 };
 
-&sys_spi {
+#define fmc_spi sys_spi
+
+&fmc_spi {
 	clksyn_ad9548: clksyn@2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "spidev";
-		//compatible = "adi,ad9548";
+		//compatible = "spidev";
+		compatible = "adi,ad9548";
 
 		reg = <2>;
 		//spi-3wire; /* HW design is 4wire mode */
 		spi-max-frequency = <10000000>;
 	};
-
-	clkgen_lmk04828: clkgen@3 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "spidev";
-		//compatible = "ti,lmk04828";
-
-		reg = <3>;
-		//spi-3wire; /* HW design is 4wire mode */
-		spi-max-frequency = <10000000>;
-	};
 };
 
-#include "i2c_dev_si5338.dtsi"
 #include "a10ad9371facc_ad9528.dtsi"
 #include "a10ad9371facc-dbg_ad9371n1.dtsi"
 #include "a10ad9371facc-dbg_ad9371n2.dtsi"
 //#include "a10ad9371facc-dbg_ad9371n3.dtsi"
 //#include "a10ad9371facc-dbg_ad9371n4.dtsi"
-//#include "eth_altr_tse.dtsi" /* no TSE in this FPGA-design version */

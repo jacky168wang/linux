@@ -152,7 +152,7 @@
 		};
 	};
 
-	n2_axi_ad9371_rx: axi-ad9371-rx-hpc-n2@b0000 {
+	n2_axi_ad9371_rx: axi-ad9371-rx-hpc@b0000 {
 		compatible = "adi,axi-ad9371-rx-1.0";
 		reg = <0x000b0000 0x00008000>;
 		dmas = <&n2_axi_ad9371_rx_dma 0>;
@@ -160,7 +160,7 @@
 		spibus-connected = <&n2_trx0_ad9371>;
 	};
 
-	n2_axi_ad9371_tx: axi-ad9371-tx-hpc-n2@b4000 {
+	n2_axi_ad9371_tx: axi-ad9371-tx-hpc@b4000 {
 		compatible = "adi,axi-ad9371-tx-1.0";
 		reg = <0x000b4000 0x00004000>;
 		dmas = <&n2_axi_ad9371_tx_dma 0>;
@@ -172,7 +172,7 @@
 		adi,axi-pl-fifo-disable;
 	};
 
-	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc-n2@b8000 {
+	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@b8000 {
 		compatible = "adi,axi-ad9371-obs-1.0";
 		reg = <0x000b8000 0x00001000>;
 		dmas = <&n2_axi_ad9371_rx_os_dma 0>;
@@ -237,6 +237,10 @@
 		tx2_enable-gpios = <&sys_gpio_out 17 0>;
 		tx1_enable-gpios = <&sys_gpio_out 18 0>;
 
+		/* all interrupts in HW design should be reviewed */
+		//interrupt-parent = <&intc>;
+		//interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
+
 		/* Clocks */
 		clocks = <&n2_axi_ad9371_rx_jesd>, <&n2_axi_ad9371_tx_jesd>, <&n2_axi_ad9371_rx_os_jesd>, <&clk0_ad9528 1>, <&clk0_ad9528 3>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk", "dev_clk", "fmc_clk";
@@ -286,7 +290,7 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
-
+#if 0
 		/* Jacky:2018/07/25: enable pin-mode 
 		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
 		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
@@ -309,5 +313,6 @@
 			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
 			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
 		adi,arm-gpio-enable-mask = <0>;
+#endif
 	};
 };

@@ -282,7 +282,7 @@ static bool si5338_regmap_is_volatile(struct device *dev, unsigned int reg)
 }
 
 /* reg, val, msk */
-static const unsigned short ad9548_regs[NUM_REGS_MAX][3] = {
+static const unsigned short si5338_regs[NUM_REGS_MAX][3] = {
 {  0,0x00,0x00},
 {  1,0x00,0x00},
 {  2,0x00,0x00},
@@ -790,9 +790,9 @@ static int si5338simple_probe(struct i2c_client *client, const struct i2c_device
 	if (ret < 0) return -ENODEV;
 
 	dev_dbg(&client->dev, "Writing registers table produced by CLOCKBUILDER DESKTOP\n");
-	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
-		ret = si5338simple_reg_write(drvdata, ad9548_regs[i][1],
-			ad9548_regs[i][0], ad9548_regs[i][2]);
+	for (i = 0; i < ARRAY_SIZE(si5338_regs); i++) {
+		ret = si5338simple_reg_write(drvdata, si5338_regs[i][1],
+			si5338_regs[i][0], si5338_regs[i][2]);
 		if (ret < 0) return -ENODEV;
 	}
 

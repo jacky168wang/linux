@@ -167,7 +167,7 @@
 		clocks = <&n2_trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&n2_trx0_ad9371>;
-		adi,axi-pl-fifo-enable;
+		adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 	};
 
 	n2_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@58000 {
@@ -235,6 +235,7 @@
 		tx2_enable-gpios = <&sys_gpio_out 17 0>;
 		tx1_enable-gpios = <&sys_gpio_out 18 0>;
 
+		/* all interrupts in HW design should be reviewed */
 		//interrupt-parent = <&intc>;
 		//interrupts = <0 39 IRQ_TYPE_LEVEL_HIGH>;
 
@@ -288,10 +289,4 @@
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
 	};
-
 };
-
-&n2_trx0_ad9371 {
-	reg = <1>;
-};
-

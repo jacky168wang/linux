@@ -208,9 +208,9 @@
 		clock-output-names = "n3_jesd204_rx_os_link_clock";
 	};
 
-	n3_fmc_spi: spi@60040 {
+	n3_fmc_spi: spi@c0040 {
 		compatible = "altr,spi-1.0";
-		reg = <0x00060040 0x00000020>;
+		reg = <0x000c0040 0x00000020>;
 		interrupt-parent = <&intc>;
 		interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
 		#address-cells = <0x1>;
@@ -237,7 +237,7 @@
 		tx2_enable-gpios = <&sys_gpio_out 10 0>;
 		tx1_enable-gpios = <&sys_gpio_out 11 0>;
 
-		// all interrupts in HW design should be reviewed
+		/* all interrupts in HW design should be reviewed */
 		//interrupt-parent = <&intc>;
 		//interrupts = <0 44 IRQ_TYPE_LEVEL_HIGH>;
 
@@ -290,5 +290,29 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
+#if 0
+		/* Jacky:2018/07/25: enable pin-mode 
+		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
+		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
+		adi,arm-gpio-use-tx2-enable-pin = <1>;	// 0= TX1_ENABLE controls TX1&TX2, 1= separate TX1/TX2_ENABLE pins
+		adi,arm-gpio-tx-rx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains
+		adi,arm-gpio-orx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up ObsRx receiver
+		// to be tested: enable pin-mode but NOT enable gpio-ack
+		adi,arm-gpio-orx-trigger-pin = <0>;		// Select desired GPIO pin (valid 4-15)
+		adi,arm-gpio-orx-mode2-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-orx-mode1-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-orx-mode0-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-rx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-rx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-orx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-orx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-srx-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx-obs-select = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable.
+			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
+			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
+		adi,arm-gpio-enable-mask = <0>;
+#endif
 	};
 };

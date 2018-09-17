@@ -46,7 +46,7 @@
 		reg = <0x00160000 0x4000>;
 
 		interrupt-parent = <&intc>;
-		interrupts = <0 50 IRQ_TYPE_NONE>; //disconnected
+		interrupts = <0 50 IRQ_TYPE_NONE>;
 
 		clocks = <&sys_clk>, <&n4_rx_os_device_clk_pll>, <&n4_axi_ad9371_rx_os_xcvr>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -104,7 +104,7 @@
 
 		#clock-cells = <0>;
 		clock-output-names = "n4_jesd204_rx_os_lane_clock";
-	}; 
+	};
 
 	n4_axi_ad9371_tx_dma: axi-ad9371-tx-dma@14c000 {
 		compatible = "adi,axi-dmac-1.00.a";
@@ -167,7 +167,7 @@
 		clocks = <&n4_trx0_ad9371 2>;
 		clock-names = "sampl_clk";
 		spibus-connected = <&n4_trx0_ad9371>;
-		adi,axi-pl-fifo-enable;
+		adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
 	};
 
 	n4_xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@178000 {
@@ -235,8 +235,9 @@
 		tx2_enable-gpios = <&sys_gpio_out 3 0>;
 		tx1_enable-gpios = <&sys_gpio_out 4 0>;
 
+		/* all interrupts in HW design should be reviewed */
 		//interrupt-parent = <&intc>;
-		//interrupts = <0 49 4>;
+		//interrupts = <0 49 IRQ_TYPE_LEVEL_HIGH>;
 
 		/* Clocks */
 		clocks = <&n4_axi_ad9371_rx_jesd>, <&n4_axi_ad9371_tx_jesd>, <&n4_axi_ad9371_rx_os_jesd>, <&clk0_ad9528 8>, <&clk0_ad9528 11>;
