@@ -673,6 +673,13 @@ static int axi_jesd204_rx_probe(struct platform_device *pdev)
 
 	device_create_file(&pdev->dev, &dev_attr_status);
 
+#ifdef A10AD9371_FOXCONN_DBG
+       dev_info(&pdev->dev, "AXI_jesd204_rx (%d.%.2d.%c).\n",
+        		PCORE_VERSION_MAJOR(jesd->version),
+        		PCORE_VERSION_MINOR(jesd->version),
+        		PCORE_VERSION_PATCH(jesd->version));
+#endif
+
 	return 0;
 
 err_disable_device_clk:
@@ -689,11 +696,42 @@ err_axi_clk_disable:
 
 static int axi_jesd204_rx_remove(struct platform_device *pdev)
 {
-	struct axi_jesd204_rx *jesd = platform_get_drvdata(pdev);
-	int irq = platform_get_irq(pdev, 0);
+	int irq;
+	struct axi_jesd204_rx *jesd;
+
+	if(pdev == NULL)
+		return 0;
+
+	irq = platform_get_irq(pdev, 0);
+	jesd = platform_get_drvdata(pdev);
+	if(jesd == NULL)
+		return 0;
+
+	switch (jesd->num_lanes) {
+	case 8:
+		device_remove_file(&pdev->dev, &dev_attr_lane4_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane5_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane6_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane7_info);
+	case 4:
+		device_remove_file(&pdev->dev, &dev_attr_lane2_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane3_info);
+	case 2:
+		device_remove_file(&pdev->dev, &dev_attr_lane1_info);
+	case 1:
+		device_remove_file(&pdev->dev, &dev_attr_lane0_info);
+		break;
+	default:
+		break;
+	}
+
+	device_remove_file(&pdev->dev, &dev_attr_status);
 
 	of_clk_del_provider(pdev->dev.of_node);
 
+	del_timer(&(jesd->watchdog_work.timer));
+	INIT_WORK(&(jesd->watchdog_work.work), 0);
+	disable_irq(irq);
 	free_irq(irq, jesd);
 
 	writel_relaxed(0xff, jesd->base + JESD204_RX_REG_IRQ_PENDING);
@@ -711,7 +749,7 @@ static const struct of_device_id axi_jesd204_rx_of_match[] = {
 	{ .compatible = "adi,axi-jesd204-rx-1.0" },
 	{ /* end of list */ },
 };
-MODULE_DEVICE_TABLE(of, adxcvr_of_match);
+MODULE_DEVICE_TABLE(of, axi_jesd204_rx_of_match);
 
 static struct platform_driver axi_jesd204_rx_driver = {
 	.probe = axi_jesd204_rx_probe,

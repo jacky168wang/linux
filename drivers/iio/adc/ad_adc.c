@@ -311,6 +311,14 @@ static int adc_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_unconfigure_ring;
 
+#ifdef A10AD9371_FOXCONN_DBG
+        dev_info(&pdev->dev, "AXI OBS (%d.%.2d.%c) at 0x%08llX mapped to 0x%p.\n",
+        		PCORE_VERSION_MAJOR(st->pcore_version),
+        		PCORE_VERSION_MINOR(st->pcore_version),
+        		PCORE_VERSION_LETTER(st->pcore_version),
+        		 (unsigned long long)mem->start, st->regs);
+#endif
+
 	return 0;
 
 err_unconfigure_ring:

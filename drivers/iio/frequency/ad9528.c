@@ -846,6 +846,25 @@ static struct clk *ad9528_clk_register(struct iio_dev *indio_dev, unsigned num,
 	return clk;
 }
 
+static int ad9528_clk_unregister(struct iio_dev *indio_dev)
+{
+	int i;
+	struct ad9528_state *st = iio_priv(indio_dev);
+	struct ad9528_platform_data *pdata = st->pdata;
+	struct ad9528_channel_spec *chan;
+
+	for (i = 0; i < pdata->num_channels; i++) {
+		chan = &pdata->channels[i];
+		if (chan->channel_num >= AD9528_NUM_CHAN || chan->output_dis)
+			continue;
+
+		if(st->clk_data.clks[chan->channel_num])
+			clk_unregister(st->clk_data.clks[chan->channel_num]);
+		st->clk_data.clks[chan->channel_num] = 0;
+	}
+	return 0;
+}
+
 static int ad9528_setup(struct iio_dev *indio_dev)
 {
 	struct ad9528_state *st = iio_priv(indio_dev);
@@ -1220,7 +1239,6 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 		if (IS_ERR(clk))
 			return PTR_ERR(clk);
 	}
-
 	of_clk_add_provider(st->spi->dev.of_node,
 				of_clk_src_onecell_get, &st->clk_data);
 
@@ -1466,11 +1484,17 @@ static int ad9528_probe(struct spi_device *spi)
 
 	ret = ad9528_setup(indio_dev);
 	if (ret < 0)
+	    {
+	    	dev_info(&spi->dev, "%s exit line %d : enter\n", __func__, __LINE__);
 		goto error_disable_reg;
+	    }
 
 	ret = iio_device_register(indio_dev);
 	if (ret)
+	    {
+		dev_info(&spi->dev, "%s exit line %d : enter\n", __func__, __LINE__);
 		goto error_disable_reg;
+	    }
 
 	dev_info(&spi->dev, "%s: succeed\n", __func__);
 	return 0;
@@ -1492,6 +1516,7 @@ static int ad9528_remove(struct spi_device *spi)
 	if (!IS_ERR(st->reg))
 		regulator_disable(st->reg);
 
+	ad9528_clk_unregister(indio_dev);
 	return 0;
 }
 
@@ -1515,3 +1540,4 @@ module_spi_driver(ad9528_driver);
 MODULE_AUTHOR("Michael Hennerich <hennerich@blackfin.uclinux.org>");
 MODULE_DESCRIPTION("Analog Devices AD9528 CLOCKDIST/PLL");
 MODULE_LICENSE("GPL v2");
+
