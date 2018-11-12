@@ -550,7 +550,16 @@ static int axi_jesd204_tx_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, jesd);
 
+/*lijinguo add for debug*/
+#ifdef A10AD9371_FOXCONN_DBG
+       dev_info(&pdev->dev, "AXI_jesd204_tx (%d.%.2d.%c).\n",
+        		PCORE_VERSION_MAJOR(version),
+        		PCORE_VERSION_MINOR(version),
+        		PCORE_VERSION_PATCH(version));
+#endif
+
 	return 0;
+
 err_disable_device_clk:
 /*
 	clk_disable_unprepare(jesd->device_clk);
@@ -568,8 +577,10 @@ static int axi_jesd204_tx_remove(struct platform_device *pdev)
 	struct axi_jesd204_tx *jesd = platform_get_drvdata(pdev);
 	int irq = platform_get_irq(pdev, 0);
 
+	device_remove_file(&pdev->dev, &dev_attr_status);
 	of_clk_del_provider(pdev->dev.of_node);
 
+	disable_irq(irq);
 	free_irq(irq, jesd);
 
 	writel_relaxed(0xff, jesd->base + JESD204_TX_REG_IRQ_PENDING);
@@ -587,7 +598,7 @@ static const struct of_device_id axi_jesd204_tx_of_match[] = {
 	{ .compatible = "adi,axi-jesd204-tx-1.0" },
 	{ /* end of list */ },
 };
-MODULE_DEVICE_TABLE(of, adxcvr_of_match);
+MODULE_DEVICE_TABLE(of, axi_jesd204_tx_of_match);
 
 static struct platform_driver axi_jesd204_tx_driver = {
 	.probe = axi_jesd204_tx_probe,
