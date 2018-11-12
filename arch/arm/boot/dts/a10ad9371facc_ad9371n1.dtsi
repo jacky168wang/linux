@@ -118,7 +118,7 @@
 			adi,source-bus-width = <128>;
 			adi,destination-bus-width = <128>;
 			adi,type = <1>;
-			adi,cyclic;
+			//adi,cyclic;
 		};
 	};
 
@@ -181,7 +181,7 @@
 		clock-names = "sampl_clk";
 	};
 
-	tx_device_clk_pll: altera-a10-fpll@25000 {
+	tx_device_clk_pll: a10-fpll-tx@25000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00025000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
@@ -190,7 +190,7 @@
 		clock-output-names = "jesd204_tx_link_clock";
 	};
 
-	rx_device_clk_pll: altera-a10-fpll@35000 {
+	rx_device_clk_pll: a10-fpll-rx@35000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00035000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
@@ -199,7 +199,7 @@
 		clock-output-names = "jesd204_rx_link_clock";
 	};
 
-	rx_os_device_clk_pll: altera-a10-fpll@45000 {
+	rx_os_device_clk_pll: a10-fpll-rx-os@45000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00045000 0x1000>;
 		clocks = <&clk0_ad9528 3>;

@@ -118,6 +118,7 @@
 			adi,source-bus-width = <128>;
 			adi,destination-bus-width = <128>;
 			adi,type = <1>;
+			//adi,cyclic;
 		};
 	};
 
@@ -168,6 +169,7 @@
 		clock-names = "sampl_clk";
 		spibus-connected = <&trx0_ad9371>;
 		adi,axi-pl-fifo-enable;/* RxDMA fifo mode */
+		//adi,axi-pl-fifo-disable;
 	};
 
 	xcvr_rx_os_core: axi-ad9371-rx-obs-hpc@58000 {
@@ -179,7 +181,7 @@
 		clock-names = "sampl_clk";
 	};
 
-	tx_device_clk_pll: altera-a10-fpll@25000 {
+	tx_device_clk_pll: a10-fpll-tx@25000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00025000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
@@ -188,7 +190,7 @@
 		clock-output-names = "jesd204_tx_link_clock";
 	};
 
-	rx_device_clk_pll: altera-a10-fpll@35000 {
+	rx_device_clk_pll: a10-fpll-rx@35000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00035000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
@@ -197,7 +199,7 @@
 		clock-output-names = "jesd204_rx_link_clock";
 	};
 
-	rx_os_device_clk_pll: altera-a10-fpll@45000 {
+	rx_os_device_clk_pll: a10-fpll-rx-os@45000 {
 		compatible = "altr,a10-fpll";
 		reg = <0x00045000 0x1000>;
 		clocks = <&clk0_ad9528 3>;
@@ -279,5 +281,29 @@
 		adi,sniffer-profile-rx-bbf-3db-corner_khz = <100000>;
 		adi,sniffer-profile-rx-dec5-decimation = <5>;
 		adi,sniffer-profile-rx-fir-decimation = <4>;
+#if 0
+		/* Jacky:2018/07/25: enable pin-mode 
+		   https://wiki.analog.com/resources/tools-software/linux-drivers/iio-transceiver/ad9371-customization */
+		adi,arm-gpio-use-rx2-enable-pin = <1>;	// 0= RX1_ENABLE controls RX1&RX2, 1= separate RX1/RX2_ENABLE pins
+		adi,arm-gpio-use-tx2-enable-pin = <1>;	// 0= TX1_ENABLE controls TX1&TX2, 1= separate TX1/TX2_ENABLE pins
+		adi,arm-gpio-tx-rx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains
+		adi,arm-gpio-orx-pin-mode = <1>;		// 0= ARM command mode, 1 = Pin mode to power up ObsRx receiver
+		// to be tested: enable pin-mode but NOT enable gpio-ack
+		adi,arm-gpio-orx-trigger-pin = <0>;		// Select desired GPIO pin (valid 4-15)
+		adi,arm-gpio-orx-mode2-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-orx-mode1-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-orx-mode0-pin = <0>;		// Select desired GPIO pin (valid 0-18)
+		adi,arm-gpio-rx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-rx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-orx1-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-orx2-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-srx-enable-ack = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable
+		adi,arm-gpio-tx-obs-select = <0>;		// Select desired GPIO pin (0-15), [4] = Output Enable.
+			// When 2 Tx are used with only 1 ORx input, this GPIO tells BBIC which Tx channel is active
+			// for calibrations, so BBIC can route correct RF Tx path into the single ORx input
+		adi,arm-gpio-enable-mask = <0>;
+#endif
 	};
 };

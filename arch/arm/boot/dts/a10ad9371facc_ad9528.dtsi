@@ -34,7 +34,7 @@
 		adi,osc-in-cmos-neg-inp-enable;
 
 		/* PLL1 config */
-		adi,pll1-feedback-div = <4>;
+		adi,pll1-feedback-div = <1>;/* change from 4 to 1 per RF, 2018/11/01 */
 		adi,pll1-charge-pump-current-nA = <5000>;
 
 		/* PLL2 config */
