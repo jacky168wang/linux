@@ -674,10 +674,10 @@ static int axi_jesd204_rx_probe(struct platform_device *pdev)
 	device_create_file(&pdev->dev, &dev_attr_status);
 
 #ifdef A10AD9371_FOXCONN_DBG
-       dev_info(&pdev->dev, "AXI_jesd204_rx (%d.%.2d.%c).\n",
-        		PCORE_VERSION_MAJOR(jesd->version),
-        		PCORE_VERSION_MINOR(jesd->version),
-        		PCORE_VERSION_PATCH(jesd->version));
+	dev_info(&pdev->dev, "AXI_jesd204_rx (%d.%.2d.%c).\n",
+		PCORE_VERSION_MAJOR(jesd->version),
+		PCORE_VERSION_MINOR(jesd->version),
+		PCORE_VERSION_PATCH(jesd->version));
 #endif
 
 	return 0;
@@ -696,16 +696,13 @@ err_axi_clk_disable:
 
 static int axi_jesd204_rx_remove(struct platform_device *pdev)
 {
-	int irq;
-	struct axi_jesd204_rx *jesd;
+	struct axi_jesd204_rx *jesd = platform_get_drvdata(pdev);
+	int irq = platform_get_irq(pdev, 0);
 
-	if(pdev == NULL)
+	if (jesd == NULL)
 		return 0;
-
-	irq = platform_get_irq(pdev, 0);
-	jesd = platform_get_drvdata(pdev);
-	if(jesd == NULL)
-		return 0;
+	if (irq < 0)
+		return irq;
 
 	switch (jesd->num_lanes) {
 	case 8:
@@ -728,9 +725,16 @@ static int axi_jesd204_rx_remove(struct platform_device *pdev)
 	device_remove_file(&pdev->dev, &dev_attr_status);
 
 	of_clk_del_provider(pdev->dev.of_node);
-
+#if 0
 	del_timer(&(jesd->watchdog_work.timer));
 	INIT_WORK(&(jesd->watchdog_work.work), 0);
+#else
+	/* reference: 
+	https://www.ibm.com/developerworks/library/l-tasklets/index.html
+	https://www.systutorials.com/linux-kernels/192771 */
+	cancel_delayed_work(&(jesd->watchdog_work.work));
+	flush_scheduled_work();
+#endif
 	disable_irq(irq);
 	free_irq(irq, jesd);
 
@@ -739,7 +743,7 @@ static int axi_jesd204_rx_remove(struct platform_device *pdev)
 
 	writel_relaxed(0x1, jesd->base + JESD204_RX_REG_LINK_DISABLE);
 
-/*	clk_disable_unprepare(jesd->device_clk);*/
+	/*clk_disable_unprepare(jesd->device_clk);*/
 	clk_disable_unprepare(jesd->axi_clk);
 
 	return 0;

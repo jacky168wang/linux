@@ -1483,18 +1483,16 @@ static int ad9528_probe(struct spi_device *spi)
 	indio_dev->num_channels = pdata->num_channels;
 
 	ret = ad9528_setup(indio_dev);
-	if (ret < 0)
-	    {
-	    	dev_info(&spi->dev, "%s exit line %d : enter\n", __func__, __LINE__);
+	if (ret < 0) {
+		dev_info(&spi->dev, "%s exit at line %d\n", __func__, __LINE__);
 		goto error_disable_reg;
-	    }
+	}
 
 	ret = iio_device_register(indio_dev);
-	if (ret)
-	    {
-		dev_info(&spi->dev, "%s exit line %d : enter\n", __func__, __LINE__);
+	if (ret) {
+		dev_info(&spi->dev, "%s exit line at %d\n", __func__, __LINE__);
 		goto error_disable_reg;
-	    }
+	}
 
 	dev_info(&spi->dev, "%s: succeed\n", __func__);
 	return 0;
