@@ -698,7 +698,7 @@ dtb-$(CONFIG_ARCH_SOCFPGA) += \
 	socfpga_arria10_socdk_qspi.dtb \
 	socfpga_arria10_socdk_sdmmc.dtb \
 	a10ad9371facc.dtb \
-	a10ad9371facc-dbg.dtb \
+	a10ad9371facc_dma.dtb \
 	socfpga_arria10_swvp.dtb \
 	socfpga_cyclone5_mcvevk.dtb \
 	socfpga_cyclone5_socdk.dtb \

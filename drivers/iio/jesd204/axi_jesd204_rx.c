@@ -725,16 +725,13 @@ static int axi_jesd204_rx_remove(struct platform_device *pdev)
 	device_remove_file(&pdev->dev, &dev_attr_status);
 
 	of_clk_del_provider(pdev->dev.of_node);
-#if 0
-	del_timer(&(jesd->watchdog_work.timer));
-	INIT_WORK(&(jesd->watchdog_work.work), 0);
-#else
-	/* reference: 
+
+	/* reference:
 	https://www.ibm.com/developerworks/library/l-tasklets/index.html
 	https://www.systutorials.com/linux-kernels/192771 */
-	cancel_delayed_work(&(jesd->watchdog_work.work));
+	cancel_delayed_work(&(jesd->watchdog_work));
 	flush_scheduled_work();
-#endif
+
 	disable_irq(irq);
 	free_irq(irq, jesd);
 
