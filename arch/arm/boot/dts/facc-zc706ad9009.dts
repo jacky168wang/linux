@@ -63,7 +63,7 @@
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <128>;
+				adi,source-bus-width = <64>;
 				adi,source-bus-type = <2>;
 				adi,destination-bus-width = <64>;
 				adi,destination-bus-type = <0>;
@@ -141,7 +141,7 @@
 		compatible = "adi,axi-jesd204-tx-1.0";
 		reg = <0x44a90000 0x1000>;
 
-		interrupts = <0 52 0>;
+		interrupts = <0 53 0>;
 
 		clocks = <&clkc 16>, <&axi_tx_clkgen>, <&axi_adrv9009_adxcvr_tx 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -151,17 +151,17 @@
 
 		adi,octets-per-frame = <2>;
 		adi,frames-per-multiframe = <32>;
-		adi,converter-resolution = <14>;
+		adi,converter-resolution = <16>;
 		adi,bits-per-sample = <16>;
 		adi,converters-per-device = <4>;
-		adi,control-bits-per-sample = <2>;
+		adi,control-bits-per-sample = <0>;
 	};
 
-	axi_adrv9009_rx_os_jesd: axi-jesd204-rx@44ab0000 {
+	axi_adrv9009_rx_os_jesd: axi-jesd204-rx-os@44ab0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44ab0000 0x1000>;
 
-		interrupts = <0 53 0>;
+		interrupts = <0 52 0>;
 
 		clocks = <&clkc 16>, <&axi_rx_os_clkgen>, <&axi_adrv9009_adxcvr_rx_os 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -169,7 +169,7 @@
 		#clock-cells = <0>;
 		clock-output-names = "jesd_rx_os_lane_clk";
 
-		adi,octets-per-frame = <4>;
+		adi,octets-per-frame = <2>;
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -256,7 +256,7 @@
 
 #define fmc_spi spi0
 
-#include "adi-adrv9009.dtsi"
+#include "facc-adrv9009.dtsi"
 
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59

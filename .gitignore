@@ -10,7 +10,6 @@
 # Normal rules
 #
 .*
-*.rej
 *.o
 *.o.*
 *.a
