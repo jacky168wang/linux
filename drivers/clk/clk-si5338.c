@@ -27,7 +27,6 @@
  */
 
 #define DEBUG 1
-#include <dt-bindings/clock/clk-si5338.h>
 #include <linux/bsearch.h>
 #include <linux/clk.h>
 #include <linux/clkdev.h>
@@ -40,10 +39,11 @@
 #include <linux/i2c.h>
 #include <linux/math64.h>
 #include <linux/module.h>
-#include <linux/platform_data/si5338.h>
 #include <linux/regmap.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <dt-bindings/clock/clk-si5338.h>
+#include "si5338.h"
 
 #define REG5338_PAGE			255
 #define REG5338_PAGE_MASK		1
@@ -2039,7 +2039,7 @@ static int set_drv_powerdown(struct si5338_driver_data *drvdata,
 	return write_field(drvdata, typ, awe_drv_powerdown[chn]);
 }
 
-static const struct si5338_drv_t const drv_configs[] = {
+static const struct si5338_drv_t drv_configs[] = {
 	{"3V3_CMOS_A+",	0x1, 0x0, 0x17, 0x8}, /* bX0 */
 	{"3V3_CMOS_A-",	0x1, 0x0, 0x17, 0x9}, /* bX1 */
 	{"3V3_CMOS_B+",	0x2, 0x0, 0x17, 0x4}, /* b0X */

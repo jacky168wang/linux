@@ -109,7 +109,7 @@ static int xilinx_xcvr_drp_write(struct xilinx_xcvr *xcvr,
 	return 0;
 }
 
-static int xilinx_xcvr_drp_update(struct xilinx_xcvr *xcvr,
+int xilinx_xcvr_drp_update(struct xilinx_xcvr *xcvr,
 	unsigned int drp_port, unsigned int reg, unsigned int mask,
 	unsigned int val)
 {
@@ -123,6 +123,7 @@ static int xilinx_xcvr_drp_update(struct xilinx_xcvr *xcvr,
 
 	return xilinx_xcvr_drp_write(xcvr, drp_port, reg, val);
 }
+EXPORT_SYMBOL_GPL(xilinx_xcvr_drp_update);
 
 static int xilinx_xcvr_gth3_configure_cdr(struct xilinx_xcvr *xcvr,
 	unsigned int drp_port, unsigned int out_div)
@@ -321,6 +322,10 @@ int xilinx_xcvr_calc_cpll_config(struct xilinx_xcvr *xcvr,
 		}
 	}
 
+	dev_dbg(xcvr->dev,
+		 "CPLL: failed to find setting for lane rate %u kHz with reference clock %u kHz\n",
+		lane_rate_khz, refclk_khz);
+
 	return -EINVAL;
 }
 EXPORT_SYMBOL_GPL(xilinx_xcvr_calc_cpll_config);
@@ -397,6 +402,10 @@ int xilinx_xcvr_calc_qpll_config(struct xilinx_xcvr *xcvr,
 		}
 	}
 
+	dev_dbg(xcvr->dev,
+		 "QPLL: failed to find setting for lane rate %u kHz with reference clock %u kHz\n",
+		 lane_rate_khz, refclk_khz);
+
 	return -EINVAL;
 }
 EXPORT_SYMBOL_GPL(xilinx_xcvr_calc_qpll_config);
@@ -442,7 +451,7 @@ int xilinx_xcvr_gth34_cpll_read_config(struct xilinx_xcvr *xcvr,
 	else
 		conf->refclk_div = 2;
 
-	dev_err(xcvr->dev, "cpll: fb_div_N1=%d\ncpll: fb_div_N2=%d\ncpll: refclk_div=%d\n",
+	dev_dbg(xcvr->dev, "cpll: fb_div_N1=%d\ncpll: fb_div_N2=%d\ncpll: refclk_div=%d\n",
 		conf->fb_div_N1, conf->fb_div_N2, conf->refclk_div);
 
 	return 0;
@@ -684,7 +693,7 @@ static int xilinx_xcvr_gth34_qpll_read_config(struct xilinx_xcvr *xcvr,
 
 	conf->band = 0;
 
-	dev_err(xcvr->dev, "qpll: fb_div=%d, qpll: refclk_div=%d\n",
+	dev_dbg(xcvr->dev, "qpll: fb_div=%d, qpll: refclk_div=%d\n",
 		conf->fb_div, conf->refclk_div);
 
 	return 0;

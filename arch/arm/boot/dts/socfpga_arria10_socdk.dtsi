@@ -96,7 +96,7 @@
 	rxdv-skew-ps = <420>; /* 0ps */
 	rxc-skew-ps = <1680>; /* 780ps */
 	max-frame-size = <3800>;
-	//max-frame-size = <5000>; /* iperf test: performace is worse than 3800 */
+	//max-frame-size = <5000>; /* iperf performace is worse than 3800 */
 	status = "okay";
 };
 

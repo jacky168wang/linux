@@ -27,8 +27,6 @@
 #include "dmaengine.h"
 #include "virt-dma.h"
 
-//#define A10AD9371_FOXCONN_DBG
-
 /*
  * The AXI-DMAC is a soft IP core that is used in FPGA designs. The core has
  * various instantiation parameters which decided the exact feature set support
@@ -245,17 +243,15 @@ static void axi_dmac_start_transfer(struct axi_dmac_chan *chan)
 	if (axi_dmac_dest_is_mem(chan)) {
 		axi_dmac_write(dmac, AXI_DMAC_REG_DEST_ADDRESS, sg->dest_addr);
 		axi_dmac_write(dmac, AXI_DMAC_REG_DEST_STRIDE, sg->dest_stride);
-#ifdef A10AD9371_FOXCONN_DBG
-		printk("DMAC %d start transfer %d, %x, %x, %x\n",dmac->dma_dev.dev_id, sg->id, sg->dest_addr, sg->x_len, sg->y_len);
-#endif
+		printk("%s: axi_dmac_dst_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
+            dmac->dma_dev.dev_id, sg->id, sg->dest_addr, sg->x_len, sg->y_len);
 	}
 
 	if (axi_dmac_src_is_mem(chan)) {
 		axi_dmac_write(dmac, AXI_DMAC_REG_SRC_ADDRESS, sg->src_addr);
 		axi_dmac_write(dmac, AXI_DMAC_REG_SRC_STRIDE, sg->src_stride);
-#ifdef A10AD9371_FOXCONN_DBG
-		printk("DMAC %d start transfer %d, %x, %x, %x\n",dmac->dma_dev.dev_id, sg->id, sg->src_addr, sg->x_len, sg->y_len);
-#endif
+		printk("%s: axi_dmac_src_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
+            dmac->dma_dev.dev_id, sg->id, sg->dest_addr, sg->x_len, sg->y_len);
 	}
 
 	/*
@@ -316,10 +312,7 @@ static bool axi_dmac_transfer_done(struct axi_dmac_chan *chan,
 		}
 	} while (active);
 
-#ifdef A10AD9371_FOXCONN_DBG
-    printk("Transfer %x done\n", completed_transfers);
-#endif
-
+	printk("%s: %u\n", __func__, completed_transfers);
 	return start_next;
 }
 
@@ -840,10 +833,7 @@ static int axi_dmac_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 
-#ifdef A10AD9371_FOXCONN_DBG
-	printk("DMAC probe start\n");
-#endif
-
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
 	dmac = devm_kzalloc(&pdev->dev, sizeof(*dmac), GFP_KERNEL);
 	if (!dmac)
 		return -ENOMEM;
@@ -934,10 +924,8 @@ static int axi_dmac_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, dmac);
 
 	devm_regmap_init_mmio(&pdev->dev, dmac->base, &axi_dmac_regmap_config);
-
-#ifdef A10AD9371_FOXCONN_DBG
-	printk("dev id is %x, dev direction is %d\n",dma_dev->dev_id, dma_dev->directions);
-#endif
+	dev_info(&pdev->dev, "%s succeed: dma %x direction %d\n", __func__,
+        dma_dev->dev_id, dma_dev->directions);
 
 #ifdef SPEED_TEST
 	for (i = 0; i < 0x30; i += 4)

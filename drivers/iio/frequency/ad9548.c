@@ -237,13 +237,19 @@ static int ad9548_read(struct spi_device *spi, unsigned reg)
 	cmd = AD_READ | AD_CNT(1) | AD_ADDR(reg);
 	buf[0] = cmd >> 8;
 	buf[1] = cmd & 0xFF;
+
+
 	ret = spi_write_then_read(spi, &buf[0], 2, &buf[2], 1);
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		dev_err(&spi->dev, "%s %u\n", __func__, reg);
+		return ret;
+	}
 
 	return buf[2];
 }
 
-static int ad9548_write(struct spi_device *spi, unsigned reg, unsigned val)
+static int ad9548_write(struct spi_device *spi,
+			 unsigned reg, unsigned val)
 {
 	unsigned char buf[3];
 	int ret;
@@ -253,8 +259,12 @@ static int ad9548_write(struct spi_device *spi, unsigned reg, unsigned val)
 	buf[0] = cmd >> 8;
 	buf[1] = cmd & 0xFF;
 	buf[2] = val;
+
 	ret = spi_write(spi, buf, 3);
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		dev_err(&spi->dev, "%s %u %u\n", __func__, reg, val);
+		return ret;
+	}
 
 	return 0;
 }
@@ -313,21 +323,26 @@ static int ad9548_probe(struct spi_device *spi)
 	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
 		switch (ad9548_regs[i][0]) {
 		case WAIT_B:
-			timeout = 1000;
+			timeout = 800;
 			do {
 				ret = ad9548_read(spi, 0xD01);
-				if (ret < 0) return ret;
-				if (ret & BIT(0)) break;
+				if (ret < 0)
+					return ret;
+				if (ret & BIT(0))
+					break;
 				mdelay(1);
 			} while (timeout--);
+
 			if (timeout <= 0) {
-				dev_info(&spi->dev, "system clock PLL unlock in 1000ms\n");
+				dev_info(&spi->dev, "system clock PLL unlock in 800ms\n");
 				return -ETIMEDOUT;
 			}
 			break;
 		default:
-			ret = ad9548_write(spi, ad9548_regs[i][0], ad9548_regs[i][1]);
-			if (ret < 0) return ret;
+			ret = ad9548_write(spi, ad9548_regs[i][0],
+					   ad9548_regs[i][1]);
+			if (ret < 0)
+				return ret;
 			break;
 		}
 	}

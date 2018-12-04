@@ -190,6 +190,8 @@ struct adrv9009_rf_phy {
 	struct adrv9009_hal	linux_hal;
 	struct clk 		*dev_clk;
 	struct clk 		*fmc_clk;
+	struct clk		*sysref_dev_clk;
+	struct clk		*sysref_fmc_clk;
 	struct clk 		*jesd_rx_clk;
 	struct clk 		*jesd_tx_clk;
 	struct clk 		*jesd_rx_os_clk;
@@ -215,6 +217,8 @@ struct adrv9009_rf_phy {
 	bool			saved_radio_state;
 	u32			init_cal_mask;
 	u32			cal_mask;
+	bool			is_initialized;
+	int			spi_device_id;
 };
 
 int adrv9009_hdl_loopback(struct adrv9009_rf_phy *phy, bool enable);
@@ -222,5 +226,15 @@ int adrv9009_register_axi_converter(struct adrv9009_rf_phy *phy);
 struct adrv9009_rf_phy *adrv9009_spi_to_phy(struct spi_device *spi);
 int adrv9009_spi_read(struct spi_device *spi, u32 reg);
 int adrv9009_spi_write(struct spi_device *spi, u32 reg, u32 val);
+
+static inline bool has_tx(struct adrv9009_rf_phy *phy)
+{
+	return phy->spi_device_id != ID_ADRV90081;
+}
+
+static inline bool has_rx(struct adrv9009_rf_phy *phy)
+{
+	return phy->spi_device_id != ID_ADRV90082;
+}
 
 #endif

@@ -192,10 +192,10 @@ config AT91_ADC
 	  called at91_adc.
 
 config CF_AXI_ADC
-	tristate "Analog Devices High-Speed AXI ADC"
-	depends on IIO_BUFFER
-	depends on IIO_HW_CONSUMER
-	depends on IIO_BUFFER_DMAENGINE
+	tristate "Analog Devices High-Speed AXI ADC driver core"
+	select IIO_BUFFER
+	select IIO_HW_CONSUMER
+	select IIO_BUFFER_DMAENGINE
 	help
 	  Say yes here to build support for Analog Devices AD9467 and AD9643,
 	  High-Speed LVDS analog to digital converters (ADC).
@@ -247,7 +247,7 @@ config ADRV9009
 config AD6676
 	tristate "Analog Devices AD6676 Wideband IF Receiver driver"
 	depends on SPI
-	depends on CF_AXI_ADC
+	select CF_AXI_ADC
 	help
 	  Say yes here to build support for Analog Devices:
 	  AD6676 Wideband IF Receivers. Provides direct access
@@ -256,7 +256,7 @@ config AD6676
 config AD9467
 	tristate "Analog Devices AD9467 etc. high speed ADCs"
 	depends on SPI
-	depends on CF_AXI_ADC
+	select CF_AXI_ADC
 	help
 	  Say yes here to build support for Analog Devices:
 	  AD9467, AD9643, AD9250, AD9265, AD9683, AD9434, AD9625, AD9652
@@ -265,7 +265,7 @@ config AD9467
 config AD9680
 	tristate "Analog Devices AD9680 and similar high speed ADCs"
 	depends on SPI
-	depends on CF_AXI_ADC
+	select CF_AXI_ADC
 	help
 	  Say yes here to build support for Analog Devices:
 	  AD9234, AD9680, AD9684 high speed ADCs.
@@ -274,7 +274,7 @@ config AD9680
 config ADMC
 	tristate "Analog Devices Motor Control (AD-FMCMOTCON) drivers"
 	depends on SPI
-	depends on CF_AXI_ADC
+	select CF_AXI_ADC
 	help
 	  Say yes here to build support for Analog Devices:
 	  AD-FMCMOTCON1 device drivers. Provides direct access

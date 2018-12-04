@@ -1370,7 +1370,9 @@ static int tse_shutdown(struct net_device *dev)
 static struct net_device_ops altera_tse_netdev_ops = {
 	.ndo_open		= tse_open,
 	.ndo_stop		= tse_shutdown,
-	//.ndo_start_xmit		= tse_start_xmit,
+#if !defined(A10AD9371FOXCONN_TSEMAC_DBG)
+	.ndo_start_xmit		= tse_start_xmit,
+#endif
 	.ndo_set_mac_address	= eth_mac_addr,
 	.ndo_set_rx_mode	= tse_set_rx_mode,
 	.ndo_change_mtu		= tse_change_mtu,
@@ -1420,11 +1422,7 @@ static int altera_tse_probe(struct platform_device *pdev)
 	const struct of_device_id *of_id = NULL;
 
 	dev_info(&pdev->dev, "%s: enter", __func__);
-#if 0
-	ndev = alloc_etherdev_ethid(sizeof(struct altera_tse_private), 0);
-#else
 	ndev = alloc_etherdev(sizeof(struct altera_tse_private));
-#endif
 	if (!ndev) {
 		dev_err(&pdev->dev, "Could not allocate network device\n");
 		return -ENODEV;
@@ -1690,9 +1688,7 @@ static int altera_tse_remove(struct platform_device *pdev)
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct altera_tse_private *priv = netdev_priv(ndev);
 
-#if defined(A10AD9371FOXCONN_TSEMAC_DBG)
     tse_shutdown(ndev);
-#endif
 
 	if (ndev->phydev) {
 		phy_disconnect(ndev->phydev);

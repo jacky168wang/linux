@@ -21,7 +21,6 @@ config IIO_BUFFER_DMA
 config IIO_BUFFER_DMAENGINE
 	tristate
 	select IIO_BUFFER_DMA
-	default y
 	help
 	  Provides a bonding of the generic IIO DMA buffer infrastructure with the
 	  DMAengine framework. This can be used by converter drivers with a DMA port
@@ -46,6 +45,5 @@ config IIO_TRIGGERED_BUFFER
 
 config IIO_HW_CONSUMER
 	tristate
-	default y
 	help
 	  Hardware consumer buffer

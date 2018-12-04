@@ -344,8 +344,9 @@ static int ad9528_write(struct iio_dev *indio_dev, unsigned addr, unsigned val)
 			AD9528_ADDR(addr) - AD9528_TRANSF_LEN(addr) + 1, val);
 
 	ret = spi_sync_transfer(st->spi, t, ARRAY_SIZE(t));
+
 	if (ret < 0)
-		dev_err(&indio_dev->dev, "ERR: write failed (%d)", ret);
+		dev_err(&indio_dev->dev, "write failed (%d)", ret);
 
 	return ret;
 }

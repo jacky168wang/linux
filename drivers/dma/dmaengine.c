@@ -43,8 +43,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-//#define A10AD9371_FOXCONN_DBG
-
 #include <linux/platform_device.h>
 #include <linux/dma-mapping.h>
 #include <linux/init.h>
@@ -989,10 +987,6 @@ int dma_async_device_register(struct dma_device *device)
 		dev_set_name(&chan->dev->device, "dma%dchan%d",
 			     device->dev_id, chan->chan_id);
 
-#ifdef A10AD9371_FOXCONN_DBG
-		dev_info(device->dev, "device name is dma%dchan%d",device->dev_id,chan->chan_id);
-#endif
-
 		rc = device_register(&chan->dev->device);
 		if (rc) {
 			free_percpu(chan->local);
@@ -1011,6 +1005,8 @@ int dma_async_device_register(struct dma_device *device)
 	}
 
 	device->chancnt = chancnt;
+	dev_info(device->dev, "%s: dma %d channel %d register succeed\n",
+			__func__, device->dev_id, chan->chan_id);
 
 	mutex_lock(&dma_list_mutex);
 	/* take references on public channels */

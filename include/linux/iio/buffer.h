@@ -143,8 +143,8 @@ struct iio_buffer {
 	int					length;
 	int					bytes_per_datum;
 	struct attribute_group			*scan_el_attrs;
-	long					*channel_mask;
-	long					*scan_mask;
+	long			    *channel_mask;
+	long			    *scan_mask;
 	bool					scan_timestamp;
 	const struct iio_buffer_access_funcs	*access;
 	struct list_head			scan_el_dev_attr_list;
