@@ -20,7 +20,7 @@
 
 /* enable: sys_clk_in with 10.0 MHz from external GPRS
   disable: sys_clk_in with 76.8 MHz from lmk04828 */
-#define EXT_CLKIN_10M
+//#define EXT_CLKIN_10M
 
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
@@ -50,7 +50,7 @@ static const unsigned short ad9548_regs[][2] = {
 #else
 	/*	Date: 20180817
 		Change: bit6: Charge pump mode automatic/0->manual/1
-				bit[5:3]: charge pump current 500->1000 μA 
+				bit[5:3]: charge pump current 500->1000 μA
 		Result: TO BE Verified by RF team */
 	{0x0100, 0x78},
 #endif

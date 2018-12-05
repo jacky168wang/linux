@@ -4042,11 +4042,11 @@ static int ad9371_probe(struct spi_device *spi)
 		return PTR_ERR(phy->fmc_clk);
 
 	phy->sysref_dev_clk = devm_clk_get(&spi->dev, "sysref_dev_clk");
-	if (IS_ERR(phy->sysref_dev_clk))
-		return PTR_ERR(phy->sysref_dev_clk);
+	//if (IS_ERR(phy->sysref_dev_clk))
+	//	return PTR_ERR(phy->sysref_dev_clk);
 	phy->sysref_fmc_clk = devm_clk_get(&spi->dev, "sysref_fmc_clk");
-	if (IS_ERR(phy->sysref_fmc_clk))
-		return PTR_ERR(phy->sysref_fmc_clk);
+	//if (IS_ERR(phy->sysref_fmc_clk))
+	//	return PTR_ERR(phy->sysref_fmc_clk);
 
 	ret = clk_prepare_enable(phy->fmc_clk);
 	if (ret)
