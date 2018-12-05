@@ -703,8 +703,40 @@ static int axi_jesd204_rx_remove(struct platform_device *pdev)
 	struct axi_jesd204_rx *jesd = platform_get_drvdata(pdev);
 	int irq = platform_get_irq(pdev, 0);
 
+	if (jesd == NULL)
+		return 0;
+	if (irq < 0)
+		return irq;
+
+	switch (jesd->num_lanes) {
+	case 8:
+		device_remove_file(&pdev->dev, &dev_attr_lane4_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane5_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane6_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane7_info);
+	case 4:
+		device_remove_file(&pdev->dev, &dev_attr_lane2_info);
+		device_remove_file(&pdev->dev, &dev_attr_lane3_info);
+	case 2:
+		device_remove_file(&pdev->dev, &dev_attr_lane1_info);
+	case 1:
+		device_remove_file(&pdev->dev, &dev_attr_lane0_info);
+		break;
+	default:
+		break;
+	}
+
+	device_remove_file(&pdev->dev, &dev_attr_status);
+
 	of_clk_del_provider(pdev->dev.of_node);
 
+	/* reference:
+	https://www.ibm.com/developerworks/library/l-tasklets/index.html
+	https://www.systutorials.com/linux-kernels/192771 */
+	cancel_delayed_work(&(jesd->watchdog_work));
+	flush_scheduled_work();
+
+	disable_irq(irq);
 	free_irq(irq, jesd);
 
 	writel_relaxed(0xff, jesd->base + JESD204_RX_REG_IRQ_PENDING);
@@ -722,7 +754,7 @@ static const struct of_device_id axi_jesd204_rx_of_match[] = {
 	{ .compatible = "adi,axi-jesd204-rx-1.0" },
 	{ /* end of list */ },
 };
-MODULE_DEVICE_TABLE(of, adxcvr_of_match);
+MODULE_DEVICE_TABLE(of, axi_jesd204_rx_of_match);
 
 static struct platform_driver axi_jesd204_rx_driver = {
 	.probe = axi_jesd204_rx_probe,
