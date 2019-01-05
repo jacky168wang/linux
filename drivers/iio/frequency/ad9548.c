@@ -18,6 +18,10 @@
 
 #include <linux/iio/iio.h>
 
+/* enable: sys_clk_in with 10.0 MHz from external GPRS
+  disable: sys_clk_in with 76.8 MHz from lmk04828 */
+//#define EXT_CLKIN_10M
+
 #define AD_READ		(1 << 15)
 #define AD_WRITE	(0 << 15)
 #define AD_CNT(x)	(((x) - 1) << 13)
@@ -26,18 +30,45 @@
 #define CHIPID_AD9548	0x48
 
 static const unsigned short ad9548_regs[][2] = {
+#if 0
 	{0x0000, 0x30}, /* Reset */
 	{0x0000, 0x10},
 	{0x0000, 0x10},
 	{0x0000, 0x10},
 	{0x0000, 0x10},
 	{0x0000, 0x10},
+//#else
+	{0x0000, 0x90}, /* Reset */
+	{0x0000, 0x90},
+	{0x0000, 0x90},
+	{0x0000, 0x90},
+	{0x0000, 0x90},
+	{0x0000, 0x90},
+#endif
+#if 1
 	{0x0100, 0x18}, /* System clock */
-	{0x0101, 0x28},
-	{0x0102, 0x45},
-	{0x0103, 0x43},
-	{0x0104, 0xDE},
+#else
+	/*	Date: 20180817
+		Change: bit6: Charge pump mode automatic/0->manual/1
+				bit[5:3]: charge pump current 500->1000 μA
+		Result: TO BE Verified by RF team */
+	{0x0100, 0x78},
+#endif
+#if defined(EXT_CLKIN_10M)
+	{0x0101, 0x4D},
+	/*0x45->0x05*/
+	{0x0102, 0x05},
+	{0x0103, 0x0D},
+	{0x0104, 0xD1},
 	{0x0105, 0x13},
+#else
+	{0x0101, 0x0A},
+	/*0x45->0x05*/
+	{0x0102, 0x05},
+	{0x0103, 0x9E},
+	{0x0104, 0xAE},
+	{0x0105, 0xC6},
+#endif
 	{0x0106, 0x01},
 	{0x0107, 0x00},
 	{0x0108, 0x00},
@@ -60,11 +91,19 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0212, 0x00},
 	{0x0213, 0xFF}, /* Auxiliary DAC */
 	{0x0214, 0x01},
+#if defined(EXT_CLKIN_10M)
+	{0x0300, 0xE7}, /* DPLL */
+	{0x0301, 0xE2},
+	{0x0302, 0x35},
+	{0x0303, 0x86},
+	{0x0304, 0xDA},
+#else
 	{0x0300, 0x29}, /* DPLL */
 	{0x0301, 0x5C},
 	{0x0302, 0x8F},
 	{0x0303, 0xC2},
 	{0x0304, 0xF5},
+#endif
 	{0x0305, 0x28},
 	{0x0307, 0x00},
 	{0x0308, 0x00},
@@ -88,19 +127,26 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x031A, 0x00},
 	{0x031B, 0x00},
 	{0x0306, 0x01}, /* Update TW */
-	{0x0400, 0x0C}, /* Clock distribution output */
-	{0x0401, 0x03},
-	{0x0402, 0x00},
-	{0x0403, 0x02},
-	{0x0404, 0x04},
-	{0x0405, 0x08},
+	{0x0400, 0x0D}, /* Clock distribution output */
+	{0x0401, 0x02},
+	{0x0402, 0x0D},
+	{0x0403, 0x00},
+	{0x0404, 0x03},
+#if 1
+	{0x0405, 0x0A},
+#else
+	/*	Change: bit4: OUT1 Invert the polarity;
+				bit3: OUT1 low->normal drive strength
+		Result: AD9528 PLL2 ***UNCLOCK*** */
+	{0x0405, 0x12},
+#endif
 	{0x0406, 0x03},
 	{0x0407, 0x03},
-	{0x0408, 0x03},
+	{0x0408, 0x00},
 	{0x0409, 0x00},
 	{0x040A, 0x00},
 	{0x040B, 0x00},
-	{0x040C, 0x03},
+	{0x040C, 0x00},
 	{0x040D, 0x00},
 	{0x040E, 0x00},
 	{0x040F, 0x00},
@@ -113,7 +159,7 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0416, 0x00},
 	{0x0417, 0x00},
 	{0x0500, 0xFE}, /* Reference inputs */
-	{0x0501, 0x00},
+	{0x0501, 0x03},
 	{0x0502, 0x00},
 	{0x0503, 0x08},
 	{0x0504, 0x00},
@@ -121,13 +167,13 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x0506, 0x00},
 	{0x0507, 0x00},
 	{0x0600, 0x00}, /* Profiles are 0x0600-0x07FF */
-	{0x0601, 0x55}, /* Profile 0 */
-	{0x0602, 0xA0}, /* 30MHz input from FPGA, 122.880MHz output clock */
-	{0x0603, 0xFC},
-	{0x0604, 0x01},
-	{0x0605, 0x00},
-	{0x0606, 0x00},
-	{0x0607, 0x00},
+	{0x0601, 0x00}, /* Profile 0 */
+	{0x0602, 0x80}, /* 30MHz input from FPGA, 122.880MHz output clock */
+	{0x0603, 0xC6},
+	{0x0604, 0xA4},
+	{0x0605, 0x7E},
+	{0x0606, 0x8D},
+	{0x0607, 0x03},
 	{0x0608, 0xE8},
 	{0x0609, 0x03},
 	{0x060A, 0x00},
@@ -150,19 +196,19 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x061B, 0xCB},
 	{0x061C, 0xC4},
 	{0x061D, 0x05},
-	{0x061E, 0x7F},
+	{0x061E, 0x07},
 	{0x061F, 0x00},
 	{0x0620, 0x00},
 	{0x0621, 0x00},
-	{0x0622, 0x0B},
-	{0x0623, 0x02},
-	{0x0624, 0x00},
-	{0x0625, 0x00},
+	{0x0622, 0xCA},
+	{0x0623, 0x0A},
+	{0x0624, 0x98},
+	{0x0625, 0x3A},
 	{0x0626, 0x26},
-	{0x0627, 0xB0},
+	{0x0627, 0x60},
 	{0x0628, 0x00},
-	{0x0629, 0x10},
-	{0x062A, 0x27},
+	{0x0629, 0xe8},
+	{0x062A, 0x03},
 	{0x062B, 0x20},
 	{0x062C, 0x44},
 	{0x062D, 0xF4},
@@ -170,6 +216,9 @@ static const unsigned short ad9548_regs[][2] = {
 	{0x062F, 0x00},
 	{0x0630, 0x20},
 	{0x0631, 0x44},
+	{0x0005, 0x01}, /* I/O Update */
+	{0x0A01, 0x38},
+	{0x0A0D, 0x01},
 	{0x0005, 0x01}, /* I/O Update */
 	{0x0A0E, 0x01}, /* Force validation timeout */
 	{0x0005, 0x01}, /* I/O Update */
@@ -191,8 +240,10 @@ static int ad9548_read(struct spi_device *spi, unsigned reg)
 
 
 	ret = spi_write_then_read(spi, &buf[0], 2, &buf[2], 1);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(&spi->dev, "%s %u\n", __func__, reg);
 		return ret;
+	}
 
 	return buf[2];
 }
@@ -210,8 +261,10 @@ static int ad9548_write(struct spi_device *spi,
 	buf[2] = val;
 
 	ret = spi_write(spi, buf, 3);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(&spi->dev, "%s %u %u\n", __func__, reg, val);
 		return ret;
+	}
 
 	return 0;
 }
@@ -220,18 +273,57 @@ static int ad9548_probe(struct spi_device *spi)
 {
 	int i, ret, timeout;
 
-	ret = ad9548_read(spi, 0x3);
-	if (ret < 0)
-		return ret;
-	if (ret != CHIPID_AD9548) {
-		dev_err(&spi->dev, "Unrecognized CHIP_ID 0x%X\n", ret);
- 		return -ENODEV;
-	}
+	dev_info(&spi->dev, "%s: enter", __func__);
 
-	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++)
+#ifdef CONFIG_OF
+	/*
+	struct device_node *np;
+	np = of_find_node_by_name(NULL, "clksyn");
+	if (NULL == np) {
+		dev_err(&spi->dev, "device-tree: node 'ad9548-spi' not find\n");
+		return -EINVAL;
+	}
+	ret = of_property_read_u32_index(np, "pl-cs-val", 0, &pl_cs_val);
+	if (ret < 0) {
+		dev_err(&spi->dev, "device-tree: property 'pl-cs-val' not find\n");
+		return -EINVAL;
+	}*/
+#endif
+
+	ret = ad9548_write(spi, 0x0, 0x20);
+	if (ret < 0) {
+		dev_err(&spi->dev, "Failed to write for reset\n");
+		return -ENODEV;
+	}
+	mdelay(100);
+	ret = ad9548_read(spi, 0x3);
+	if (ret < 0) {
+		dev_err(&spi->dev, "Failed to read [3] for ID\n");
+		return -ENODEV;
+	}
+	if (ret != CHIPID_AD9548) {
+		ret = ad9548_write(spi, 0x0, 0xB0);
+		if (ret < 0) {
+			dev_err(&spi->dev, "Failed to change default 3-wire mode into 4-wire\n");
+			return -ENODEV;
+		}
+		mdelay(100);
+		ret = ad9548_read(spi, 0x3);
+		if (ret < 0) {
+			dev_err(&spi->dev, "Failed to read [3] for ID\n");
+			return -ENODEV;
+		}
+		if (ret != CHIPID_AD9548) {
+			dev_err(&spi->dev, "Unrecognized CHIP_ID 0x%X\n", ret);
+			return -ENODEV;
+		}
+	}
+	dev_info(&spi->dev, "Rev.0x%X probed\n", ad9548_read(spi, 0x2));
+
+	for (i = 0; i < ARRAY_SIZE(ad9548_regs); i++) {
 		switch (ad9548_regs[i][0]) {
 		case WAIT_B:
-			timeout = 100;
+			timeout = 800;
 			do {
 				ret = ad9548_read(spi, 0xD01);
 				if (ret < 0)
@@ -241,8 +333,10 @@ static int ad9548_probe(struct spi_device *spi)
 				mdelay(1);
 			} while (timeout--);
 
-			if (timeout <= 0)
+			if (timeout <= 0) {
+				dev_info(&spi->dev, "system clock PLL unlock in 800ms\n");
 				return -ETIMEDOUT;
+			}
 			break;
 		default:
 			ret = ad9548_write(spi, ad9548_regs[i][0],
@@ -251,25 +345,35 @@ static int ad9548_probe(struct spi_device *spi)
 				return ret;
 			break;
 		}
+	}
 
-	dev_info(&spi->dev, "Rev. 0x%X probed\n", ad9548_read(spi, 0x2));
-
+	dev_info(&spi->dev, "%s: succeed\n", __func__);
 	return 0;
 }
 
-static const struct spi_device_id ad9548_id[] = {
-	{"ad9548", 0},
-	{}
+#ifdef CONFIG_OF
+static const struct of_device_id ad9548_dt_ids[] = {
+	{ .compatible = "adi,ad9548" },
+	{ }
 };
-MODULE_DEVICE_TABLE(spi, ad9548_id);
+#endif
+
+static const struct spi_device_id ad9548_hw_ids[] = {
+	{ "ad9548", CHIPID_AD9548 },
+	{ }
+};
+MODULE_DEVICE_TABLE(spi, ad9548_hw_ids);
 
 static struct spi_driver ad9548_driver = {
 	.driver = {
 		.name	= "ad9548",
 		.owner	= THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(ad9548_dt_ids),
+#endif
 	},
 	.probe		= ad9548_probe,
-	.id_table	= ad9548_id,
+	.id_table	= ad9548_hw_ids,
 };
 module_spi_driver(ad9548_driver);
 

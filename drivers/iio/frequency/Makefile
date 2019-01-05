@@ -6,8 +6,8 @@
 obj-$(CONFIG_AD9508) += ad9508.o
 obj-$(CONFIG_AD9517) += ad9517.o
 obj-$(CONFIG_AD9523) += ad9523.o
-obj-$(CONFIG_AD9528) += ad9528.o
-obj-$(CONFIG_AD9548) += ad9548.o
+obj-$(CONFIG_AD9548) += ad9548.o # should be latter than lmk04828
+obj-$(CONFIG_AD9528) += ad9528.o # should be latter than ad9548
 obj-$(CONFIG_ADF4350) += adf4350.o
 obj-$(CONFIG_ADF5355) += adf5355.o
 cf_axi_dds_drv-y := cf_axi_dds.o cf_axi_dds_buffer_stream.o
@@ -17,6 +17,9 @@ obj-$(CONFIG_CF_AXI_DDS_AD9144) += ad9144.o
 obj-$(CONFIG_CF_AXI_DDS_AD9739A) += ad9739a.o
 obj-$(CONFIG_HMC7044) += hmc7044.o
 
-ad916x_drv-y := ad916x/ad916x_api.o  ad916x/ad916x_irq_api.o  ad916x/ad916x_jesd_api.o  ad916x/ad916x_jesd_test_api.o  ad916x/ad916x_nco_api.o  ad916x/ad916x_reg.o  ad916x/api_errors.o  ad916x/utils.o
+ad916x_drv-y := ad916x/ad916x_api.o  ad916x/ad916x_irq_api.o \
+	ad916x/ad916x_jesd_api.o  ad916x/ad916x_jesd_test_api.o \
+	ad916x/ad916x_nco_api.o  ad916x/ad916x_reg.o \
+	ad916x/api_errors.o  ad916x/utils.o
 obj-$(CONFIG_CF_AXI_DDS_AD9162) += ad9162.o ad916x_drv.o
 

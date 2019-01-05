@@ -7,7 +7,7 @@
  * Licensed under the GPL-2.
  *
  */
-
+#define DEBUG
 #include <linux/platform_device.h>
 #include <linux/clk-provider.h>
 #include <linux/slab.h>
@@ -333,6 +333,9 @@ static int axi_clkgen_set_rate(struct clk_hw *clk_hw,
 		return -EINVAL;
 
 	axi_clkgen_calc_params(parent_rate, rate, &d, &m, &dout);
+	pr_debug("%s: %s, calc_params(): parent_rate=%lu, rate=%lu\n", 
+			axi_clkgen->clk_hw.init->name, __func__,
+			parent_rate, rate);
 
 	if (d == 0 || dout == 0 || m == 0)
 		return -EINVAL;
@@ -346,15 +349,24 @@ static int axi_clkgen_set_rate(struct clk_hw *clk_hw,
 	lock = axi_clkgen_lookup_lock(m - 1);
 
 	axi_clkgen_calc_clk_params(dout >> 3, dout & 0x7, &params);
+	pr_debug("%s: %s, calc_clk_params() to set_div(): div=%u, frac=%u\n", 
+			axi_clkgen->clk_hw.init->name, __func__,
+			dout >> 3, dout & 0x7);
 	axi_clkgen_set_div(axi_clkgen,  MMCM_REG_CLKOUT0_1, MMCM_REG_CLKOUT0_2,
 		MMCM_REG_CLKOUT5_2, &params);
 
 	axi_clkgen_calc_clk_params(d, 0, &params);
+	pr_debug("%s: %s, calc_clk_params() to mmcm_write(): div=%u, frac=0\n", 
+			axi_clkgen->clk_hw.init->name, __func__,
+			d);
 	axi_clkgen_mmcm_write(axi_clkgen, MMCM_REG_CLK_DIV,
 		(params.edge << 13) | (params.nocount << 12) |
 		(params.high << 6) | params.low, 0x3fff);
 
 	axi_clkgen_calc_clk_params(m >> 3, m & 0x7, &params);
+	pr_debug("%s: %s, calc_clk_params() to set_div(): div=%u, frac=%u\n", 
+			axi_clkgen->clk_hw.init->name, __func__,
+			m >> 3, m & 0x7);
 	axi_clkgen_set_div(axi_clkgen,  MMCM_REG_CLK_FB1, MMCM_REG_CLK_FB2,
 		MMCM_REG_CLKOUT6_2, &params);
 
@@ -366,6 +378,9 @@ static int axi_clkgen_set_rate(struct clk_hw *clk_hw,
 	axi_clkgen_mmcm_write(axi_clkgen, MMCM_REG_FILTER1, filter >> 16, 0x9900);
 	axi_clkgen_mmcm_write(axi_clkgen, MMCM_REG_FILTER2, filter, 0x9900);
 
+	pr_debug("%s: %s, done: parent_rate=%lu, rate=%lu\n", 
+			axi_clkgen->clk_hw.init->name, __func__,
+			parent_rate, rate);
 	return 0;
 }
 
@@ -505,6 +520,7 @@ static int axi_clkgen_probe(struct platform_device *pdev)
 	unsigned int i;
 	int ret;
 
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
 	if (!pdev->dev.of_node)
 		return -ENODEV;
 
@@ -522,8 +538,11 @@ static int axi_clkgen_probe(struct platform_device *pdev)
 		return PTR_ERR(axi_clkgen->base);
 
 	init.num_parents = of_clk_get_parent_count(pdev->dev.of_node);
-	if (init.num_parents < 1 || init.num_parents > 2)
+	if (init.num_parents < 1 || init.num_parents > 2) {
+		dev_err(&pdev->dev, "line%d: init.num_parents %d\n",
+                __LINE__, init.num_parents);
 		return -EINVAL;
+    }
 
 	for (i = 0; i < init.num_parents; i++) {
 		parent_names[i] = of_clk_get_parent_name(pdev->dev.of_node, i);
@@ -544,11 +563,21 @@ static int axi_clkgen_probe(struct platform_device *pdev)
 
 	axi_clkgen->clk_hw.init = &init;
 	ret = devm_clk_hw_register(&pdev->dev, &axi_clkgen->clk_hw);
-	if (ret)
+	if (ret) {
+		dev_err(&pdev->dev, "line%d: devm_clk_hw_register() %d\n",
+                __LINE__, ret);
 		return ret;
+    }
 
-	return of_clk_add_hw_provider(pdev->dev.of_node, of_clk_hw_simple_get,
+	ret = of_clk_add_hw_provider(pdev->dev.of_node, of_clk_hw_simple_get,
 				      &axi_clkgen->clk_hw);
+	if (ret) {
+		dev_err(&pdev->dev, "line%d: of_clk_add_hw_provider() %d\n",
+                __LINE__, ret);
+		return ret;
+    }
+	dev_info(&pdev->dev, "%s succeed\n", __func__);
+	return ret;
 }
 
 static int axi_clkgen_remove(struct platform_device *pdev)

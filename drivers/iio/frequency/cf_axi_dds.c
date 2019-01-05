@@ -5,7 +5,7 @@
  *
  * Licensed under the GPL-2.
  */
-
+#define DEBUG
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/errno.h>
@@ -1341,6 +1341,8 @@ static int cf_axi_dds_probe(struct platform_device *pdev)
 	int timeout = 100;
 	int ret;
 
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
+
 	id = of_match_device(cf_axi_dds_of_match, &pdev->dev);
 	if (!id || !id->data)
 		return -ENODEV;
@@ -1584,6 +1586,7 @@ static int cf_axi_dds_probe(struct platform_device *pdev)
 
 	platform_set_drvdata(pdev, indio_dev);
 
+	dev_info(&pdev->dev, "%s: succeed\n", __func__);
 	return 0;
 
 err_unconfigure_buffer:

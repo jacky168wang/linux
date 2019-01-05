@@ -260,6 +260,8 @@ static int adc_probe(struct platform_device *pdev)
 	struct resource *mem;
 	int ret;
 
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
+
 	id = of_match_node(adc_of_match, pdev->dev.of_node);
 	if (!id)
 		return -ENODEV;
@@ -318,6 +320,7 @@ static int adc_probe(struct platform_device *pdev)
 	if (ret)
 		goto err_unconfigure_ring;
 
+	dev_info(&pdev->dev, "%s: succeed\n", __func__);
 	return 0;
 
 err_unconfigure_ring:
