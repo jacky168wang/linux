@@ -7,6 +7,7 @@
  *
  * https://wiki.analog.com/resources/fpga/docs/axi_adxcvr
  */
+#define DEBUG
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/of_device.h>
@@ -525,6 +526,8 @@ static int adxcvr_probe(struct platform_device *pdev)
 	unsigned int version;
 	unsigned int synth_conf;
 	int i, ret;
+
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
 
 	st = devm_kzalloc(&pdev->dev, sizeof(*st), GFP_KERNEL);
 	if (!st)

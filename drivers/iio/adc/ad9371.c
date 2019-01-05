@@ -5,8 +5,8 @@
  *
  * Licensed under the GPL-2.
  */
-//#define DEBUG
-//#define _DEBUG
+#define DEBUG
+#define _DEBUG
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/kernel.h>
@@ -4042,7 +4042,11 @@ static int ad9371_probe(struct spi_device *spi)
 		return PTR_ERR(phy->fmc_clk);
 
 	phy->sysref_dev_clk = devm_clk_get(&spi->dev, "sysref_dev_clk");
+	//if (IS_ERR(phy->sysref_dev_clk))
+	//	return PTR_ERR(phy->sysref_dev_clk);
 	phy->sysref_fmc_clk = devm_clk_get(&spi->dev, "sysref_fmc_clk");
+	//if (IS_ERR(phy->sysref_fmc_clk))
+	//	return PTR_ERR(phy->sysref_fmc_clk);
 
 	ret = clk_prepare_enable(phy->fmc_clk);
 	if (ret)
@@ -4141,9 +4145,12 @@ static int ad9371_probe(struct spi_device *spi)
 	MYKONOS_getApiVersion(phy->mykDevice, &api_vers[0], &api_vers[1], &api_vers[2], &api_vers[3]);
 	MYKONOS_getDeviceRev(phy->mykDevice, &rev);
 
-	dev_info(&spi->dev, "%s : AD937%d Rev %d, Firmware %u.%u.%u API version: %u.%u.%u.%u successfully initialized",
+	dev_info(&spi->dev, "%s: AD937%d Rev.%d, Firmware %u.%u.%u API %u.%u.%u.%u successfully initialized",
 		 __func__, AD937x_PARTID(phy), rev, vers[0], vers[1], vers[2],
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
+
+	/* release: multiple ad9371 chips share this gpio */
+	//gpiod_put(phy->sysref_req_gpio);
 
 	return 0;
 

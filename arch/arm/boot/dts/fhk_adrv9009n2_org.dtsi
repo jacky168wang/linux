@@ -3,25 +3,28 @@
 &fmc_spi {
 
 	trx0_adrv9009n2: adrv9009-phy@2 {
+		compatible = "adi,adrv9009";
+		reg = <2>;
+
 		#address-cells = <1>;
 		#size-cells = <0>;
-		#clock-cells = <1>;
-		compatible = "adi,adrv9009";
 
 		/* SPI Setup */
-		reg = <2>;
 		spi-max-frequency = <1250000>; // 12.5M
 
 		interrupt-parent = <&gpio0>;
 		interrupts = <79 IRQ_TYPE_EDGE_RISING>; // 25 + 54
 
 		/* Clocks */
-		clocks = <&axi_adrv9009_rx_jesd>, <&axi_adrv9009_tx_jesd>,
-			<&axi_adrv9009_rx_os_jesd>, <&clk0_ad9528 4>,
-			<&clk0_ad9528 8>;
+		clocks = <&axi_adrv9009_rx_jesd_n2>, <&axi_adrv9009_tx_jesd_n2>,
+			<&axi_adrv9009_rx_os_jesd_n2>, <&clk0_ad9528 4>,
+			<&clk0_ad9528 8>, <&clk0_ad9528 0>, <&clk0_ad9528 7>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk",
-			"dev_clk", "fmc_clk";
+			"dev_clk", "fmc_clk", "sysref_dev_clk",
+			"sysref_fmc_clk";
+
 		clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";
+		#clock-cells = <1>;
 
 		/* JESD204 */
 

@@ -103,18 +103,18 @@
 		spibus-connected = <&trx0_adrv9009>;
 	};
 
-	axi_adrv9009_core_rx_obs: axi-adrv9009-rx-obs-hpc@44a20000 {
+	axi_adrv9009_core_rx_obs: axi-adrv9009-rx-obs-hpc@44a08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
-		reg = <0x44a20000 0x1000>;
+		reg = <0x44a08000 0x1000>;
 		dmas = <&rx_obs_dma 0>;
 		dma-names = "rx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009 1>;
 		clock-names = "sampl_clk"; // the name is aligned with the driver
 	};
 
-	axi_adrv9009_core_tx: axi-adrv9009-tx-hpc@44a10000 {
+	axi_adrv9009_core_tx: axi-adrv9009-tx-hpc@44a04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
-		reg = <0x44a10000 0x4000>;
+		reg = <0x44a04000 0x4000>;
 		dmas = <&tx_dma 0>;
 		dma-names = "tx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009 2>;
@@ -308,4 +308,4 @@
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
 
-#include "fhk_zc706ad9009n2_org.dtsi"
+//#include "fhk_zc706ad9009n2_org.dtsi"

@@ -497,13 +497,22 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 
 	switch (phy->spi_device_id) {
 	case ID_ADRV9009:
+#if 0
 		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
 			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
 			TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL |
 			TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY |
 			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
-
+#else
+		/* following default configuration in the TES environment */
+		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
+			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
+			TAL_PATH_DELAY |
+			TAL_LOOPBACK_RX_LO_DELAY |
+			TAL_LOOPBACK_RX_RX_QEC_INIT |
+			TAL_ORX_QEC_INIT | TAL_TX_DAC;
+#endif
 		pllLockStatus_mask = 0x7;
 		break;
 	case ID_ADRV90081:
@@ -1344,6 +1353,7 @@ static int adrv9009_phy_reg_access(struct iio_dev *indio_dev,
 enum lo_ext_info {
 	LOEXT_FREQ,
 	FHM_ENABLE,
+	FHM_HOP,
 };
 
 static ssize_t adrv9009_phy_lo_write(struct iio_dev *indio_dev,
@@ -1417,6 +1427,15 @@ static ssize_t adrv9009_phy_lo_write(struct iio_dev *indio_dev,
 			ret = -EPROTO;
 
 		break;
+	case FHM_HOP:
+		ret = kstrtoull(buf, 10, &readin);
+		if (ret)
+			return ret;
+
+		mutex_lock(&indio_dev->mlock);
+
+		ret = TALISE_setFhmHop(phy->talDevice, readin);
+		break;
 	default:
 		ret = -EINVAL;
 		break;
@@ -1448,6 +1467,9 @@ static ssize_t adrv9009_phy_lo_read(struct iio_dev *indio_dev,
 		ret = TALISE_getFhmMode(phy->talDevice, &fhm_mode);
 		val = fhm_mode.fhmEnable;
 		break;
+	case FHM_HOP:
+		ret = TALISE_getFhmRfPllFrequency(phy->talDevice, &val);
+		break;
 	default:
 		ret = 0;
 	}
@@ -1470,6 +1492,7 @@ static const struct iio_chan_spec_ext_info adrv9009_phy_ext_lo_info[] = {
 	 */
 	_ADRV9009_EXT_LO_INFO("frequency", LOEXT_FREQ),
 	_ADRV9009_EXT_LO_INFO("frequency_hopping_mode_enable", FHM_ENABLE),
+	_ADRV9009_EXT_LO_INFO("frequency_hopping_mode", FHM_HOP),
 	{ },
 };
 

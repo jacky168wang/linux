@@ -7,7 +7,7 @@
  *
  * http://wiki.analog.com/resources/fpga/xilinx/fmc/ad9467
  */
-
+#define DEBUG
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
@@ -740,6 +740,8 @@ static int axiadc_probe(struct platform_device *pdev)
 	struct axiadc_converter *conv;
 	int ret;
 
+	dev_info(&pdev->dev, "%s: enter\n", __func__);
+
 	dev_dbg(&pdev->dev, "Device Tree Probing \'%s\'\n",
 		 pdev->dev.of_node->name);
 
@@ -881,6 +883,7 @@ static int axiadc_probe(struct platform_device *pdev)
 					iio_get_debugfs_dentry(indio_dev),
 					indio_dev, &axiadc_debugfs_pncheck_fops);
 
+	dev_info(&pdev->dev, "%s: succeed\n", __func__);
 	return 0;
 
 err_unconfigure_ring:
