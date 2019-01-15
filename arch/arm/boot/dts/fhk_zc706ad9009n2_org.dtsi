@@ -59,7 +59,6 @@
 				adi,source-bus-type = <0>;
 				adi,destination-bus-width = <128>;
 				adi,destination-bus-type = <2>;
-				adi,cyclic;
 			};
 		};
 	};
@@ -72,7 +71,7 @@
 		spibus-connected = <&trx0_adrv9009n2>;
 	};
 
-	axi_adrv9009_core_rx_obs_n2: axi-adrv9009-rx-obs-hpc@44b20000 { 
+	axi_adrv9009_core_rx_obs_n2: axi-adrv9009-rx-obs-hpc@44b20000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44b20000 0x1000>;
 		dmas = <&rx_obs_dma_n2 0>;
@@ -94,7 +93,7 @@
 
 	axi_adrv9009_rx_jesd_n2: axi-jesd204-rx@44ba0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44ba0000 0x1000>;
+		reg = <0x44ba0000 0x4000>;
 
 		interrupts = <0 33 0>; // UG858, Table 7-4: IRQF2P[4] -> IRQ[65-32]
 
@@ -110,7 +109,7 @@
 
 	axi_adrv9009_tx_jesd_n2: axi-jesd204-tx@44b90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
-		reg = <0x44b90000 0x1000>;
+		reg = <0x44b90000 0x4000>;
 
 		interrupts = <0 32 0>; // UG858, Table 7-4: IRQF2P[3] -> IRQ[64-32]
 
@@ -130,7 +129,7 @@
 
   	axi_adrv9009_rx_os_jesd_n2: axi-jesd204-rx-os@44bb0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44bb0000 0x1000>;
+		reg = <0x44bb0000 0x4000>;
 
 		interrupts = <0 31 0>; // UG858, Table 7-4: IRQF2P[2] -> IRQ[63-32]
 

@@ -59,6 +59,7 @@
 				adi,source-bus-type = <0>;
 				adi,destination-bus-width = <128>;
 				adi,destination-bus-type = <2>;
+				adi,cyclic;
 			};
 		};
 	};
@@ -93,7 +94,7 @@
 
 	jesd204rx_layer2_n2: jesd204rx-layer2@44ba0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44ba0000 0x4000>;
+		reg = <0x44ba0000 0x1000>;
 
 		interrupts = <0 33 0>; // UG858, Table 7-4: IRQF2P[4] -> IRQ[65-32]
 
@@ -109,7 +110,7 @@
 
 	jesd204tx_layer2_n2: jesd204tx-layer2@44b90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
-		reg = <0x44b90000 0x4000>;
+		reg = <0x44b90000 0x1000>;
 
 		interrupts = <0 32 0>; // UG858, Table 7-4: IRQF2P[3] -> IRQ[64-32]
 
@@ -129,7 +130,7 @@
 
 	jesd204ro_layer2_n2: jesd204ro-layer2@44bb0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44bb0000 0x4000>;
+		reg = <0x44bb0000 0x1000>;
 
 		interrupts = <0 31 0>; // UG858, Table 7-4: IRQF2P[2] -> IRQ[63-32]
 

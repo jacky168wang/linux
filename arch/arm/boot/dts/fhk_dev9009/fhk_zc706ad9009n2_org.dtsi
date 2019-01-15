@@ -1,6 +1,6 @@
 
 &fpga_axi {
-	jesd204rx_dma_n2: jesd204rx-dma@7c460000 {
+	rx_dma_n2: rx-dmac@7c460000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c460000 0x10000>;
 		#dma-cells = <1>;
@@ -21,7 +21,7 @@
 		};
 	};
 
-	jesd204ro_dma_n2: jesd204ro-dma@7c4a0000  {
+	rx_obs_dma_n2: rx-obs-dmac@7c4a0000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c4a0000  0x10000>;
 		#dma-cells = <1>;
@@ -42,7 +42,7 @@
 		};
 	};
 
-	jesd204tx_dma_n2: jesd204tx-dma@7c480000 {
+	tx_dma_n2: tx-dmac@7c480000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c480000 0x10000>;
 		#dma-cells = <1>;
@@ -59,31 +59,32 @@
 				adi,source-bus-type = <0>;
 				adi,destination-bus-width = <128>;
 				adi,destination-bus-type = <2>;
+				adi,cyclic;
 			};
 		};
 	};
 
-	jesd204rx_layer3_n2: jesd204rx-layer3@44b00000 {
+	axi_adrv9009_core_rx_n2: axi-adrv9009-rx-hpc@44b00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44b00000 0x8000>;
-		dmas = <&jesd204rx_dma_n2 0>;
+		dmas = <&rx_dma_n2 0>;
 		dma-names = "rx"; // the name is aligned with the driver
 		spibus-connected = <&trx0_adrv9009n2>;
 	};
 
-	jesd204ro_layer3_n2: jesd204ro-layer3@44b20000 {
+	axi_adrv9009_core_rx_obs_n2: axi-adrv9009-rx-obs-hpc@44b20000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44b20000 0x1000>;
-		dmas = <&jesd204ro_dma_n2 0>;
+		dmas = <&rx_obs_dma_n2 0>;
 		dma-names = "rx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009n2 1>;
 		clock-names = "sampl_clk"; // the name is aligned with the driver
 	};
 
-	jesd204tx_layer3_n2: jesd204tx-layer3@44b10000 {
+	axi_adrv9009_core_tx_n2: axi-adrv9009-tx-hpc@44b10000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44b10000 0x4000>;
-		dmas = <&jesd204tx_dma_n2 0>;
+		dmas = <&tx_dma_n2 0>;
 		dma-names = "tx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009n2 2>;
 		clock-names = "sampl_clk"; // the name is aligned with the driver
@@ -91,13 +92,13 @@
 		adi,axi-pl-fifo-disable;//adi,axi-pl-fifo-enable; see "plddrbypass-gpios"
 	};
 
-	jesd204rx_layer2_n2: jesd204rx-layer2@44ba0000 {
+	axi_adrv9009_rx_jesd_n2: axi-jesd204-rx@44ba0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44ba0000 0x4000>;
+		reg = <0x44ba0000 0x1000>;
 
 		interrupts = <0 33 0>; // UG858, Table 7-4: IRQF2P[4] -> IRQ[65-32]
 
-		clocks = <&clkc 15>, <&jesd204rx_clkgen_n2>, <&jesd204rx_layer1_n2 0>;
+		clocks = <&clkc 15>, <&axi_rx_clkgen_n2>, <&axi_adrv9009_adxcvr_rx_n2 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk"; // the name is aligned with the driver
 
 		#clock-cells = <0>;
@@ -107,13 +108,13 @@
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_layer2_n2: jesd204tx-layer2@44b90000 {
+	axi_adrv9009_tx_jesd_n2: axi-jesd204-tx@44b90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
-		reg = <0x44b90000 0x4000>;
+		reg = <0x44b90000 0x1000>;
 
 		interrupts = <0 32 0>; // UG858, Table 7-4: IRQF2P[3] -> IRQ[64-32]
 
-		clocks = <&clkc 15>, <&jesd204tx_clkgen_n2>, <&jesd204tx_layer1_n2 0>;
+		clocks = <&clkc 15>, <&axi_tx_clkgen_n2>, <&axi_adrv9009_adxcvr_tx_n2 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk"; // the name is aligned with the driver
 
 		#clock-cells = <0>;
@@ -127,23 +128,23 @@
 		adi,control-bits-per-sample = <0>;
 	};
 
-	jesd204ro_layer2_n2: jesd204ro-layer2@44bb0000 {
+  	axi_adrv9009_rx_os_jesd_n2: axi-jesd204-rx-os@44bb0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44bb0000 0x4000>;
+		reg = <0x44bb0000 0x1000>;
 
 		interrupts = <0 31 0>; // UG858, Table 7-4: IRQF2P[2] -> IRQ[63-32]
 
-		clocks = <&clkc 15>, <&jesd204ro_clkgen_n2>, <&jesd204ro_layer1_n2 0>;
+		clocks = <&clkc 15>, <&axi_rx_os_clkgen_n2>, <&axi_adrv9009_adxcvr_rx_os_n2 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk"; // the name is aligned with the driver
 
 		#clock-cells = <0>;
-		clock-output-names = "jesd_ro_lane_clk_n2";
+		clock-output-names = "jesd_rx_os_lane_clk_n2";
 
 		adi,octets-per-frame = <4>;
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_clkgen_n2: jesd204tx-clkgen@43c30000  {
+	axi_tx_clkgen_n2: axi-clkgen@43c30000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c30000 0x10000>;
 		#clock-cells = <0>;
@@ -151,7 +152,7 @@
 		clock-output-names = "axi_tx_clkgen_n2";
 	};
 
-	jesd204rx_clkgen_n2: jesd204rx-clkgen@43c40000  {
+	axi_rx_clkgen_n2: axi-clkgen@43c40000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c40000 0x10000>;
 		#clock-cells = <0>;
@@ -159,21 +160,21 @@
 		clock-output-names = "axi_rx_clkgen_n2";
 	};
 
-	jesd204ro_clkgen_n2: jesd204ro-clkgen@43c50000  {
+	axi_rx_os_clkgen_n2: axi-clkgen@43c50000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c50000 0x10000>;
 		#clock-cells = <0>;
 		clocks = <&clk0_ad9528 8>;
-		clock-output-names = "axi_ro_clkgen_n2";
+		clock-output-names = "axi_rx_os_clkgen_n2";
 	};
 
-	jesd204rx_layer1_n2: jesd204rx-layer1@44b60000 {
+	axi_adrv9009_adxcvr_rx_n2: axi-adxcvr-rx@44b60000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44b60000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204rx_clkgen_n2 0>;
+		clocks = <&clk0_ad9528 8>, <&axi_rx_clkgen_n2 0>;
 		clock-names = "conv", "div40"; // the name is aligned with the driver
 
 		#clock-cells = <1>;
@@ -185,17 +186,17 @@
 		adi,use-cpll-enable;
 	};
 
-	jesd204ro_layer1_n2: jesd204ro-layer1@44b50000 {
+	axi_adrv9009_adxcvr_rx_os_n2: axi-adxcvr-rx-os@44b50000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44b50000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204ro_clkgen_n2>;
+		clocks = <&clk0_ad9528 8>, <&axi_rx_os_clkgen_n2>;
 		clock-names = "conv", "div40"; // the name is aligned with the driver
 
 		#clock-cells = <1>;
-		clock-output-names = "ro_gt_clk_n2", "ro_out_clk_n2";
+		clock-output-names = "rx_os_gt_clk_n2", "rx_os_out_clk_n2";
 
 		adi,sys-clk-select = <0>;
 		adi,out-clk-select = <3>;
@@ -203,13 +204,13 @@
 		adi,use-cpll-enable;
 	};
 
-	jesd204tx_layer1_n2: jesd204tx-layer1@44b80000 {
+	axi_adrv9009_adxcvr_tx_n2: axi-adxcvr-tx@44b80000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44b80000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204tx_clkgen_n2>;
+		clocks = <&clk0_ad9528 8>, <&axi_tx_clkgen_n2>;
 		clock-names = "conv", "div40"; // the name is aligned with the driver
 
 		#clock-cells = <1>;
@@ -226,7 +227,7 @@
 
 #define fmc_spi spi0
 
-#include "fhk_adrv9009n2.dtsi"
+#include "fhk_adrv9009n2_org.dtsi"
 
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
@@ -269,6 +270,6 @@
 };
 
 
-&jesd204tx_layer3_n2 {
+&axi_adrv9009_core_tx_n2 {
 	plddrbypass-gpios = <&gpio0 114 0>;
 };

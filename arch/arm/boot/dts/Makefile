@@ -1009,8 +1009,6 @@ dtb-$(CONFIG_ARCH_ZYNQ) += \
 	zynq-zc706-adv7511-adrv9009.dtb \
 	fhk_zc706ad9009.dtb \
 	fhk_zc706ad9009_org.dtb \
-	fhk_zc706ad9009_2018r2.dtb \
-	fhk_zc706ad9009_2018r2org.dtb \
 	zynq-zc770-xm010.dtb \
 	zynq-zc770-xm011.dtb \
 	zynq-zc770-xm012.dtb \

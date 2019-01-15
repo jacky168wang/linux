@@ -90,7 +90,6 @@
 				adi,source-bus-type = <0>;
 				adi,destination-bus-width = <128>;
 				adi,destination-bus-type = <2>;
-				adi,cyclic;
 			};
 		};
 	};
@@ -103,18 +102,18 @@
 		spibus-connected = <&trx0_adrv9009>;
 	};
 
-	axi_adrv9009_core_rx_obs: axi-adrv9009-rx-obs-hpc@44a20000 {
+	axi_adrv9009_core_rx_obs: axi-adrv9009-rx-obs-hpc@44a08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
-		reg = <0x44a20000 0x1000>;
+		reg = <0x44a08000 0x1000>;
 		dmas = <&rx_obs_dma 0>;
 		dma-names = "rx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009 1>;
 		clock-names = "sampl_clk"; // the name is aligned with the driver
 	};
 
-	axi_adrv9009_core_tx: axi-adrv9009-tx-hpc@44a10000 {
+	axi_adrv9009_core_tx: axi-adrv9009-tx-hpc@44a04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
-		reg = <0x44a10000 0x4000>;
+		reg = <0x44a04000 0x4000>;
 		dmas = <&tx_dma 0>;
 		dma-names = "tx"; // the name is aligned with the driver
 		clocks = <&trx0_adrv9009 2>;
@@ -125,7 +124,7 @@
 
 	axi_adrv9009_rx_jesd: axi-jesd204-rx@44aa0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44aa0000 0x1000>;
+		reg = <0x44aa0000 0x4000>;
 
 		interrupts = <0 54 0>; // UG858, Table 7-4: IRQF2P[10] -> IRQ[86-32]
 
@@ -141,7 +140,7 @@
 
 	axi_adrv9009_tx_jesd: axi-jesd204-tx@44a90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
-		reg = <0x44a90000 0x1000>;
+		reg = <0x44a90000 0x4000>;
 
 		interrupts = <0 53 0>; // UG858, Table 7-4: IRQF2P[9] -> IRQ[85-32]
 
@@ -161,7 +160,7 @@
 
 	axi_adrv9009_rx_os_jesd: axi-jesd204-rx-os@44ab0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
-		reg = <0x44ab0000 0x1000>;
+		reg = <0x44ab0000 0x4000>;
 
 		interrupts = <0 52 0>; // UG858, Table 7-4: IRQF2P[8] -> IRQ[84-32]
 
@@ -308,4 +307,4 @@
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
 
-#include "fhk_zc706ad9009n2_org.dtsi"
+//#include "fhk_zc706ad9009n2_org.dtsi"
