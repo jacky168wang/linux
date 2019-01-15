@@ -512,9 +512,9 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
 /*************************************************************************/
 #define RFFC_CTL_BY_SW
 //#define RFIC_CTL_MODE_PIN
-/* (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=false) means 
+/* (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=false) means
 		TXLOL_ECAL with RFIC SPI mode,
-   (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means 
+   (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means
    		TXLOL_ECAL with RFIC PIN mode */
 #if defined(RFIC_CTL_MODE_PIN) && !defined(RFFC_CTL_BY_SW)
 #error "RFIC pin mode means RFFC has to been operated meanwhile"
@@ -539,7 +539,7 @@ static int txlol_ecal_tx1orx2(struct adrv9009_rf_phy *phy)
 	/* ECAL for UA_TX1<->UA_ORX2, Tx1EN and ORx2EN pins are controlled by FPGA */
 #ifdef RFFC_CTL_BY_SW
 	writel(0x0554fc08, phy->tddc_regs+TDDC_REG_OUT);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__, 
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -619,7 +619,7 @@ static int txlol_ecal_tx2orx2(struct adrv9009_rf_phy *phy)
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 #ifdef RFFC_CTL_BY_SW
 	writel(0x0554bc0c, phy->tddc_regs+TDDC_REG_OUT);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__, 
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -701,7 +701,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	}
 #endif
 #ifdef RFFC_CTL_BY_SW
-	if (NULL == request_mem_region(FHK_FPGA_TDDC_IO_BASE, 
+	if (NULL == request_mem_region(FHK_FPGA_TDDC_IO_BASE,
 			FHK_FPGA_TDDC_IO_SIZE, phy->indio_dev->name)) {
 		dev_err(&phy->spi->dev, "%s:%d Couldn't lock memory region 0x%08X+0x%x",
 			__func__, __LINE__, FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
@@ -716,7 +716,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 
 	/* FPGA-RFES-TDDC: io_config_manually enable
 	writel(0x00000000, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__, 
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL));*/
 #endif
@@ -747,7 +747,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	}
 #endif
 #ifdef RFFC_CTL_BY_SW
-	/* at last, ALWAYS set RFIC into pin mode 
+	/* at last, ALWAYS set RFIC into pin mode
 	   (ignore RFFC_CTL_BY_SW and RFIC_CTL_MODE_PIN) */
 	ret = TALISE_setRadioCtlPinMode(phy->talDevice,
 		TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
@@ -794,15 +794,15 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 
 	switch (phy->spi_device_id) {
 	case ID_ADRV9009:
-		//0xE5DEF
+	case ID_ADRV9009_X2:
 		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
 			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
 			TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL |
 			TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY |
 			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
-
 		/* JACKY-20190307: TxLOL_ICAL would incorrect TX_LOL_ECAL result */
+		//initCalMask == 0xE5DEF right now
 		//initCalMask &= ~TAL_ADC_STITCHING; // TES: 0x65DEF
 		//initCalMask &= ~TAL_TX_LO_LEAKAGE_INTERNAL;
 		initCalMask |= TAL_TX_LO_LEAKAGE_EXTERNAL;
@@ -5147,10 +5147,10 @@ static int adrv9009_probe(struct spi_device *spi)
 	else
 		phy->jesd_rx_clk = clk;
 
-	if (id == ID_ADRV9009)
+	if (id == ID_ADRV9009 || id == ID_ADRV9009_X2)
 		phy->jesd_tx_clk = devm_clk_get(&spi->dev, "jesd_tx_clk");
 
-	if (id == ID_ADRV9009 || id == ID_ADRV90082)
+	if (id == ID_ADRV9009 || id == ID_ADRV9009_X2 || id == ID_ADRV90082)
 		phy->jesd_rx_os_clk = devm_clk_get(&spi->dev, "jesd_rx_os_clk");
 
 	phy->dev_clk = devm_clk_get(&spi->dev, "dev_clk");
@@ -5175,6 +5175,7 @@ static int adrv9009_probe(struct spi_device *spi)
 	if (of_property_read_string(spi->dev.of_node, "arm-firmware-name", &name))
 		switch (id) {
 		case ID_ADRV9009:
+		case ID_ADRV9009_X2:
 			name = FIRMWARE;
 			break;
 		case ID_ADRV90081:
@@ -5261,6 +5262,7 @@ static int adrv9009_probe(struct spi_device *spi)
 
 	switch (id) {
 	case ID_ADRV9009:
+	case ID_ADRV9009_X2:
 		indio_dev->info = &adrv9009_phy_info;
 		indio_dev->channels = adrv9009_phy_chan;
 		indio_dev->num_channels = ARRAY_SIZE(adrv9009_phy_chan);
@@ -5366,6 +5368,7 @@ static const struct spi_device_id adrv9009_id[] = {
 	{"adrv9009", ID_ADRV9009},
 	{"adrv9008-1", ID_ADRV90081},
 	{"adrv9008-2", ID_ADRV90082},
+	{"adrv9009-x2", ID_ADRV9009_X2},
 	{}
 };
 MODULE_DEVICE_TABLE(spi, adrv9009_id);
