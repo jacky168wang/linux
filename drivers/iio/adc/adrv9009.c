@@ -505,7 +505,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
 #else
-		/* following default configuration in the TES environment */
+		/* JACKY-20190123: follow the configuration in the TES environment */
 		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
 			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
 			TAL_PATH_DELAY |
@@ -724,7 +724,11 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*******************************/
 	/**Set RF PLL LO Frequencies ***/
 	/*******************************/
+#if 0	/* JACKY-20190228 */
 	phy->current_loopBandwidth_kHz[0] = 50;
+#else
+	phy->current_loopBandwidth_kHz[0] = 300;
+#endif
 
 	ret = TALISE_setRfPllLoopFilter(phy->talDevice, phy->current_loopBandwidth_kHz[0],
 				  phy->loopFilter_stability);

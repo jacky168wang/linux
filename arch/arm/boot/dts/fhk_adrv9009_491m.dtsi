@@ -46,7 +46,7 @@
 
 		/* PLL2 config */
 		adi,pll2-vco-div-m1 = <3>; /* use 5 for 184320000 output device clock */
-		adi,pll2-n2-div = <10>; /* N / M1 */
+		adi,pll2-n2-div = <10>; /* N / M1, 4*Bdiv + Adiv //Bdiv valid range (3 to 63), Adiv valid range (0-3) */
 		adi,pll2-r1-div = <1>;
 		adi,pll2-charge-pump-current-nA = <805000>;
 
@@ -161,8 +161,8 @@
 		interrupts = <105 IRQ_TYPE_EDGE_RISING>; // adrv9009_gpint=51 + 54
 
 		/* Clocks */
-		clocks = <&axi_adrv9009_rx_jesd>, <&axi_adrv9009_tx_jesd>,
-			<&axi_adrv9009_rx_os_jesd>, <&clk0_ad9528 4>,
+		clocks = <&jesd204rx_layer2>, <&jesd204tx_layer2>,
+			<&jesd204ro_layer2>, <&clk0_ad9528 4>,
 			<&clk0_ad9528 8>, <&clk0_ad9528 5>, <&clk0_ad9528 7>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk",
 			"dev_clk", "fmc_clk", "sysref_dev_clk",
@@ -197,9 +197,9 @@
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <4>;
+		adi,jesd204-framer-b-m = <2>;
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <4>;
+		adi,jesd204-framer-b-f = <2>;
 		adi,jesd204-framer-b-np = <16>;
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;
@@ -245,15 +245,15 @@
 
 		adi,rx-profile-rx-fir-gain_db = <(-6)>;
 		adi,rx-profile-rx-fir-num-fir-coefs = <48>;
-		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-8) (-22) (32) (50) (-68) (-106) (141) (199) (-258) (-352) (430) (572) (-691) (-903) (1069) (1392) (-1644) (-2172) (2569) (3574) (-4364) (-7129) (9355) (31095) (31095) (9355) (-7129) (-4364) (3574) (2569) (-2172) (-1644) (1392) (1069) (-903) (-691) (572) (430) (-352) (-258) (199) (141) (-106) (-68) (50) (32) (-22) (-8)>;
+		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-7) (-23) (33) (50) (-70) (-110) (144) (205) (-259) (-356) (437) (581) (-698) (-916) (1082) (1415) (-1655) (-2209) (2567) (3615) (-4351) (-7169) (9329) (31129) (31129) (9329) (-7169) (-4351) (3615) (2567) (-2209) (-1655) (1415) (1082) (-916) (-698) (581) (437) (-356) (-259) (205) (144) (-110) (-70) (50) (33) (-23) (-7)>;
 
 		adi,rx-profile-rx-fir-decimation = <2>;
 		adi,rx-profile-rx-dec5-decimation = <4>;
-		adi,rx-profile-rhb1-decimation = <2>;
-		adi,rx-profile-rx-output-rate_khz = <122880>;
-		adi,rx-profile-rf-bandwidth_hz = <100000000>;
-		adi,rx-profile-rx-bbf3d-bcorner_khz = <100000>;
-		adi,rx-profile-rx-adc-profile = /bits/ 16 <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,rx-profile-rhb1-decimation = <1>;
+		adi,rx-profile-rx-output-rate_khz = <245760>;
+		adi,rx-profile-rf-bandwidth_hz = <200000000>;
+		adi,rx-profile-rx-bbf3d-bcorner_khz = <200000>;
+		adi,rx-profile-rx-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>; /* pointer to custom ADC profile */
 		adi,rx-profile-rx-ddc-mode = <0>;
 
 		adi,rx-nco-shifter-band-a-input-band-width_khz = <0>;
@@ -278,19 +278,19 @@
 
 		/* ORX */
 
-		adi,orx-profile-rx-fir-gain_db = <(-6)>;
-		adi,orx-profile-rx-fir-num-fir-coefs = <48>;
-		adi,orx-profile-rx-fir-coefs = /bits/ 16  <(-9) (-18) (31) (42) (-65) (-89) (132) (168) (-240) (-298) (396) (486) (-632) (-770) (968) (1163) (-1530) (-1862) (2369) (3051) (-4066) (-5983) (9689) (29830) (29830) (9689) (-5983) (-4066) (3051) (2369) (-1862) (-1530) (1163) (968) (-770) (-632) (486) (396) (-298) (-240) (168) (132) (-89) (-65) (42) (31) (-18) (-9)>;
-		adi,orx-profile-rx-fir-decimation = <2>;
+		adi,orx-profile-rx-fir-gain_db = <6>;
+		adi,orx-profile-rx-fir-num-fir-coefs = <24>;
+		adi,orx-profile-rx-fir-coefs = /bits/ 16 <(61) (-9) (8) (-6) (-2) (12) (-55) (91) (-192) (460) (-1719) (19205) (-1719) (460) (-192) (91) (-55) (12) (-2) (-6) (8) (-9) (61) (0)>;
+		adi,orx-profile-rx-fir-decimation = <1>;
 		adi,orx-profile-rx-dec5-decimation = <4>;
-		adi,orx-profile-rhb1-decimation = <2>;
-		adi,orx-profile-orx-output-rate_khz = <122880>;
-		adi,orx-profile-rf-bandwidth_hz = <100000000>;
+		adi,orx-profile-rhb1-decimation = <1>;
+		adi,orx-profile-orx-output-rate_khz = <491520>;
+		adi,orx-profile-rf-bandwidth_hz = <450000000>;
 		adi,orx-profile-rx-bbf3d-bcorner_khz = <225000>;
-		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16 <155 163 181 90 1280 1254 1572 340 1431 142 973 8 48 47 36 205 0 0 0 0 51 0 0 6 24 0 0 6 24 0 25 27 0 0 25 27 0 0 165 44 15 905>;
+		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <124 131 154 90 1280 2779 1986 0 1037 839 988 109 11 15 28 179 0 0 0 0 45 0 0 0 24 0 0 0 24 0 25 27 0 0 25 27 0 0 165 44 15 905>;
 		adi,orx-profile-orx-ddc-mode = <0>;
-		adi,orx-profile-orx-merge-filter = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0>;
+		adi,orx-profile-orx-merge-filter = /bits/ 16 <(-167) 419 (-208) (-498) 968 (-320) (-1273) 2154 (-402) (-4155) 9170 21413>;
 
 		adi,orx-gain-control-gain-mode = <0>;
 		adi,orx-gain-control-orx1-gain-index = <255>;
@@ -306,38 +306,40 @@
 
 		/* TX */
 
-		adi,tx-profile-tx-fir-gain_db = <6>;
-		adi,tx-profile-tx-fir-num-fir-coefs = <80>;
-		adi,tx-profile-tx-fir-coefs = /bits/ 16  <(0) (0) (0) (1) (0) (-3) (1) (7) (-3) (-13) (7) (25) (-14) (-42) (27) (69) (-46) (-107) (74) (160) (-115) (-229) (184) (336) (-264) (-468) (382) (653) (-538) (-904) (754) (1269) (-1056) (-1842) (1486) (2879) (-2031) (-4846) (3816) (16221) (16221) (3816) (-4846) (-2031) (2879) (1486) (-1842) (-1056) (1269) (754) (-904) (-538) (653) (382) (-468) (-264) (336) (184) (-229) (-115) (160) (74) (-107) (-46) (69) (27) (-42) (-14) (25) (7) (-13) (-3) (7) (1) (-3) (0) (1) (0) (0) (0)>;
+		adi,tx-profile-tx-fir-gain_db = <0>;
+		adi,tx-profile-tx-fir-num-fir-coefs = <20>;
+		adi,tx-profile-tx-fir-coefs = /bits/ 16  <(-3) (9) (-28) (69) (-131) (246) (-507) (1182) (-2648) (19449) (-2648) (1182) (-507) (246) (-131) (69) (-28) (9) (-3) (0)>;
 
 		adi,tx-profile-dac-div = <1>;
 
-		adi,tx-profile-tx-fir-interpolation = <2>;
+		adi,tx-profile-tx-fir-interpolation = <1>;
 		adi,tx-profile-thb1-interpolation = <2>;
 		adi,tx-profile-thb2-interpolation = <2>;
-		adi,tx-profile-thb3-interpolation = <2>;
+		adi,tx-profile-thb3-interpolation = <1>;
 		adi,tx-profile-tx-int5-interpolation = <1>;
-		adi,tx-profile-tx-input-rate_khz = <122880>;
-		adi,tx-profile-primary-sig-bandwidth_hz = <50000000>;
-		adi,tx-profile-rf-bandwidth_hz = <100000000>;
-		adi,tx-profile-tx-dac3d-bcorner_khz = <187000>;
-		adi,tx-profile-tx-bbf3d-bcorner_khz = <56000>;
-		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,tx-profile-tx-input-rate_khz = <491520>;
+		adi,tx-profile-primary-sig-bandwidth_hz = <100000000>;
+		adi,tx-profile-rf-bandwidth_hz = <450000000>;
+		adi,tx-profile-tx-dac3d-bcorner_khz = <450000>;
+		adi,tx-profile-tx-bbf3d-bcorner_khz = <225000>;
+		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <(212) (140) (175) (90) (1280) (699) (1304) (59) (1343) (33) (913) (27) (48) (48) (34) (192) (0) (0) (0) (0) (48) (0) (7) (6) (42) (0) (7) (6) (42) (0) (25) (27) (0) (0) (25) (27) (0) (0) (165) (44) (31) (905)>;
 
 		adi,tx-settings-deframer-sel = <0>;
 		adi,tx-settings-tx-channels = <3>;
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;/* 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO */
 
 		/* Clocks */
 
-		adi,dig-clocks-device-clock_khz = <122880>;
+		adi,dig-clocks-device-clock_khz = <122880>;/* JACKY-20190228: it means changes for AD9528 */
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
-		adi,dig-clocks-clk-pll-hs-div = <1>;
-		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;
+		adi,dig-clocks-clk-pll-hs-div = <1>;/* JACKY-20190228: TAL_HSDIV_2P5 */
+		adi,dig-clocks-rf-pll-use-external-lo = <0>; /* TES.py: 1, 0 */
+		adi,dig-clocks-rf-pll-phase-sync-mode = <3>; /* 0->3 Enable RFPLL phase sync init and track continuously */
+		adi,trx-pll-lo-frequency_hz = <3500000000>;/* JACKY-20190228: new per the driver codes */
+		//adi,aux-pll-lo-frequency_hz = <>;/* JACKY-20190228: new per the driver codes */
 
 		/* AGC */
 
@@ -345,7 +347,7 @@
 		adi,rxagc-peak-agc-under-range-mid-interval = <2>;
 		adi,rxagc-peak-agc-under-range-high-interval = <4>;
 		adi,rxagc-peak-apd-high-thresh = <39>;
-		adi,rxagc-peak-apd-low-gain-mode-high-thresh = <36>;
+		adi,rxagc-peak-apd-low-gain-mode-high-thresh = <49>;
 		adi,rxagc-peak-apd-low-thresh = <23>;
 		adi,rxagc-peak-apd-low-gain-mode-low-thresh = <19>;
 		adi,rxagc-peak-apd-upper-thresh-peak-exceeded-cnt = <6>;
@@ -354,7 +356,7 @@
 		adi,rxagc-peak-apd-gain-step-recovery = <2>;
 		adi,rxagc-peak-enable-hb2-overload = <1>;
 		adi,rxagc-peak-hb2-overload-duration-cnt = <1>;
-		adi,rxagc-peak-hb2-overload-thresh-cnt = <4>;
+		adi,rxagc-peak-hb2-overload-thresh-cnt = <1>;
 		adi,rxagc-peak-hb2-high-thresh = <181>;
 		adi,rxagc-peak-hb2-under-range-low-thresh = <45>;
 		adi,rxagc-peak-hb2-under-range-mid-thresh = <90>;
@@ -367,7 +369,7 @@
 		adi,rxagc-peak-hb2-gain-step-attack = <4>;
 		adi,rxagc-peak-hb2-overload-power-mode = <1>;
 		adi,rxagc-peak-hb2-ovrg-sel = <0>;
-		adi,rxagc-peak-hb2-thresh-config = <3>;
+		adi,rxagc-peak-hb2-thresh-config = <0>;
 
 		adi,rxagc-power-power-enable-measurement = <1>;
 		adi,rxagc-power-power-use-rfir-out = <1>;
@@ -390,20 +392,20 @@
 		adi,rxagc-agc-rx1-min-gain-index = <195>;
 		adi,rxagc-agc-rx2-max-gain-index = <255>;
 		adi,rxagc-agc-rx2-min-gain-index = <195>;
-		adi,rxagc-agc-gain-update-counter_us = <250>;
+		adi,rxagc-agc-gain-update-counter_us = <30720>;/* AGC gain update time in us */
 		adi,rxagc-agc-rx1-attack-delay = <10>;
 		adi,rxagc-agc-rx2-attack-delay = <10>;
 		adi,rxagc-agc-slow-loop-settling-delay = <16>;
 		adi,rxagc-agc-low-thresh-prevent-gain = <0>;
 		adi,rxagc-agc-change-gain-if-thresh-high = <1>;
-		adi,rxagc-agc-peak-thresh-gain-control-mode = <1>;
+		adi,rxagc-agc-peak-thresh-gain-control-mode = <0>;
 		adi,rxagc-agc-reset-on-rxon = <0>;
 		adi,rxagc-agc-enable-sync-pulse-for-gain-counter = <0>;
-		adi,rxagc-agc-enable-ip3-optimization-thresh = <0>;
+		adi,rxagc-agc-enable-ip3-optimization-thresh = <1>;
 		adi,rxagc-ip3-over-range-thresh = <31>;
 		adi,rxagc-ip3-over-range-thresh-index = <246>;
 		adi,rxagc-ip3-peak-exceeded-cnt = <4>;
-		adi,rxagc-agc-enable-fast-recovery-loop = <0>;
+		adi,rxagc-agc-enable-fast-recovery-loop = <1>;
 
 
 		/* Misc */
@@ -469,13 +471,13 @@
 		adi,orx-lo-cfg-gpio-select = <19>;
 
 		adi,fhm-config-fhm-gpio-pin = <0>;
-		adi,fhm-config-fhm-min-freq_mhz = <100>;
-		adi,fhm-config-fhm-max-freq_mhz = <100>;
+		adi,fhm-config-fhm-min-freq_mhz = <2400>;
+		adi,fhm-config-fhm-max-freq_mhz = <2500>;
 
 		adi,fhm-mode-fhm-enable = <0>;
 		adi,fhm-mode-enable-mcs-sync = <0>;
 		adi,fhm-mode-fhm-trigger-mode = <0>;
-		adi,fhm-mode-fhm-exit-mode = <0>;
+		adi,fhm-mode-fhm-exit-mode = <1>;
 		adi,fhm-mode-fhm-init-frequency_hz = <2450000000>;
 
 		adi,rx1-gain-ctrl-pin-inc-step = <1>;
@@ -505,8 +507,8 @@
 		adi,tx-pa-protection-tx1-power-threshold = <4096>;
 		adi,tx-pa-protection-tx2-power-threshold = <4096>;
 		adi,tx-pa-protection-peak-count = <4>;
-		adi,tx-pa-protection-tx1-peak-threshold = <130>;
-		adi,tx-pa-protection-tx2-peak-threshold = <130>;
+		adi,tx-pa-protection-tx1-peak-threshold = <140>;
+		adi,tx-pa-protection-tx2-peak-threshold = <140>;
 	};
 };
 
