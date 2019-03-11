@@ -59,6 +59,13 @@
 			gpios = <&gpio0 59 0>;
 		};*/
 	};
+
+	fpga_axi1: fpga-axi@1 {
+		compatible = "simple-bus";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		ranges;
+	};
 };
 
 &gem0 {

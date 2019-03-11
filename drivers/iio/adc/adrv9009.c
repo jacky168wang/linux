@@ -506,12 +506,13 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
 #else
 		/* JACKY-20190123: follow the configuration in the TES environment */
+		/* JACKY-20190307: TO BE verified!!! */
 		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
 			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
-			TAL_PATH_DELAY |
-			TAL_LOOPBACK_RX_LO_DELAY |
-			TAL_LOOPBACK_RX_RX_QEC_INIT |
-			TAL_ORX_QEC_INIT | TAL_TX_DAC;
+			TAL_PATH_DELAY |	/* internal TX_LO would incorrect external TX_LO result */
+			TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY |
+			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
+			TAL_ORX_QEC_INIT | TAL_TX_DAC | TAL_ADC_STITCHING;
 #endif
 		pllLockStatus_mask = 0x7;
 		break;
@@ -785,6 +786,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		goto out_disable_tx_clk;
 	}
 
+#if 0
 	/*************************************************************************/
 	/*****  TALISE ARM Initialization External LOL Calibrations with PA  *****/
 	/*************************************************************************/
@@ -802,11 +804,11 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
 				__func__, __LINE__, errorFlag);
 	}
+#endif
 
 	/***************************************************/
 	/**** Enable Talise JESD204B Framer ***/
 	/***************************************************/
-
 	if (!IS_ERR_OR_NULL(phy->jesd_rx_clk) && phy->talInit.jesd204Settings.framerA.M) {
 		ret = TALISE_enableFramerLink(phy->talDevice, TAL_FRAMER_A, 0);
 		if (ret != TALACT_NO_ACTION) {
@@ -826,7 +828,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		/**** Enable SYSREF to Talise JESD204B Framer ***/
 		/*************************************************/
 		/*** < User: Make sure SYSREF is stopped/disabled > ***/
-
 		ret = TALISE_enableSysrefToFramer(phy->talDevice, TAL_FRAMER_A, 1);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -866,6 +867,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_tx_clk;
 		}
 	}
+
 	/***************************************************/
 	/**** Enable  Talise JESD204B Deframer ***/
 	/***************************************************/
@@ -896,8 +898,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/*** < User Sends SYSREF Here > ***/
-
-
 	adrv9009_sysref_req(phy, SYSREF_CONT_ON);
 
 	if (has_rx_and_en(phy)) {
@@ -916,9 +916,8 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		}
 	}
 
-	adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
-
 	/*** < User Sends SYSREF Here > ***/
+	adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
 
 	/*** < Insert User JESD204B Sync Verification Code Here > ***/
 
@@ -952,6 +951,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		if ((framerStatus & 0x07) != 0x05)
 			dev_warn(&phy->spi->dev, "TAL_FRAMER_A framerStatus 0x%X", framerStatus);
 	}
+
 	/************************************/
 	/**** Check Talise Framer Status ***/
 	/************************************/
@@ -968,6 +968,26 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/*** < User: When links have been verified, proceed > ***/
+
+#if 1
+	/*************************************************************************/
+	/*****	TALISE ARM Initialization External LOL Calibrations with PA  *****/
+	/*************************************************************************/
+	/*** < Action: Please ensure PA is enabled operational at this time > ***/
+	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
+		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
+		if (ret != TALACT_NO_ACTION)
+			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+
+		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
+		if (ret != TALACT_NO_ACTION)
+			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+
+		if (errorFlag)
+			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
+				__func__, __LINE__, errorFlag);
+	}
+#endif
 
 	/***********************************************
 	 * Allow Rx1/2 QEC tracking and Tx1/2 QEC       *
@@ -998,6 +1018,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_obs_rx_clk;
 		}
 	}
+
 	/* Function to turn radio on, Enables transmitters and receivers */
 	/* that were setup during TALISE_initialize() */
 	ret = TALISE_radioOn(phy->talDevice);
@@ -1006,7 +1027,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		ret = -EFAULT;
 		goto out_disable_obs_rx_clk;
 	}
-
 
 	if (has_rx(phy))
 		clk_set_rate(phy->clks[RX_SAMPL_CLK],
