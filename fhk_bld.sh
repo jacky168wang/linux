@@ -67,8 +67,8 @@ export CROSS_COMPILE=arm-linux-gnueabihf-
 # BBU ... eCPRI ... 10GEth_RX <=
 #*******************************************************************************
 
-BRANCH=fhk_a10ad9371
-#BRANCH=fhk_zc706ad9009
+BRANCH=fhk_a10ad9371    # tracing "adi-linux:origin/altera4.9"
+#BRANCH=fhk_zc706ad9009 # tracing "adi-linux:origin/2018_R2"
 
 #git checkout adrv9009_zc706
 #OUT_DIR=../out_adrv9009_zc706
