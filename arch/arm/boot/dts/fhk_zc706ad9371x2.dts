@@ -30,8 +30,8 @@
 	status = "okay";
 };
 
-#include "facc-zc706ad9371n1.dtsi"
-#include "facc-zc706ad9371n2.dtsi"
+#include "fhk_zc706ad9371n1.dtsi"
+#include "fhk_zc706ad9371n2.dtsi"
 
 // ad9371_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59

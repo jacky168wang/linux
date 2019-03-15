@@ -6,7 +6,8 @@
  *
  * Licensed under the GPL-2.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/clk.h>
 #include <linux/device.h>
 #include <linux/dma-mapping.h>

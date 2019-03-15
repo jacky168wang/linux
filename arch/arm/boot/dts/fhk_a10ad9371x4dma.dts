@@ -113,8 +113,8 @@
 	};
 };
 
-#include "facc-a10ad9528.dtsi"
-#include "facc-a10ad9371n1dma.dtsi"
-#include "facc-a10ad9371n2dma.dtsi"
-#include "facc-a10ad9371n3dma.dtsi"
-#include "facc-a10ad9371n4dma.dtsi"
+#include "fhk_a10ad9528.dtsi"
+#include "fhk_a10ad9371n1dma.dtsi"
+#include "fhk_a10ad9371n2dma.dtsi"
+#include "fhk_a10ad9371n3dma.dtsi"
+#include "fhk_a10ad9371n4dma.dtsi"

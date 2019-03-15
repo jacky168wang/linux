@@ -693,13 +693,13 @@ dtb-$(CONFIG_ARCH_SHMOBILE_MULTI) += \
 	r8a7794-silk.dtb \
 	sh73a0-kzm9g.dtb
 dtb-$(CONFIG_ARCH_SOCFPGA) += \
-	socfpga_arria5_socdk.dtb \
+	fhk_a10ad9371x2.dtb \
+	fhk_a10ad9371x4dma.dtb \
 	socfpga_arria10_socdk_nand.dtb \
 	socfpga_arria10_socdk_qspi.dtb \
 	socfpga_arria10_socdk_sdmmc.dtb \
-	facc-a10ad9371x2.dtb \
-	facc-a10ad9371x4dma.dtb \
-	socfpga_arria10_swvp.dtb \
+	socfpga_arria10_swvp.dtb
+	#socfpga_arria5_socdk.dtb \
 	socfpga_cyclone5_mcvevk.dtb \
 	socfpga_cyclone5_socdk.dtb \
 	socfpga_cyclone5_de0_sockit.dtb \

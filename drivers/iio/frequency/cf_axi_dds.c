@@ -5,7 +5,8 @@
  *
  * Licensed under the GPL-2.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/errno.h>

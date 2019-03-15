@@ -256,7 +256,7 @@
 
 #define fmc_spi spi0
 
-#include "facc-adrv9009.dtsi"
+#include "fhk_adrv9009.dtsi"
 
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
