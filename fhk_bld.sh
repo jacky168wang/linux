@@ -1,9 +1,7 @@
 #!/bin/sh
-
 #arm_cc
 export ARCH=arm
 export CROSS_COMPILE=arm-linux-gnueabihf-
-
 #*******************************************************************************
 #                   "fhk_a10ad9371" SDR-system architecture
 #*******************************************************************************
@@ -67,26 +65,28 @@ export CROSS_COMPILE=arm-linux-gnueabihf-
 # BBU ... eCPRI ... 10GEth_RX <=
 #*******************************************************************************
 
-BRANCH=fhk_a10ad9371    # tracing "adi-linux:origin/altera4.9"
-#BRANCH=fhk_zc706ad9009 # tracing "adi-linux:origin/2018_R2"
+#TARGET=fhk_a10ad9371
+TARGET=fhk_zc706ad9009
 
-#git checkout adrv9009_zc706
-#OUT_DIR=../out_adrv9009_zc706
-#make zynq_xcomm_adv7511_defconfig O=$OUT_DIR
-#make zynq-zc706-adv7511-adrv9009.dtb O=$OUT_DIR
+OUT_DIR=../out_${TARGET}
 
-#git checkout ${BRANCH}
-OUT_DIR=../out_${BRANCH}
-make ${BRANCH}_defconfig O=${OUT_DIR}
-if [ ${BRANCH} != "fhk_a10ad9371" ]; then
-    #make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR} KCFLAGS=-DDEBUG
-    make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR}
-    make ${BRANCH}.dtb O=${OUT_DIR}
-else
+if [ ${TARGET} = "fhk_a10ad9371" ]; then
+    git checkout fhk_altera4.9 # tracing "adi-linux:origin/altera4.9"
+
+    make ${TARGET}_defconfig O=${OUT_DIR}
     #make all -j5 O=${OUT_DIR} KCFLAGS=-DDEBUG
     make -j5 O=${OUT_DIR}
 fi
+if [ ${TARGET} = "fhk_zc706ad9009" ]; then
+    git checkout fhk_2018r2 # tracing "adi-linux:origin/2018_R2"
 
+    make ${TARGET}_defconfig O=${OUT_DIR}
+    #make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR} KCFLAGS=-DDEBUG
+    make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR}
+    make ${TARGET}.dtb O=${OUT_DIR}
+fi
+
+#*******************************************************************************
 export ARCH=
 export CROSS_COMPILE=
 #arm_rm
