@@ -14,7 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#define DEBUG
+#define _DEBUG
 #include "xilinx_axienet.h"
 #include "xilinx_tsn_ptp.h"
 #include "xilinx_tsn_timer.h"

@@ -8,6 +8,7 @@
  *
  */
 #define DEBUG
+#define _DEBUG
 #include <linux/platform_device.h>
 #include <linux/clk-provider.h>
 #include <linux/slab.h>

@@ -1,3 +1,14 @@
+/* Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76
+History:
+  base: "fhk_adrv9009_122m.dtsi"
+  reference1: branch "2018_R2", "arch\arm64\boot\dts\xilinx\adi-adrv9009.dtsi" for 245.76M sample rate
+  NOTICE: commit "7cf276a19b991da0120de717cdc7ba327c0158c2":
+    "Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76"
+    are NOT valid for the CPLL range of the ZC706
+  JACKY-20190314: ZC706-GTX-CPLL(<5.16GHz)=40*fmc_clk=40*dev_clk,
+    so sample_rate > 122.88M is not supported by ZC706-GTX-serdes,
+    although AD9009-Serdes support 9.8304GHz
+*/
 
 #include <dt-bindings/iio/frequency/ad9528.h>
 #include <dt-bindings/gpio/gpio.h>
@@ -6,11 +17,10 @@
 / {
 	clocks {
 		adrv9009_clkin: clock@0 {
+			#clock-cells = <0>;
 			compatible = "fixed-clock";
-
 			clock-frequency = <12288000>;
 			clock-output-names = "adrv9009_ext_refclk";
-			#clock-cells = <0>;
 		};
 	};
 };
@@ -18,20 +28,19 @@
 &fmc_spi {
 
 	clk0_ad9528: ad9528-1@0 {
-		compatible = "adi,ad9528";
-		reg = <0>;
-
 		#address-cells = <1>;
 		#size-cells = <0>;
+		#clock-cells = <1>;
+		compatible = "adi,ad9528";
 
 		spi-max-frequency = <1000000>; // 1M
 		//adi,spi-3wire-enable;
+		reg = <0>;
 
 		clock-output-names = "ad9528-1_out0", "ad9528-1_out1", "ad9528-1_out2",
 			"ad9528-1_out3", "ad9528-1_out4", "ad9528-1_out5", "ad9528-1_out6",
 			"ad9528-1_out7", "ad9528-1_out8", "ad9528-1_out9", "ad9528-1_out10",
 			"ad9528-1_out11", "ad9528-1_out12", "ad9528-1_out13";
-		#clock-cells = <1>;
 
 		adi,vcxo-freq = <122880000>;
 
@@ -70,7 +79,7 @@
 			adi,extended-name = "DEV_CLK_EV";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 
@@ -79,7 +88,7 @@
 			adi,extended-name = "DEV_CLK_UA";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 
@@ -88,7 +97,7 @@
 			adi,extended-name = "DEV_CLK_UB";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 
@@ -97,7 +106,7 @@
 			adi,extended-name = "FMC_CLK";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 
@@ -148,13 +157,13 @@
 	};
 
 	trx0_adrv9009: adrv9009-phy@1 {
-		compatible = "adi,adrv9009";
-		reg = <1>;
-
 		#address-cells = <1>;
 		#size-cells = <0>;
+		#clock-cells = <1>;
+		compatible = "adi,adrv9009";
 
 		/* SPI Setup */
+		reg = <1>;
 		spi-max-frequency = <1250000>; // 12.5M
 
 		interrupt-parent = <&gpio0>;
@@ -169,7 +178,6 @@
 			"sysref_fmc_clk";
 
 		clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";
-		#clock-cells = <1>;
 
 		/* JESD204 */
 
@@ -197,9 +205,9 @@
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <2>;
+		adi,jesd204-framer-b-m = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;
+		adi,jesd204-framer-b-f = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
 		adi,jesd204-framer-b-np = <16>;
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;
@@ -250,7 +258,7 @@
 		adi,rx-profile-rx-fir-decimation = <2>;
 		adi,rx-profile-rx-dec5-decimation = <4>;
 		adi,rx-profile-rhb1-decimation = <1>;
-		adi,rx-profile-rx-output-rate_khz = <245760>;
+		adi,rx-profile-rx-output-rate_khz = <245760>;// see NOTES "JACKY-20190314"
 		adi,rx-profile-rf-bandwidth_hz = <200000000>;
 		adi,rx-profile-rx-bbf3d-bcorner_khz = <200000>;
 		adi,rx-profile-rx-adc-profile = /bits/ 16 <182 142 173 90 1280 982 1335 96 1369 48 1012 18 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
@@ -284,7 +292,7 @@
 		adi,orx-profile-rx-fir-decimation = <1>;
 		adi,orx-profile-rx-dec5-decimation = <4>;
 		adi,orx-profile-rhb1-decimation = <2>;
-		adi,orx-profile-orx-output-rate_khz = <245760>;
+		adi,orx-profile-orx-output-rate_khz = <245760>;// see NOTES "JACKY-20190314"
 		adi,orx-profile-rf-bandwidth_hz = <200000000>;
 		adi,orx-profile-rx-bbf3d-bcorner_khz = <225000>;
 		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
@@ -302,6 +310,7 @@
 
 		adi,obs-settings-framer-sel = <1>;
 		adi,obs-settings-obs-rx-channels-enable = <2>; // FHK HW design: ORX2-only
+		//adi,obs-settings-obs-rx-channels-enable = <1>; // 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz
 		adi,obs-settings-obs-rx-lo-source = <0>;
 
 		/* TX */
@@ -317,7 +326,7 @@
 		adi,tx-profile-thb2-interpolation = <2>;
 		adi,tx-profile-thb3-interpolation = <2>;
 		adi,tx-profile-tx-int5-interpolation = <1>;
-		adi,tx-profile-tx-input-rate_khz = <245760>;
+		adi,tx-profile-tx-input-rate_khz = <245760>;// see NOTES "JACKY-20190314"
 		adi,tx-profile-primary-sig-bandwidth_hz = <100000000>;
 		adi,tx-profile-rf-bandwidth_hz = <225000000>;
 		adi,tx-profile-tx-dac3d-bcorner_khz = <225000>;
@@ -333,13 +342,13 @@
 
 		/* Clocks */
 
-		adi,dig-clocks-device-clock_khz = <245760>;/* JACKY-20190228: it means changes for AD9528 */
+		adi,dig-clocks-device-clock_khz = <245760>;// it means changes for AD9528-output-channel "DEV_CLK"
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
-		adi,dig-clocks-clk-pll-hs-div = <1>;/* JACKY-20190228: TAL_HSDIV_2P5 */
+		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
 		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;
-		adi,trx-pll-lo-frequency_hz = <3500000000>;/* JACKY-20190228: new per the driver codes */
-		//adi,aux-pll-lo-frequency_hz = <>;/* JACKY-20190228: new per the driver codes */
+		adi,trx-pll-lo-frequency_hz = <3500000000>;// JACKY-20190228: new per the driver
+		//adi,aux-pll-lo-frequency_hz = <>;// JACKY-20190228: new per the driver
 
 		/* AGC */
 

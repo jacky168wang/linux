@@ -9,7 +9,8 @@
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/interrupt.h>

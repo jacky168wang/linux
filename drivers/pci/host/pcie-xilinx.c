@@ -13,7 +13,8 @@
  * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/irqdomain.h>

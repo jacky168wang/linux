@@ -8,6 +8,7 @@
  * https://wiki.analog.com/resources/fpga/docs/axi_adxcvr
  */
 #define DEBUG
+#define _DEBUG
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/of_device.h>
@@ -261,7 +262,7 @@ static unsigned long adxcvr_clk_recalc_rate(struct clk_hw *hw,
 	unsigned int *tx_out_div;
 	unsigned int out_div;
 
-	dev_dbg(st->dev, "%s: Parent Rate %lu Hz",
+	dev_dbg(st->dev, "%s: Parent-Rate %lu Hz",
 		__func__, parent_rate);
 
 	if (st->tx_enable) {
@@ -303,7 +304,7 @@ static long adxcvr_clk_round_rate(struct clk_hw *hw, unsigned long rate,
 	if (st->ref_is_div40)
 		*prate = rate * (1000 / 40);
 
-	dev_dbg(st->dev, "%s: Rate %lu Hz Parent Rate %lu Hz",
+	dev_dbg(st->dev, "%s: Rate %lu KHz, Parent-Rate %lu Hz",
 		__func__, rate, *prate);
 
 	/* Just check if we can support the requested rate */
@@ -328,7 +329,7 @@ static int adxcvr_clk_set_rate(struct clk_hw *hw, unsigned long rate,
 	unsigned int i;
 	int ret;
 
-	dev_dbg(st->dev, "%s: Rate %lu Hz Parent Rate %lu Hz",
+	dev_dbg(st->dev, "%s: Rate %lu KHz, Parent-Rate %lu Hz",
 		__func__, rate, parent_rate);
 
 	clk25_div = DIV_ROUND_CLOSEST(parent_rate, 25000000);
@@ -622,7 +623,8 @@ static int adxcvr_probe(struct platform_device *pdev)
 
 	device_create_file(st->dev, &dev_attr_reg_access);
 
-	dev_info(&pdev->dev, "AXI-ADXCVR-%s (%d.%.2d.%c) using %s at 0x%08llX mapped to 0x%p. Number of lanes: %d.",
+	dev_info(&pdev->dev, "AXI-ADXCVR-%s (%d.%.2d.%c) using %s at 0x%08llX mapped to 0x%p."\
+		"Number of lanes: %d.",
 		st->tx_enable ? "TX" : "RX",
 		PCORE_VER_MAJOR(version),
 		PCORE_VER_MINOR(version),

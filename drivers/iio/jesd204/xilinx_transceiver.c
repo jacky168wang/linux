@@ -6,7 +6,8 @@
  * Licensed under the GPL-2.
  *
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/module.h>

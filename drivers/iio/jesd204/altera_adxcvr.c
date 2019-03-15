@@ -5,7 +5,6 @@
  *
  * Licensed under the GPL-2.
  */
-
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/delay.h>

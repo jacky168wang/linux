@@ -14,7 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#define DEBUG
+#define _DEBUG
 #include "xilinx_tsn_switch.h"
 
 #define SMC_MODE_SHIFT				28

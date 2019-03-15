@@ -17,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/clk/zynq.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>

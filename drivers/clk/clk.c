@@ -10,7 +10,6 @@
  */
 #define DEBUG
 #define _DEBUG
-
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/clk/clk-conf.h>
@@ -1392,6 +1391,7 @@ static struct clk_core *clk_calc_new_rates(struct clk_core *core,
 		best_parent_rate = parent->rate;
 
 	clk_core_get_boundaries(core, &min_rate, &max_rate);
+	pr_debug("%s(%d): min_rate=%lu, max_rate=%lu\n", __FILE__, __LINE__, min_rate, max_rate);
 
 	/* find the closest rate and parent clk/rate */
 	if (core->ops->determine_rate) {

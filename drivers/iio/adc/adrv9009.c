@@ -7,7 +7,6 @@
  */
 #define DEBUG
 #define _DEBUG
-
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/kernel.h>

@@ -14,7 +14,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#define DEBUG
+#define _DEBUG
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/io.h>
