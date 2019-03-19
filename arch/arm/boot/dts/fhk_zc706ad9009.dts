@@ -364,19 +364,15 @@ History:
 		xlnx,phases = <0x1>;
 	};
 #endif
-
-	TXCHAIN0_DFESS0_DPD_1: dpd@80000000 {
+    /* "dpd-host-app" demands 0xA0000000 rather than 0x80000000, fhk_zc706ad9009_dpd_debug.txt */
+	TXCHAIN0_DFESS0_DPD: dpd@A0000000 {
 		//clock-names = "dpd_aclk", "dpd_2x_aclk", "s_axi_ctrl_aclk", "s_axi_user_aclk";
 		//clocks = <&jesd204tx_clkgen>, <&jesd204tx_clkgen>, <&clkc 16>, <&clkc 16>; // 16/fclk1/200MHz
-		compatible = "xlnx,dpd-8.1", "generic-uio";
-		interrupts = <0 51 1>; // UG858, Table 7-4: IRQF2P[7] -> IRQ[83-32]
-		reg = <0x80000000 0x4000000 0x84000000 0x20000>;
-	};
-	/*
-	TXCHAIN0_DFESS0_DPD_H: dpd@84000000 {
+		//compatible = "xlnx,dpd-8.1", "generic-uio";
 		compatible = "generic-uio";
-		reg = <0x84000000 0x20000>;
-	};*/
+		interrupts = <0 51 1>; // UG858, Table 7-4: IRQF2P[7] -> IRQ[83-32]
+		reg = <0xA0000000 0x04000000 0xA4000000 0x00020000>;
+	};
 };
 
 &spi0 {

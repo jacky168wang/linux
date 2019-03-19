@@ -1,0 +1,130 @@
+JESD_RX_LINKCLK		122.88
+JESD_TX_LINKCLK		122.88/2
+JESD_OR_LINKCLK		122.88/2
+
+#---- step0, check all DTS nodes
+//root@analog:# ls -l /sys/firmware/devicetree/base/fpga-axi@0
+root@analog:# ls -l /sys/firmware/devicetree/base/fpga-axi@1
+
+# dfe_scratch@8c000000 			reg = <0x8c000000 0x1000>;
+devmem 0x8c000000 32
+devmem 0x8c000000 32 0xabcdef12
+devmem 0x8c000000 32
+
+devmem 0xA0000000 32
+devmem 0xA0000000 32 0xabcdef12
+
+# dfe_clk_ctrl@8c001000 			reg = <0x8c001000 0x1000>;
+root@analog:~# devmem 0x8c001000 32
+0x00000007
+root@analog:~# devmem 0x8c001004 32
+0x00000007
+root@analog:~# devmem 0x8c001008 32
+0x0000000C
+root@analog:~# devmem 0x8c001ffc 32
+0x0000000C
+
+# dfe_rsi_ext_sync@8e002000 		reg = <0x8e002000 0x1000>;
+root@analog:~# devmem 0x8e002000 32
+0x00000000
+root@analog:~# devmem 0x8e002ffc 32 
+0x00000000
+
+# dfe_rsi_glitch_protect@8e005000 reg = <0x8e005000 0x1000>;
+root@analog:~# devmem 0x8e005000 32 
+0x00000000
+root@analog:~# devmem 0x8e005ffc 32
+0x00000000
+
+# dfe_txchain_cfr@85000000		reg = <0x85000000 0x00100000>;
+root@analog:~# devmem 0x85000000 32
+0x00000000
+root@analog:~# devmem 0x85000004 32
+0x00000000
+root@analog:~# devmem 0x85000008 32
+0x0000FDE8
+root@analog:~# devmem 0x8500000c 32
+0x00000000
+
+# dfe_txchain_gainctrl@86001000 	reg = <0x86001000 0x1000>;
+
+# dfe_txchain_cfr@85000000		reg = <0x85000000 0x100000>;
+
+#---- step1, dfe_txchain_dpd@80000000		reg = <0x80000000 0x4000000 0x84000000 0x20000>;
+# pg076
+# S_AXI_USER <=> shared memory (0x84000000)
+#==== Table 6-8.
+0-31 Control and Status
+	0	CONTROLMODE-TRIGGER	
+	1	CONTROLMODE-REGISTER	
+	19	CODEPOINTER 
+		devmem 0x8400004c 32
+32~127 Continuous Monitors (read only)
+	32 REPOSITORY 			Software build Change List number
+		devmem 0x84000080 32
+	33 BUILDDATE
+	34 BUILDTIME
+160~191 Parameters
+
+>>>>>>>>>>>>> Reset and Clock Sequencing <<<<<<<<<<<<<<<<<<
+
+#1> Power-On: assert "dpd_aresetn", "s_axi_ctrl_aresetn", "s_axi_user_aresetn"
+#2> Bring-Up Bus Clocks: bring-up "s_axi_ctrl_acllk", "s_axi_ctrl_2x_aclk",
+"s_axi_user_aclk". Once these clocks are stable, de-assert "s_axi_ctrl_aresetn"
+and "s_axi_user_aresetn".
+#2-1> devmem 0xF8007080 32 #ug585: MCTRL
+none-zero
+devmem 0xF8000240 32 #ug585: FPGA_RST_CTRL
+0x00000000
+devmem 0xF8000240 32 0x2 # FPGA_RST_CTRL[1]/FCLK_RESET_N1 -> to-all-DPD-HW
+
+devmem 0x43c30000 32 0xffffffff  //dpd_rst_n 工作
+devmem 0x43c30000 32 0x0         //dpd_rst_n 复位
+devmem 0x43c3003c 32 0x0         //sys_rst 工作(高有效）默认就是工作状态，上电不需要设置
+devmem 0x43c3003c 32 0xffffffff  //sys_rst 复位
+
+#3> Start DPD-SW once it is possible to communicate on "s_axi_ctrl" interface.
+However, it will wait for de-assertion of "dpd_aresetn".
+#3-1> devmem 0x80000000 32
+
+#3-2> devmem 0x80000000 32
+root@analog:~# ls /dev/uio0
+/dev/uio0
+root@analog:~# ./dpd-smp
+--- Xilinx Digital Pre-Distortion Software v8.1 rev0
+--- Build: Linux SMP: CL1923058
+Unhandled fault: external abort on non-linefetch (0x818) at 0xb497a04c
+pgd = ee08c000
+[b497a04c] *pgd=2f273831, *pte=81c00743, *ppte=81c00c33
+--- Opened DPD Device at /dev/uio0
+Bus error
+ ############# FPGA design have problems
+
+root@analog:~# ./dpd-smp &
+[1] 2525
+root@analog:~# --- Xilinx Digital Pre-Distortion Software v9.0 rev0
+--- Build: Linux SMP: CL2454068
+--- Opened DPD Device at /dev/uio0
+
+ENTER
+root@analog:~#
+#4> Bring Up Data Rate Clocks: Once "dpd_aclk" and "dpd_2x_aclk" are stable, then
+"dpd_aresetn" can be de-asserted.
+#5> Follow the Instructions in "DPD Application Software Boot Process"
+#5-1> read CODEPOINTER, should be WAITING_FOR_SW_BOOT_CODE/125/0x7D
+devmem 0x8400004C 32
+0x0000007D
+#5-2> read CONTROLMODE-TRIGGER, default is 0
+devmem 0x84000000 32
+0x00000000
+#5-3> write CONTROLMODE-TRIGGER to out of reset for DPD-HW
+devmem 0x84000000 32 0xA5A5A5A5
+--- DPD: HW Initialisation Complete
+devmem 0x84000000 32
+0xA5A5A5A5
+#5-4> read CODEPOINTER, should be WAITING_FOR_TRIGGER_RESET_AT_START/130/0x82
+devmem 0x8400004C 32
+0x00000085
+#5-5> write CONTROLMODE-TRIGGER to trigger the control mode
+devmem 0x84000000 32 0xABCDEF12
+
