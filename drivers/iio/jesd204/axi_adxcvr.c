@@ -337,9 +337,15 @@ static int adxcvr_clk_set_rate(struct clk_hw *hw, unsigned long rate,
 	if (st->cpll_enable)
 		ret = xilinx_xcvr_calc_cpll_config(&st->xcvr, parent_rate, rate,
 			&cpll_conf, &out_div);
-	else
+	else {
+		/* Jacky-20190320: apply TX-QPLL-config to RX */
+		if (!st->tx_enable) {
+			ret = xilinx_xcvr_qpll_reset_config(&st->xcvr,
+								ADXCVR_DRP_PORT_COMMON(0));
+		}
 		ret = xilinx_xcvr_calc_qpll_config(&st->xcvr, parent_rate, rate,
 			&qpll_conf, &out_div);
+	}
 	if (ret < 0)
 		return ret;
 
