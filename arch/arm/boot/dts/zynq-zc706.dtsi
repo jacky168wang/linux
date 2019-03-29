@@ -52,7 +52,7 @@
 			linux,code = <106>; // Right
 			gpios = <&gpio0 60 0>;
 		};
-		/* comment to enable UART0
+		/* comment to enable the interrupt of UART0
 		sw9 {
 			label = "Select";
 			linux,code = <28>; // Enter

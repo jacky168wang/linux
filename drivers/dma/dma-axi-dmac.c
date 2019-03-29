@@ -253,14 +253,14 @@ static void axi_dmac_start_transfer(struct axi_dmac_chan *chan)
 	if (axi_dmac_dest_is_mem(chan)) {
 		axi_dmac_write(dmac, AXI_DMAC_REG_DEST_ADDRESS, sg->dest_addr);
 		axi_dmac_write(dmac, AXI_DMAC_REG_DEST_STRIDE, sg->dest_stride);
-		printk("%s: axi_dmac_dst_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
+		pr_debug("%s: axi_dmac_dst_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
             dmac->dma_dev.dev_id, sg->id, sg->dest_addr, sg->x_len, sg->y_len);
 	}
 
 	if (axi_dmac_src_is_mem(chan)) {
 		axi_dmac_write(dmac, AXI_DMAC_REG_SRC_ADDRESS, sg->src_addr);
 		axi_dmac_write(dmac, AXI_DMAC_REG_SRC_STRIDE, sg->src_stride);
-		printk("%s: axi_dmac_src_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
+		pr_debug("%s: axi_dmac_src_is_mem: %d, %d, 0x%x, %d, %d\n", __func__,
             dmac->dma_dev.dev_id, sg->id, sg->dest_addr, sg->x_len, sg->y_len);
 	}
 

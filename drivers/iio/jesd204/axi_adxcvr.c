@@ -19,6 +19,27 @@
 #include "xilinx_transceiver.h"
 #include "axi_adxcvr_eyescan.h"
 
+/* Jacky-20190320: 
+origin-adi-design: 
+	UTIL_XCVR.COMMON/QPLL is shared for 4*TX-lanes of Xlnx-GTH
+		connected to AXI_ADXCVR_TX only
+		[Control-Path: AXI_ADXCVR_TX -> ADXCVR_DRP_PORT_COMMON -> QPLL]
+		[Control-Path: AXI_ADXCVR_TX -> ADXCVR_DRP_PORT_CHANNEL -> CPLL]
+	UTIL_XCVR.CHANNEL/CPLL is seperated for 4*RX-lanes of Xlnx-GTH, 
+		2 RX-lanes are connected to AXI_ADXCVR_RX
+		2 RX-lanes are connected to AXI_ADXCVR_ObsRX
+		[Control-Path: AXI_ADXCVR_RX/OR -> ADXCVR_DRP_PORT_CHANNEL -> CPLL]
+fhk-requirments-for higer RX/ObsRx lane-rate than cpll can reach
+	UTIL_XCVR.COMMON/QPLL is shared for 4*TX-lanes + 4*RX-lanes of Xlnx-GTH
+		connected to AXI_ADXCVR_TX only, NO HW changes
+		[Control-Path: AXI_ADXCVR_TX -> ADXCVR_DRP_PORT_COMMON -> QPLL]
+		[Control-Path: AXI_ADXCVR_TX -> ADXCVR_DRP_PORT_CHANNEL -> CPLL]
+	UTIL_XCVR.CHANNEL/CPLL is seperated for 4*RX-lanes of Xlnx-GTH
+		2 RX-lanes are connected to AXI_ADXCVR_RX, NO HW changes
+		2 RX-lanes are connected to AXI_ADXCVR_ObsRX, NO HW changes
+		[Control-Path: AXI_ADXCVR_RX/OR -> ADXCVR_DRP_PORT_CHANNEL -> CPLL]
+*/
+#define RX_CPLL_DISABLE_FHK
 
 static struct adxcvr_state *xcvr_to_adxcvr(struct xilinx_xcvr *xcvr)
 {
@@ -287,8 +308,32 @@ static unsigned long adxcvr_clk_recalc_rate(struct clk_hw *hw,
 	} else {
 		struct xilinx_xcvr_qpll_config qpll_conf;
 
-		xilinx_xcvr_qpll_read_config(&st->xcvr, ADXCVR_DRP_PORT_COMMON(0),
-			&qpll_conf);
+		if (!st->tx_enable) {
+#ifdef RX_CPLL_DISABLE_FHK
+			/* failed because ADXCVR_RX has no connection with UTIL_XCVR.COMMON/QPLL */
+#if 0
+			dev_dbg(st->dev, "==%s: %s: Jacky-20190320 start\n",
+				st->tx_enable ? "TX" : "RX", __func__);
+			xilinx_xcvr_qpll_reset_config(&st->xcvr,
+				ADXCVR_DRP_PORT_COMMON(0));
+			dev_dbg(st->dev, "==%s: %s: Jacky-20190320 finish\n",
+				st->tx_enable ? "TX" : "RX", __func__);
+#endif
+			/* workaround: use the current QPLL setting,
+				which can be read out by adxcvr_tx only only */
+			qpll_conf.refclk_div = 1;
+			qpll_conf.fb_div = 40;
+			qpll_conf.band = 1;
+#endif
+		} else {
+			xilinx_xcvr_qpll_read_config(&st->xcvr, ADXCVR_DRP_PORT_COMMON(0),
+				&qpll_conf);
+			dev_dbg(st->dev, "%s: xilinx_xcvr_qpll_read_config() after: "
+				"qpll_conf %d, %d, %d;    out_div=%d\n", 
+				__func__, qpll_conf.refclk_div, qpll_conf.fb_div,
+				qpll_conf.band, out_div);
+		}
+
 		return xilinx_xcvr_qpll_calc_lane_rate(&st->xcvr, parent_rate,
 			&qpll_conf, out_div);
 	}
@@ -334,29 +379,35 @@ static int adxcvr_clk_set_rate(struct clk_hw *hw, unsigned long rate,
 
 	clk25_div = DIV_ROUND_CLOSEST(parent_rate, 25000000);
 
-	if (st->cpll_enable)
+	if (st->cpll_enable) {
 		ret = xilinx_xcvr_calc_cpll_config(&st->xcvr, parent_rate, rate,
 			&cpll_conf, &out_div);
-	else {
-		/* Jacky-20190320: apply TX-QPLL-config to RX */
-		if (!st->tx_enable) {
-			ret = xilinx_xcvr_qpll_reset_config(&st->xcvr,
-								ADXCVR_DRP_PORT_COMMON(0));
-		}
+		dev_dbg(st->dev, "%s: xilinx_xcvr_calc_cpll_config() after: "
+			"qpll_conf %d %d %d;    out_div=%d\n",
+			__func__, cpll_conf.refclk_div, cpll_conf.fb_div_N1, 
+			cpll_conf.fb_div_N2, out_div);
+	} else {
 		ret = xilinx_xcvr_calc_qpll_config(&st->xcvr, parent_rate, rate,
 			&qpll_conf, &out_div);
+		dev_dbg(st->dev, "%s: xilinx_xcvr_calc_qpll_config() after: "
+			"qpll_conf %d %d %d;    out_div=%d\n",
+			__func__, qpll_conf.refclk_div, qpll_conf.fb_div,
+			qpll_conf.band, out_div);
 	}
 	if (ret < 0)
 		return ret;
 
 	for (i = 0; i < st->num_lanes; i++) {
 
-		if (st->cpll_enable)
+		if (st->cpll_enable) {
 			ret = xilinx_xcvr_cpll_write_config(&st->xcvr,
 							    ADXCVR_DRP_PORT_CHANNEL(i), &cpll_conf);
-		else if (i % 4 == 0)
+		} else if ((st->tx_enable) && (i % 4 == 0)) {
 			ret = xilinx_xcvr_qpll_write_config(&st->xcvr,
-							    ADXCVR_DRP_PORT_COMMON(i), &qpll_conf);
+							    ADXCVR_DRP_PORT_COMMON(0), &qpll_conf);
+			dev_dbg(st->dev, "%s: xilinx_xcvr_qpll_write_config() lane 0 only\n",
+				__func__);
+		}
 		if (ret < 0)
 			return ret;
 
@@ -629,8 +680,7 @@ static int adxcvr_probe(struct platform_device *pdev)
 
 	device_create_file(st->dev, &dev_attr_reg_access);
 
-	dev_info(&pdev->dev, "AXI-ADXCVR-%s (%d.%.2d.%c) using %s at 0x%08llX mapped to 0x%p."\
-		"Number of lanes: %d.",
+	dev_info(&pdev->dev, "AXI-ADXCVR-%s (%d.%.2d.%c) using %s at 0x%08llX mapped to 0x%p. Number of lanes: %d.",
 		st->tx_enable ? "TX" : "RX",
 		PCORE_VER_MAJOR(version),
 		PCORE_VER_MINOR(version),

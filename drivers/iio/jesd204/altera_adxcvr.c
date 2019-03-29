@@ -5,6 +5,8 @@
  *
  * Licensed under the GPL-2.
  */
+#define DEBUG
+#define _DEBUG
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/delay.h>

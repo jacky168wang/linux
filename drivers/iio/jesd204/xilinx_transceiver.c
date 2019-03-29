@@ -6,8 +6,8 @@
  * Licensed under the GPL-2.
  *
  */
-#define DEBUG
-#define _DEBUG
+//#define DEBUG
+//#define _DEBUG
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -700,6 +700,7 @@ static int xilinx_xcvr_gth34_qpll_read_config(struct xilinx_xcvr *xcvr,
 	return 0;
 }
 
+
 static int xilinx_xcvr_gtx2_qpll_read_config(struct xilinx_xcvr *xcvr,
 	unsigned int drp_port, struct xilinx_xcvr_qpll_config *conf)
 {
@@ -781,26 +782,6 @@ int xilinx_xcvr_qpll_read_config(struct xilinx_xcvr *xcvr,
 	}
 }
 EXPORT_SYMBOL_GPL(xilinx_xcvr_qpll_read_config);
-
-/* Jacky-20190320: apply TX-QPLL-config to RX */
-int xilinx_xcvr_qpll_reset_config(struct xilinx_xcvr *xcvr,
-	unsigned int drp_port)
-{
-	switch (xcvr->type) {
-	case XILINX_XCVR_TYPE_S7_GTX2:
-		xilinx_xcvr_drp_write(xcvr, drp_port, QPLL_CFG1_ADDR, 0x8068);
-		xilinx_xcvr_drp_write(xcvr, drp_port, QPLL_FBDIV_N_ADDR, 0x80);
-		xilinx_xcvr_drp_write(xcvr, drp_port, QPLL_CFG0_ADDR, 0x181);
-		break;
-	case XILINX_XCVR_TYPE_US_GTH3:
-	case XILINX_XCVR_TYPE_US_GTH4:
-		dev_dbg(xcvr->dev, "%s: TODO\n", __func__);
-		return -EINVAL;
-	default:
-		return -EINVAL;
-	}
-}
-EXPORT_SYMBOL_GPL(xilinx_xcvr_qpll_reset_config);
 
 static int xilinx_xcvr_gth34_qpll_write_config(struct xilinx_xcvr *xcvr,
 	unsigned int drp_port, const struct xilinx_xcvr_qpll_config *conf)

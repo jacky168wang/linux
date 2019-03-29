@@ -1,4 +1,4 @@
-/* Tx_BW450_IR491p52_Rx_BW200_OR245p76_ORx_BW450_OR491p52
+/* Tx_BW450_IR491p52_Rx_BW200_OR245p76_ORx_BW450_OR491p52_DC122p88
 History:
   base: "fhk_adrv9009_122m.dtsi"
   NOTICE: commit "7cf276a19b991da0120de717cdc7ba327c0158c2":
@@ -81,7 +81,7 @@ History:
 			adi,extended-name = "FMC_CLK_EV";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};*/
 		ad9528_0_c3: channel@3 {
@@ -89,7 +89,7 @@ History:
 			adi,extended-name = "FMC_SYSREF_EV";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <10>;
 			adi,signal-source = <SOURCE_SYSREF_VCO>;
 		};
 
@@ -98,7 +98,7 @@ History:
 			adi,extended-name = "DEV_CLK_EV";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 		ad9528_0_c12: channel@12 {
@@ -106,7 +106,7 @@ History:
 			adi,extended-name = "DEV_SYSREF_EV";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <10>;
 			adi,signal-source = <SOURCE_SYSREF_VCO>;
 		};
 
@@ -115,7 +115,7 @@ History:
 			adi,extended-name = "FMC_CLK";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 		ad9528_0_c7: channel@7 {
@@ -123,7 +123,7 @@ History:
 			adi,extended-name = "FMC_SYSREF";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <10>;
 			adi,signal-source = <SOURCE_SYSREF_VCO>;
 		};
 
@@ -132,7 +132,7 @@ History:
 			adi,extended-name = "DEV_CLK_UA";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
 			adi,signal-source = <SOURCE_VCO>;
 		};
 		ad9528_0_c5: channel@5 {
@@ -140,7 +140,7 @@ History:
 			adi,extended-name = "DEV_SYSREF_UA";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
+			adi,channel-divider = <10>;
 			adi,signal-source = <SOURCE_SYSREF_VCO>;
 		};
 
@@ -300,8 +300,7 @@ History:
 		adi,orx-gain-control-orx2-min-gain-index = <195>;
 
 		adi,obs-settings-framer-sel = <1>;
-		adi,obs-settings-obs-rx-channels-enable = <1>; // FHK HW design: ORX2-only
-		//adi,obs-settings-obs-rx-channels-enable = <1>; // 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz
+		adi,obs-settings-obs-rx-channels-enable = <2>; // FHK HW design: ORX2-only, 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz per the adrv9009.c
 		adi,obs-settings-obs-rx-lo-source = <0>;
 
 		/* lpbk ??? */
@@ -335,8 +334,7 @@ History:
 
 		/* Clocks */
 
-		adi,dig-clocks-device-clock_khz = <245760>;// ADI-Reference is 245760
-		//adi,dig-clocks-device-clock_khz = <122880>;// it means changes for AD9528-output-channel "DEV_CLK"
+		adi,dig-clocks-device-clock_khz = <122880>;// it means changes for AD9528-output-channel "DEV_CLK"
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;

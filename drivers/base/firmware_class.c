@@ -8,8 +8,6 @@
  */
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
-#define DEBUG
-#define _DEBUG
 
 #include <linux/capability.h>
 #include <linux/device.h>

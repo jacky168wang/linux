@@ -4145,7 +4145,7 @@ static int ad9371_probe(struct spi_device *spi)
 	MYKONOS_getApiVersion(phy->mykDevice, &api_vers[0], &api_vers[1], &api_vers[2], &api_vers[3]);
 	MYKONOS_getDeviceRev(phy->mykDevice, &rev);
 
-	dev_info(&spi->dev, "%s: AD937%d Rev.%d, Firmware %u.%u.%u API %u.%u.%u.%u successfully initialized",
+	dev_info(&spi->dev, "%s : AD937%d Rev %d, Firmware %u.%u.%u API version: %u.%u.%u.%u successfully initialized",
 		 __func__, AD937x_PARTID(phy), rev, vers[0], vers[1], vers[2],
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
 

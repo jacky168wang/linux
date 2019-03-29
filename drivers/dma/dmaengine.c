@@ -1006,8 +1006,6 @@ int dma_async_device_register(struct dma_device *device)
 	}
 
 	device->chancnt = chancnt;
-    dev_info(device->dev, "%s: dma %d channel %d register succeed\n",
-                       __func__, device->dev_id, chan->chan_id);
 
 	mutex_lock(&dma_list_mutex);
 	/* take references on public channels */
