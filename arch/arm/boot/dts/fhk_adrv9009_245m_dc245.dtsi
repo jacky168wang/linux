@@ -7,8 +7,7 @@ History:
   JACKY-20190314: ZC706-GTX-CPLL(<5.16GHz)=40*fmc_clk=40*dev_clk,
     so sample_rate > 122.88M is not supported by ZC706-GTX-serdes,
     although AD9009-Serdes support 9.8304GHz
-  Reference1: branch "2018_R2", "arch\arm64\boot\dts\xilinx\adi-adrv9009.dtsi"
-    for 245.76M sample rate
+  Reference1: branch "2018_R2", "arch\arm64\boot\dts\xilinx\adi-adrv9009.dtsi" for 245.76M sample rate
 */
 
 #include <dt-bindings/iio/frequency/ad9528.h>
@@ -177,13 +176,13 @@ History:
 		adi,jesd204-framer-a-bank-id = <1>;
 		adi,jesd204-framer-a-device-id = <0>;
 		adi,jesd204-framer-a-lane0-id = <0>;
-		adi,jesd204-framer-a-m = <4>;
+		adi,jesd204-framer-a-m = <4>;//M(Converters)=4
 		adi,jesd204-framer-a-k = <32>;
-		adi,jesd204-framer-a-f = <4>;
+		adi,jesd204-framer-a-f = <4>;//F=N'/8*M*S/L=(16/8)*4*S/2, mean S=1, and it decide FPGA.JESD204B-DeframerA/RX setting
 		adi,jesd204-framer-a-np = <16>;
 		adi,jesd204-framer-a-scramble = <1>;
 		adi,jesd204-framer-a-external-sysref = <1>;
-		adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;
+		adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;//L(Number of Lanes)=2
 		adi,jesd204-framer-a-serializer-lane-crossbar = <0xE4>;
 		adi,jesd204-framer-a-lmfc-offset = <31>;
 		adi,jesd204-framer-a-new-sysref-on-relink = <0>;
@@ -199,11 +198,11 @@ History:
 		adi,jesd204-framer-b-lane0-id = <0>;
 		adi,jesd204-framer-b-m = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
+		adi,jesd204-framer-b-f = <2>;// must be 2 if ORX_rfbandwidth > 200MHz, F=N'/8*M*S/L=(16/8)*2*S/2, mean S=1, and it decide FPGA.JESD204B-DeframerB/ORX setting
 		adi,jesd204-framer-b-np = <16>;
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;
-		adi,jesd204-framer-b-serializer-lanes-enabled = <0x0C>;
+		adi,jesd204-framer-b-serializer-lanes-enabled = <0x0C>;//L(Number of Lanes)=2
 		adi,jesd204-framer-b-serializer-lane-crossbar = <0xE4>;
 		adi,jesd204-framer-b-lmfc-offset = <31>;
 		adi,jesd204-framer-b-new-sysref-on-relink = <0>;
@@ -217,11 +216,11 @@ History:
 		adi,jesd204-deframer-a-bank-id = <0>;
 		adi,jesd204-deframer-a-device-id = <0>;
 		adi,jesd204-deframer-a-lane0-id = <0>;
-		adi,jesd204-deframer-a-m = <4>;
+		adi,jesd204-deframer-a-m = <4>;//M(Converters)=4
 		adi,jesd204-deframer-a-k = <32>;
 		adi,jesd204-deframer-a-scramble = <1>;
 		adi,jesd204-deframer-a-external-sysref = <1>;
-		adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0F>;
+		adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0F>;//L(Number of Lanes)=4
 		adi,jesd204-deframer-a-deserializer-lane-crossbar = <0xE4>;
 		adi,jesd204-deframer-a-lmfc-offset = <17>;
 		adi,jesd204-deframer-a-new-sysref-on-relink = <0>;
@@ -304,8 +303,6 @@ History:
 		adi,obs-settings-obs-rx-channels-enable = <2>; // FHK HW design: ORX2-only, 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz per the adrv9009.c
 		adi,obs-settings-obs-rx-lo-source = <0>;
 
-		/* lpbk ??? */
-
 		/* TX */
 
 		adi,tx-profile-tx-fir-gain_db = <6>;
@@ -331,7 +328,7 @@ History:
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
 
@@ -339,7 +336,7 @@ History:
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;
+		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3 Enable RFPLL phase sync init and track continuously
 		adi,trx-pll-lo-frequency_hz = <3500000000>;// JACKY-20190228: new per the driver
 		//adi,aux-pll-lo-frequency_hz = <>;// JACKY-20190228: new per the driver
 

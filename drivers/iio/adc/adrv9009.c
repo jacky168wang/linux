@@ -54,6 +54,18 @@
 #define FIRMWARE_TX	"TaliseTxArmFirmware.bin"
 #define FIRMWARE_RX	"TaliseRxArmFirmware.bin"
 #define STREAM		"TaliseStream.bin"
+/* Action: generate a new stream firmware
+   Reason: The page95 of UG1295: 
+"The stream processor executes the Tx/Rx/ORx enable and disable operations. 
+It is recommended to use a new stream if there is change in any of below:
+  1,the framer choices for ORx and Rx.
+  2,if link sharing is used or not between ORx and Rx.
+  3,if ORx stitching is used or not.
+  4,the DAC mode choice in TDD modes (e.g, whether or not DAC is powered off when Tx is disabled). 
+  5,if floating point formatting is used on ORx and Rx paths.
+*/
+#define STREAM_STITCH	"TaliseStreamStitch.bin"
+#define FHK_ORX_STITCH_FIXUP
 
 // 10 -bit:
 //
@@ -496,13 +508,22 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 
 	switch (phy->spi_device_id) {
 	case ID_ADRV9009:
+#if 1
 		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
 			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
 			TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL |
 			TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY |
 			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
-
+#else
+		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |
+			TAL_TIA_3DB_CORNER /*| TAL_DC_OFFSET | 
+			TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
+			TAL_PATH_DELAY | TAL_TX_QEC_INIT |
+			TAL_LOOPBACK_RX_LO_DELAY | TAL_LOOPBACK_RX_RX_QEC_INIT | 
+			TAL_RX_QEC_INIT | TAL_ORX_QEC_INIT |
+			TAL_TX_DAC  | TAL_ADC_STITCHING*/;
+#endif
 		/* JACKY-20190307: internal TX_LO would incorrect external TX_LO result */
 		initCalMask &= ~TAL_TX_LO_LEAKAGE_INTERNAL;
 		break;
@@ -1095,7 +1116,9 @@ static int adrv9009_setup(struct adrv9009_rf_phy *phy)
 
 			phy->talInit.jesd204Settings.framerB.M = 2;
 			phy->talInit.jesd204Settings.framerB.F = 2;
+#ifndef FHK_ORX_STITCH_FIXUP
 			phy->talInit.obsRx.obsRxChannelsEnable = 1;
+#endif
 		}
 	}
 
@@ -4848,7 +4871,15 @@ static int adrv9009_probe(struct spi_device *spi)
 
 	if (of_property_read_string(spi->dev.of_node, "stream-firmware-name", &name))
 		name = STREAM;
-
+#ifdef FHK_ORX_STITCH_FIXUP
+	bool orx_adc_stitching_enabled =
+		(phy->talInit.obsRx.orxProfile.rfBandwidth_Hz > 200000000) ?
+		1 : 0;
+	if (orx_adc_stitching_enabled) {
+		if (of_property_read_string(spi->dev.of_node, "stream-stitch-firmware-name", &name))
+			name = STREAM_STITCH;
+	}
+#endif
 	ret = request_firmware(&phy->stream, name, &spi->dev);
 	if (ret) {
 		dev_err(&spi->dev,

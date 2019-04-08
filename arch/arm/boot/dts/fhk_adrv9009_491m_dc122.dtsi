@@ -1,0 +1,43 @@
+/* Tx_BW450_IR491p52_Rx_BW200_OR245p76_ORx_BW450_OR491p52_DC122p88
+History:
+  base: "fhk_adrv9009_491m_dc245.dtsi"
+*/
+
+#include <dt-bindings/iio/frequency/ad9528.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+#include "fhk_adrv9009_491m_dc245.dtsi"
+
+		/*&ad9528_0_c1 {
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
+		};*/
+		&ad9528_0_c3 {
+			adi,channel-divider = <10>;
+		};
+
+		&ad9528_0_c13 {
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
+		};
+		&ad9528_0_c12 {
+			adi,channel-divider = <10>;
+		};
+
+		&ad9528_0_c8 {
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
+		};
+		&ad9528_0_c7 {
+			adi,channel-divider = <10>;
+		};
+
+		&ad9528_0_c4 {
+			adi,channel-divider = <10>;// see NOTES "JACKY-20190314"
+		};
+		&ad9528_0_c5 {
+			adi,channel-divider = <10>;
+		};
+
+	&trx0_adrv9009 {
+		adi,dig-clocks-device-clock_khz = <122880>;// it means changes for AD9528-output-channel "DEV_CLK"
+	};
+

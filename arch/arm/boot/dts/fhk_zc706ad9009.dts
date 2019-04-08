@@ -4,14 +4,23 @@
 /include/ "zynq-zc706-adv7511.dtsi"
 
 /* NOTICE:
-   clocks : means "clocks_input"
+   clocks : means "clocks_input" actually
    clock-names : the name is "aligned" with the corresponding driver
+interrupts of zynq7k:
+  PL to PS Interrupts:
+    IRQF2P[ 7: 0] input, SPI: Numbers [68:61].
+    IRQF2P[15: 8] input, SPI: Numbers [91:84].
+    IRQF2P[19:16] input, PPI: nFIQ, nIRQ (both CPUs).
+  PS to PL Interrupts:
+    IRQP2F[27: 0] Output, I/O peripherals received and forwarded to the interrupt controller.
+
 History:
   base: branch "adrv9009_zc706", "arch\arm\boot\dts\zynq-zc706-adv7511-adrv9009.dts"
   change: clock-tree/interrupts per FHK-RFB (1*AD9528+2*AD9009)
   reference: https://ez.analog.com/wide-band-rf-transceivers/
     design-support-adrv9008-1-adrv9008-2-adrv9009/f/discussions/
     100583/adrv9009-custom-profile/300558
+  change: Xilinx DPD integration, FHK DMA datapath verification
 */
 
 &i2c0 {
@@ -46,8 +55,7 @@ History:
 };
 
 &fpga_axi {
-#if 1
-	jesd204rx_dma: jesd204rx-dma@7c400000 {
+	jesd204rx_dma: jesd204rx-dmac@7c400000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c400000 0x10000>;
 		#dma-cells = <1>;
@@ -62,15 +70,15 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <128>;
+				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64
 				adi,source-bus-type = <2>;
-				adi,destination-bus-width = <128>;
+				adi,destination-bus-width = <64>;//ADI-HDL-2018R2 is 64
 				adi,destination-bus-type = <0>;
 			};
 		};
 	};
 
-	jesd204ro_dma: jesd204ro-dma@7c440000  {
+	jesd204ro_dma: jesd204ro-dmac@7c440000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
@@ -85,15 +93,15 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <128>;
+				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64
 				adi,source-bus-type = <2>;
-				adi,destination-bus-width = <128>;
+				adi,destination-bus-width = <64>;//ADI-HDL-2018R2 is 64
 				adi,destination-bus-type = <0>;
 			};
 		};
 	};
 
-	jesd204tx_dma: jesd204tx-dma@7c420000 {
+	jesd204tx_dma: jesd204tx-dmac@7c420000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c420000 0x10000>;
 		#dma-cells = <1>;
@@ -108,11 +116,11 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <128>;
+				adi,source-bus-width = <128>;//ADI-HDL-2018R2 is 64
 				adi,source-bus-type = <0>;
-				adi,destination-bus-width = <128>;
+				adi,destination-bus-width = <128>;//ADI-HDL-2018R2 is 64
 				adi,destination-bus-type = <2>;
-				adi,cyclic;
+				//adi,cyclic;
 			};
 		};
 	};
@@ -157,7 +165,12 @@ History:
 		#clock-cells = <0>;
 		clock-output-names = "jesd_rx_lane_clk";
 
-		adi,octets-per-frame = <4>;
+		//RX_PATH: *FPGA.JESD204B-DeframerA -> PHY.JESD204B-FramerA
+		//L(Number of Lanes)=2
+		//S(Number of Samples)=1 #PHY-Framer decide: 1,2,or4
+		//adi,converters-per-device = <4>;//M=4 #PHY-Framer decided
+		//adi,bits-per-sample = <16>;//N'=16
+		adi,octets-per-frame = <4>;//F = N’/8 × M × S/L = (16/8)*4*1/2=4
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -173,11 +186,14 @@ History:
 		#clock-cells = <0>;
 		clock-output-names = "jesd_tx_lane_clk";
 
-		adi,octets-per-frame = <2>;
+		//TX_PATH: *FPGA.JESD204B-FramerA -> PHY.JESD204B-DeframerA
+		//L(Number of Lanes)=4
+		//S(Number of Samples)=1 #PHY-Deframer decide: always=1
+		adi,converters-per-device = <4>;//M=4
+		adi,bits-per-sample = <16>;//N'=16
+		adi,octets-per-frame = <2>;//F = N’/8 × M × S/L = (16/8)*4*1/4=2
 		adi,frames-per-multiframe = <32>;
 		adi,converter-resolution = <16>;// 20190314: different from 14/zynqmp-zcu102-rev10-adrv9009.dts
-		adi,bits-per-sample = <16>;
-		adi,converters-per-device = <4>;
 		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
@@ -193,7 +209,12 @@ History:
 		#clock-cells = <0>;
 		clock-output-names = "jesd_ro_lane_clk";
 
-		adi,octets-per-frame = <2>; //20190306: 4->2 to align with "adrv9009-orx"
+		//OR_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//L(Number of Lanes)=2
+		//S(Number of Samples)=1 #PHY-Framer decided: 1,2,or4
+		//adi,converters-per-device = <2>;//M=2 if <=200HMz; M=4 if > 200MHz
+		//adi,bits-per-sample = <16>;//N'=16
+		adi,octets-per-frame = <2>; //20190306: 4->2 for 450MHz; F = N’/8 × M × S/L = (16/8)*2*1/2
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -252,7 +273,7 @@ History:
 		adi,sys-clk-select = <3>;//20190320: using QPLL for lane-rate>4915.6MHz
 		adi,out-clk-select = <3>;
 		adi,use-lpm-enable;
-		//adi,use-cpll-enable;
+		//adi,use-cpll-enable;//20190320: using QPLL for lane-rate>4915.6MHz
 	};
 
 	jesd204ro_layer1: jesd204ro-layer1@44a50000 {
@@ -270,15 +291,8 @@ History:
 		adi,sys-clk-select = <3>;//20190320: using QPLL for lane-rate>4915.6MHz
 		adi,out-clk-select = <3>;
 		adi,use-lpm-enable;
-		//adi,use-cpll-enable;
+		//adi,use-cpll-enable;//20190320: using QPLL for lane-rate>4915.6MHz
 	};
-#else
-	VECSS0_VMEMORY_1_VDDR_1_MIG_IQ_0: memory-controller@40000000 {
-		compatible = "xlnx,mig-7series-4.0";
-		device_type = "memory";
-		reg = <0x40000000 0x40000000>;
-	};
-#endif
 };
 
 &fpga_axi1 {
@@ -289,15 +303,6 @@ History:
 		clock-names = "s_axi_ctrl_aclk";
 		clocks = <&misc_clk_6>;
 	};
-#else
-	CLKSS0_SCR_1: dfe_scratch@a0000000 {
-		compatible = "xlnx,dfe-scratch-1.0";
-		reg = <0xa0000000 0x1000>;
-		clock-names = "s_axi_ctrl_aclk";
-		clocks = <&clkc 16>;
-	};
-#endif
-#if 0
 	CLKSS0_CLKCTL_1: dfe_clk_ctrl@8c001000 {
 		compatible = "xlnx,dfe-clk-ctrl-1.0";
 		reg = <0x8c001000 0x1000>;
@@ -364,13 +369,14 @@ History:
 		xlnx,phases = <0x1>;
 	};
 #endif
-    /* "dpd-host-app" demands 0xA0000000 rather than 0x80000000, fhk_zc706ad9009_dpd_debug.txt */
+	/* "dpd-host-app" demands 0xA0000000 rather than 0x80000000, 
+	   refer to "fhk_zc706ad9009_dpd_debug.txt" for more info */
 	TXCHAIN0_DFESS0_DPD: dpd@A0000000 {
 		//clock-names = "dpd_aclk", "dpd_2x_aclk", "s_axi_ctrl_aclk", "s_axi_user_aclk";
 		//clocks = <&jesd204tx_clkgen>, <&jesd204tx_clkgen>, <&clkc 16>, <&clkc 16>; // 16/fclk1/200MHz
 		//compatible = "xlnx,dpd-8.1", "generic-uio";
 		compatible = "generic-uio";
-		interrupts = <0 51 1>; // UG858, Table 7-4: IRQF2P[7] -> IRQ[83-32]
+		interrupts = <0 29 1>; // UG858, Table 7-4: IRQF2P[0] -> IRQ[61-32]
 		reg = <0xA0000000 0x04000000 0xA4000000 0x00020000>;
 	};
 };
@@ -382,9 +388,9 @@ History:
 #define fmc_spi spi0
 
 //#include "fhk_adrv9009_122m.dtsi"
-//#include "fhk_adrv9009_245m.dtsi"
-#include "fhk_adrv9009_491m.dtsi"
-//#include "fhk_adrv9009_491m_dc245.dtsi"
+//#include "fhk_adrv9009_245m_dc245.dtsi"
+#include "fhk_adrv9009_491m_dc245.dtsi"
+//#include "fhk_adrv9009_491m_dc122.dtsi"
 
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
