@@ -166,11 +166,12 @@ History:
 		clock-output-names = "jesd_rx_lane_clk";
 
 		//RX_PATH: *FPGA.JESD204B-DeframerA -> PHY.JESD204B-FramerA
-		//L(Number of Lanes)=2
-		//S(Number of Samples)=1 #PHY-Framer decide: 1,2,or4
-		//adi,converters-per-device = <4>;//M=4 #PHY-Framer decided
-		//adi,bits-per-sample = <16>;//N'=16
-		adi,octets-per-frame = <4>;//F = N’/8 × M × S/L = (16/8)*4*1/2=4
+		//adi,bits-per-sample = <16>;//N'=16; PHY-Framer decide
+		//adi,converters-per-device = <4>;//M=4; PHY-Framer decide
+		//L(Number of Lanes)=2; PHY-Framer decide
+		//S(Number of Samples)=1; PHY-Framer decide(1,2,4)
+		//Figure 34. JESD204B Framer Configuration (M = 4, L = 2, S = 1)
+		adi,octets-per-frame = <4>;//F=N'/8*M*S/L =(16/8)*4*1/2=4
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -187,14 +188,15 @@ History:
 		clock-output-names = "jesd_tx_lane_clk";
 
 		//TX_PATH: *FPGA.JESD204B-FramerA -> PHY.JESD204B-DeframerA
-		//L(Number of Lanes)=4
-		//S(Number of Samples)=1 #PHY-Deframer decide: always=1
-		adi,converters-per-device = <4>;//M=4
-		adi,bits-per-sample = <16>;//N'=16
-		adi,octets-per-frame = <2>;//F = N’/8 × M × S/L = (16/8)*4*1/4=2
-		adi,frames-per-multiframe = <32>;
 		adi,converter-resolution = <16>;// 20190314: different from 14/zynqmp-zcu102-rev10-adrv9009.dts
+		adi,bits-per-sample = <16>;//N'=16; PHY-Deframer decide
 		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
+		adi,converters-per-device = <4>;//M=4; PHY-Deframer decide
+		//L(Number of Lanes)=4; PHY-Deframer decide
+		//S(Number of Samples)=1; PHY-Deframer decide(1-only)
+		//Figure 36. JESD204B Framer Configuration (M = 4, L = 4, S = 1)
+		adi,octets-per-frame = <2>;//F=N'/8*M*S/L =(16/8)*4*1/4=2
+		adi,frames-per-multiframe = <32>;
 	};
 
 	jesd204ro_layer2: jesd204ro-layer2@44ab0000 {
@@ -209,12 +211,13 @@ History:
 		#clock-cells = <0>;
 		clock-output-names = "jesd_ro_lane_clk";
 
-		//OR_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
-		//L(Number of Lanes)=2
-		//S(Number of Samples)=1 #PHY-Framer decided: 1,2,or4
-		//adi,converters-per-device = <2>;//M=2 if <=200HMz; M=4 if > 200MHz
-		//adi,bits-per-sample = <16>;//N'=16
-		adi,octets-per-frame = <2>; //20190306: 4->2 for 450MHz; F = N’/8 × M × S/L = (16/8)*2*1/2
+		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//adi,bits-per-sample = <16>;//N'=16; PHY-Framer decide
+		//adi,converters-per-device = <2>;//PHY-Framer decided; ORx2-ONLY(M=2) rather than ORx1&2(M=4); must be 2 if ORX_rfbandwidth>200MHz
+		//L(Number of Lanes)=2; PHY-Framer decided
+		//S(Number of Samples)=1; PHY-Framer decided(1,2,or4)
+		//Figure 27. JESD204B Framer Configuration (M = 2, L = 2, S = 1)
+		adi,octets-per-frame = <2>; //F=N'/8*M*S/L =(16/8)*2*1/2
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -270,10 +273,10 @@ History:
 		#clock-cells = <1>;
 		clock-output-names = "rx_gt_clk", "rx_out_clk";
 
-		adi,sys-clk-select = <3>;//20190320: using QPLL for lane-rate>4915.6MHz
+		adi,sys-clk-select = <3>;//0->3: 20190320: using the shared QPLL(by Tx/Rx/ORx)
 		adi,out-clk-select = <3>;
 		adi,use-lpm-enable;
-		//adi,use-cpll-enable;//20190320: using QPLL for lane-rate>4915.6MHz
+		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 
 	jesd204ro_layer1: jesd204ro-layer1@44a50000 {
@@ -288,10 +291,10 @@ History:
 		#clock-cells = <1>;
 		clock-output-names = "ro_gt_clk", "ro_out_clk";
 
-		adi,sys-clk-select = <3>;//20190320: using QPLL for lane-rate>4915.6MHz
+		adi,sys-clk-select = <3>;//0->3: 20190320: using the shared QPLL(by Tx/Rx/ORx)
 		adi,out-clk-select = <3>;
 		adi,use-lpm-enable;
-		//adi,use-cpll-enable;//20190320: using QPLL for lane-rate>4915.6MHz
+		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 };
 

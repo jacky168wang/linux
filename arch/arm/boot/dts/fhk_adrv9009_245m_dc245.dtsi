@@ -27,7 +27,6 @@ History:
 };
 
 &fmc_spi {
-
 	clk0_ad9528: ad9528-1@0 {
 		compatible = "adi,ad9528";
 		reg = <0>;
@@ -175,8 +174,8 @@ History:
 		adi,jesd204-framer-a-lane0-id = <0>;
 		adi,jesd204-framer-a-m = <4>;//M(Converters)=4
 		adi,jesd204-framer-a-k = <32>;
-		adi,jesd204-framer-a-f = <4>;//F=N'/8*M*S/L=(16/8)*4*S/2, mean S=1, and it decide FPGA.JESD204B-DeframerA/RX setting
-		adi,jesd204-framer-a-np = <16>;
+		adi,jesd204-framer-a-f = <4>;//F=N'/8*M*S/L=(16/8)*4*S/2; decide FPGA-DeframerA/RX setting
+		adi,jesd204-framer-a-np = <16>;//N'=16
 		adi,jesd204-framer-a-scramble = <1>;
 		adi,jesd204-framer-a-external-sysref = <1>;
 		adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;//L(Number of Lanes)=2
@@ -193,10 +192,10 @@ History:
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
+		adi,jesd204-framer-b-m = <2>;//ORx2-ONLY(M=2) rather than ORx1&2(M=4); must be 2 if ORX_rfbandwidth>200MHz
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;// must be 2 if ORX_rfbandwidth > 200MHz, F=N'/8*M*S/L=(16/8)*2*S/2, mean S=1, and it decide FPGA.JESD204B-DeframerB/ORX setting
-		adi,jesd204-framer-b-np = <16>;
+		adi,jesd204-framer-b-f = <2>;//F=N'/8*M*S/L=(16/8)*2*S/2; decide FPGA-DeframerB/ORX setting
+		adi,jesd204-framer-b-np = <16>;//N'=16
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;
 		adi,jesd204-framer-b-serializer-lanes-enabled = <0x0C>;//L(Number of Lanes)=2
@@ -222,7 +221,7 @@ History:
 		adi,jesd204-deframer-a-lmfc-offset = <17>;
 		adi,jesd204-deframer-a-new-sysref-on-relink = <0>;
 		adi,jesd204-deframer-a-syncb-out-select = <0>;
-		adi,jesd204-deframer-a-np = <16>;
+		adi,jesd204-deframer-a-np = <16>;//N'=16
 		adi,jesd204-deframer-a-syncb-out-lvds-mode = <1>;
 		adi,jesd204-deframer-a-syncb-out-lvds-pn-invert = <0>;
 		adi,jesd204-deframer-a-syncb-out-cmos-slew-rate = <0>;
@@ -467,13 +466,13 @@ History:
 		adi,orx-lo-cfg-gpio-select = <19>;
 
 		adi,fhm-config-fhm-gpio-pin = <0>;
-		adi,fhm-config-fhm-min-freq_mhz = <2400>;
-		adi,fhm-config-fhm-max-freq_mhz = <2500>;
+		adi,fhm-config-fhm-min-freq_mhz = <100>;
+		adi,fhm-config-fhm-max-freq_mhz = <100>;
 
 		adi,fhm-mode-fhm-enable = <0>;
 		adi,fhm-mode-enable-mcs-sync = <0>;
 		adi,fhm-mode-fhm-trigger-mode = <0>;
-		adi,fhm-mode-fhm-exit-mode = <1>;
+		adi,fhm-mode-fhm-exit-mode = <0>;
 		adi,fhm-mode-fhm-init-frequency_hz = <2450000000>;
 
 		adi,rx1-gain-ctrl-pin-inc-step = <1>;
@@ -503,8 +502,8 @@ History:
 		adi,tx-pa-protection-tx1-power-threshold = <4096>;
 		adi,tx-pa-protection-tx2-power-threshold = <4096>;
 		adi,tx-pa-protection-peak-count = <4>;
-		adi,tx-pa-protection-tx1-peak-threshold = <140>;
-		adi,tx-pa-protection-tx2-peak-threshold = <140>;
+		adi,tx-pa-protection-tx1-peak-threshold = <130>;
+		adi,tx-pa-protection-tx2-peak-threshold = <130>;
 	};
 };
 
