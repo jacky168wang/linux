@@ -60,6 +60,13 @@
 		};*/
 	};
 
+	fpga_axi: fpga-axi@0 {
+		compatible = "simple-bus";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		ranges;
+	};
+
 	fpga_axi1: fpga-axi@1 {
 		compatible = "simple-bus";
 		#address-cells = <0x1>;

@@ -1,9 +1,5 @@
-/dts-v1/;
-
-/include/ "zynq-zc706.dtsi"
-/include/ "zynq-zc706-adv7511.dtsi"
-
-/* NOTICE:
+/* 
+NOTICE:
    clocks : means "clocks_input" actually
    clock-names : the name is "aligned" with the corresponding driver
 interrupts of zynq7k:
@@ -22,34 +18,116 @@ History:
     100583/adrv9009-custom-profile/300558
   change: Xilinx DPD integration, FHK DMA datapath verification
 */
+/dts-v1/;
 
-&i2c0 {
-	status = "okay";
-};
+/include/ "zynq-zc706.dtsi"
+
 
 &uart0 {
 	status = "okay";
 };
 
-&i2c_mux {
-	i2c@5 { /* HPC IIC */
+&i2c0 {
+	status = "okay";
+	/* uspace: i2c-si5324-xgeth.sh
+	i2c_mux: i2cswitch@74 {
+		compatible = "nxp,pca9548";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <5>;
+		reg = <0x74>;
+	};
+	clk2xge@68 {
+		compatible = "si5324";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x68>;
+	};*/
+};
 
-		eeprom@50 {
-			compatible = "at24,24c02";
-			reg = <0x50>;
-		};
+&fpga_axi {
 
-		eeprom@54 {
-			compatible = "at24,24c02";
-			reg = <0x54>;
-		};
+	i2c@41600000 {
+		compatible = "xlnx,axi-iic-1.02.a", "xlnx,xps-iic-2.00.a";
+		reg = <0x41600000 0x10000>;
+		interrupt-parent = <&intc>;
+		interrupts = <0 58 4>;
+		clocks = <&clkc 15>;
+		clock-names = "pclk";
 
-		ad7291@2f {
-			compatible = "adi,ad7291";
-			reg = <0x2f>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		i2c_mux: i2cswitch@74 {
+			compatible = "nxp,pca9548";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x74>;
+
+			i2c@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0>;
+				osc@5d {
+					compatible = "si570";
+					temperature-stability = <50>;
+					reg = <0x5d>;
+					factory-fout = <156250000>;
+					initial-fout = <148500000>;
+				};
+			};
+
+			i2c@2 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <2>;
+				eeprom@54 {
+					compatible = "at,24c08";
+					reg = <0x54>;
+				};
+			};
+
+			i2c@3 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <3>;
+				gpio@21 {
+					compatible = "ti,tca6416";
+					reg = <0x21>;
+					gpio-controller;
+					#gpio-cells = <2>;
+				};
+			};
+
+			i2c@4 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <4>;
+				rtc@54 {
+					compatible = "nxp,pcf8563";
+					reg = <0x51>;
+				};
+			};
+
+			i2c@5 { /* FMC-HPC IIC */
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <5>;
+
+				eeprom@50 {
+					compatible = "at24,24c02";
+					reg = <0x50>;
+				};
+
+				eeprom@54 {
+					compatible = "at24,24c02";
+					reg = <0x54>;
+				};
+				/*
+				ad7291@2f {
+					compatible = "adi,ad7291";
+					reg = <0x2f>;
+				};*/
+			};
 		};
 	};
 };
@@ -392,8 +470,8 @@ History:
 
 #define fmc_spi spi0
 
-#if 0
-//#include "fhk_adrv9009_122m_dc122.dtsi"
+#if 1
+#include "fhk_adrv9009_122m.dtsi"
 #else
 //#include "fhk_adrv9009_245m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc245.dtsi"
@@ -436,11 +514,11 @@ History:
 &trx0_adrv9009 {
 	reset-gpios = <&gpio0 106 0>;
 	test-gpios = <&gpio0 107 0>;
-	sysref-req-gpios = <&gpio0 112 0>;
+	sysref-req-gpios = <&gpio0 112 0>;/*
 	rx2-enable-gpios = <&gpio0 108 0>;
 	rx1-enable-gpios = <&gpio0 109 0>;
 	tx2-enable-gpios = <&gpio0 110 0>;
-	tx1-enable-gpios = <&gpio0 111 0>;
+	tx1-enable-gpios = <&gpio0 111 0>;*/
 };
 
 &clk0_ad9528 {
