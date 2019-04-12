@@ -8,6 +8,42 @@ History:
     so sample_rate > 122.88M is not supported by ZC706-GTX-serdes,
     although AD9009-Serdes support 9.8304GHz
   Reference1: branch "2018_R2", "arch\arm64\boot\dts\xilinx\adi-adrv9009.dtsi" for 245.76M sample rate
+  Reference2:
+diff --git a/arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi
+           b/arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi
+index 2cceae6..0635ed6 100644
+--- a/arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi
++++ b/arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi
+@@ -145,9 +145,9 @@
+                adi,jesd204-framer-b-bank-id = <0>;
+                adi,jesd204-framer-b-device-id = <0>;
+                adi,jesd204-framer-b-lane0-id = <0>;
+-               adi,jesd204-framer-b-m = <4>;
++               adi,jesd204-framer-b-m = <2>;
+                adi,jesd204-framer-b-k = <32>;
+-               adi,jesd204-framer-b-f = <4>;
++               adi,jesd204-framer-b-f = <2>;
+                adi,jesd204-framer-b-np = <16>;
+                adi,jesd204-framer-b-scramble = <1>;
+                adi,jesd204-framer-b-external-sysref = <1>;
+@@ -249,7 +249,7 @@
+                adi,orx-gain-control-orx2-min-gain-index = <195>;
+                adi,obs-settings-framer-sel = <1>;
+-               adi,obs-settings-obs-rx-channels-enable = <3>;
++               adi,obs-settings-obs-rx-channels-enable = <1>;
+                adi,obs-settings-obs-rx-lo-source = <0>;
+diff --git a/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
+           b/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
+index 036af22..8b5fe56 100644
+--- a/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
++++ b/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
+@@ -189,7 +189,7 @@
+                #clock-cells = <0>;
+                clock-output-names = "jesd_rx_os_lane_clk";
+-               adi,octets-per-frame = <4>;
++               adi,octets-per-frame = <2>;
+                adi,frames-per-multiframe = <32>;
+};
 */
 
 #include <dt-bindings/iio/frequency/ad9528.h>
@@ -189,12 +225,16 @@ History:
 		adi,jesd204-framer-a-enable-manual-lane-xbar = <0>;
 
 		/* JESD204 OBS */
+		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
+		//option2: HW change into (Figure 13. Framer Data Packing for (M = 2, L = 1, S = 1))
+		//stitching mode must setting with (M = 2, L = 2, logically), (M = 4, L = 2 physically)
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <2>;//ORx2-ONLY(M=2) rather than ORx1&2(M=4); must be 2 if ORX_rfbandwidth>200MHz
+		adi,jesd204-framer-b-m = <2>;//ORx1&2(M=4,L=2), or ORx2-ONLY(M=2,L=1), or ORX_rfbandwidth>200MHz(M=2,L=2)
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;//F=N'/8*M*S/L=(16/8)*2*S/2; decide FPGA-DeframerB/ORX setting
+		adi,jesd204-framer-b-f = <2>;//F=N'/8*M*S/L; decide FPGA-DeframerB/ORX setting
 		adi,jesd204-framer-b-np = <16>;//N'=16
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;

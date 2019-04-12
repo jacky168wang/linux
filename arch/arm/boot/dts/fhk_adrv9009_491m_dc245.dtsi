@@ -225,12 +225,16 @@ index 036af22..8b5fe56 100644
 		adi,jesd204-framer-a-enable-manual-lane-xbar = <0>;
 
 		/* JESD204 OBS */
+		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
+		//option2: HW change into (Figure 13. Framer Data Packing for (M = 2, L = 1, S = 1))
+		//stitching mode must setting with (M = 2, L = 2, logically), (M = 4, L = 2 physically)
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <2>;//ORx2-ONLY(M=2) rather than ORx1&2(M=4); must be 2 if ORX_rfbandwidth>200MHz
+		adi,jesd204-framer-b-m = <2>;//ORx1&2(M=4,L=2), or ORx2-ONLY(M=2,L=1), or ORX_rfbandwidth>200MHz(M=2,L=2)
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;//F=N'/8*M*S/L=(16/8)*2*S/2; decide FPGA-DeframerB/ORX setting
+		adi,jesd204-framer-b-f = <2>;//F=N'/8*M*S/L; decide FPGA-DeframerB/ORX setting
 		adi,jesd204-framer-b-np = <16>;//N'=16
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;

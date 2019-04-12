@@ -166,11 +166,11 @@ History:
 		clock-output-names = "jesd_rx_lane_clk";
 
 		//RX_PATH: *FPGA.JESD204B-DeframerA -> PHY.JESD204B-FramerA
+		//Figure 34. JESD204B Framer Configuration (M = 4, L = 2, S = 1)
 		//adi,bits-per-sample = <16>;//N'=16; PHY-Framer decide
 		//adi,converters-per-device = <4>;//M=4; PHY-Framer decide
 		//L(Number of Lanes)=2; PHY-Framer decide
 		//S(Number of Samples)=1; PHY-Framer decide(1,2,4)
-		//Figure 34. JESD204B Framer Configuration (M = 4, L = 2, S = 1)
 		adi,octets-per-frame = <4>;//F=N'/8*M*S/L =(16/8)*4*1/2=4
 		adi,frames-per-multiframe = <32>;
 	};
@@ -188,15 +188,15 @@ History:
 		clock-output-names = "jesd_tx_lane_clk";
 
 		//TX_PATH: *FPGA.JESD204B-FramerA -> PHY.JESD204B-DeframerA
-		adi,converter-resolution = <16>;// 20190314: different from 14/zynqmp-zcu102-rev10-adrv9009.dts
-		adi,bits-per-sample = <16>;//N'=16; PHY-Deframer decide
-		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
-		adi,converters-per-device = <4>;//M=4; PHY-Deframer decide
 		//L(Number of Lanes)=4; PHY-Deframer decide
 		//S(Number of Samples)=1; PHY-Deframer decide(1-only)
 		//Figure 36. JESD204B Framer Configuration (M = 4, L = 4, S = 1)
 		adi,octets-per-frame = <2>;//F=N'/8*M*S/L =(16/8)*4*1/4=2
 		adi,frames-per-multiframe = <32>;
+		adi,converter-resolution = <16>;// 20190314: different from 14/zynqmp-zcu102-rev10-adrv9009.dts
+		adi,bits-per-sample = <16>;//N'=16; PHY-Deframer decide
+		adi,converters-per-device = <4>;//M=4; PHY-Deframer decide
+		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
 	jesd204ro_layer2: jesd204ro-layer2@44ab0000 {
@@ -212,12 +212,14 @@ History:
 		clock-output-names = "jesd_ro_lane_clk";
 
 		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
+		//option2: HW change into (Figure 13. Framer Data Packing for (M = 2, L = 1, S = 1))
+		//stitching mode must setting with (M = 2, L = 2, logically), (M = 4, L = 2 physically)
 		//adi,bits-per-sample = <16>;//N'=16; PHY-Framer decide
-		//adi,converters-per-device = <2>;//PHY-Framer decided; ORx2-ONLY(M=2) rather than ORx1&2(M=4); must be 2 if ORX_rfbandwidth>200MHz
-		//L(Number of Lanes)=2; PHY-Framer decided
-		//S(Number of Samples)=1; PHY-Framer decided(1,2,or4)
-		//Figure 27. JESD204B Framer Configuration (M = 2, L = 2, S = 1)
-		adi,octets-per-frame = <2>; //F=N'/8*M*S/L =(16/8)*2*1/2
+		//adi,converters-per-device = <2>;//PHY-Framer decide; must be 2 logically if ORX_rfbandwidth>200MHz
+		//L(Number of Lanes)=2; PHY-Framer decide
+		//S(Number of Samples)=1; PHY-Framer decide(1,2,or4)
+		adi,octets-per-frame = <4>; //F=N'/8*M*S/L =(16/8)*4*1/2
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -390,10 +392,16 @@ History:
 
 #define fmc_spi spi0
 
-//#include "fhk_adrv9009_122m.dtsi"
+#if 0
+//#include "fhk_adrv9009_122m_dc122.dtsi"
+#else
 //#include "fhk_adrv9009_245m_dc245.dtsi"
-#include "fhk_adrv9009_491m_dc245.dtsi"
+//#include "fhk_adrv9009_491m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc122.dtsi"
+	&jesd204ro_layer2 {
+		adi,octets-per-frame = <2>;
+	};
+#endif
 
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
