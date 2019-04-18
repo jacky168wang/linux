@@ -5006,6 +5006,8 @@ static int adrv9009_probe(struct spi_device *spi)
 		 talArmVersionInfo.minorVer, talArmVersionInfo.rcVer,
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
 
+	TALISE_setRadioCtlPinMode(phy->talDevice, TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+
 	return 0;
 
 out_remove_sysfs_bin:

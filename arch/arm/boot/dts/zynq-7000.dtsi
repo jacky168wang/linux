@@ -109,6 +109,10 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 20 4>;
 			reg = <0xe000a000 0x1000>;
+			/* merge from petalinux-zc706
+			emio-gpio-width = <64>;
+			gpio-mask-high = <0>;
+			gpio-mask-low = <0x5600>; */
 		};
 
 		i2c0: i2c@e0004000 {
@@ -120,6 +124,9 @@
 			reg = <0xe0004000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			/* merge from petalinux-zc706
+			clock-frequency = <400000>;
+			i2c-reset = <&gpio 46 0>; */
 		};
 
 		i2c1: i2c@e0005000 {
@@ -133,15 +140,18 @@
 			#size-cells = <0>;
 		};
 
-		intc: interrupt-controller@f8f01000 {
+		intc: int-ctrl@f8f01000 {
 			compatible = "arm,cortex-a9-gic";
 			#interrupt-cells = <3>;
 			interrupt-controller;
 			reg = <0xF8F01000 0x1000>,
 			      <0xF8F00100 0x100>;
+			/* merge from petalinux-zc706
+			num_cpus = <2>;
+			num_interrupts = <96>; */
 		};
 
-		L2: cache-controller@f8f02000 {
+		L2: cache-ctrl@f8f02000 {
 			compatible = "arm,pl310-cache";
 			reg = <0xF8F02000 0x1000>;
 			interrupts = <0 2 4>;
@@ -151,12 +161,12 @@
 			cache-level = <2>;
 		};
 
-		mc: memory-controller@f8006000 {
+		ddrmc: ddr-memctrl@f8006000 {
 			compatible = "xlnx,zynq-ddrc-a05";
 			reg = <0xf8006000 0x1000>;
 		};
 
-		ocmc: ocmc@f800c000 {
+		ocmc: ocm-memctrl@f800c000 {
 			compatible = "xlnx,zynq-ocmc-1.0";
 			interrupt-parent = <&intc>;
 			interrupts = <0 3 4>;
@@ -179,6 +189,9 @@
 			clock-names = "uart_clk", "pclk";
 			reg = <0xE0001000 0x1000>;
 			interrupts = <0 50 4>;
+			/* merge from petalinux-zc706
+			device_type = "serial";
+			port-number = <0>;*/
 		};
 
 		spi0: spi@e0006000 {
@@ -217,7 +230,7 @@
 			#size-cells = <0>;
 		};
 
-		smcc: memory-controller@e000e000 {
+		smcc: smc-memctrl@e000e000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
@@ -226,8 +239,9 @@
 			compatible = "arm,pl353-smc-r2p1";
 			interrupt-parent = <&intc>;
 			interrupts = <0 18 4>;
-			ranges ;
+			ranges;
 			reg = <0xe000e000 0x1000>;
+
 			nand0: flash@e1000000 {
 				status = "disabled";
 				compatible = "arm,pl353-nand-r2p1";
@@ -235,6 +249,7 @@
 				#address-cells = <0x1>;
 				#size-cells = <0x1>;
 			};
+
 			nor0: flash@e2000000 {
 				status = "disabled";
 				compatible = "cfi-flash";
@@ -253,6 +268,11 @@
 			clock-names = "pclk", "hclk", "tx_clk";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			/* merge from petalinux-zc706
+			enet-reset = <&gpio 47 0>;
+			phy-mode = "rgmii-id";
+			xlnx,ptp-enet-clock = <111111115>;
+			local-mac-address = [00 0a 35 00 1e 53];*/
 		};
 
 		gem1: ethernet@e000c000 {
@@ -274,6 +294,10 @@
 			interrupt-parent = <&intc>;
 			interrupts = <0 24 4>;
 			reg = <0xe0100000 0x1000>;
+			/* merge from petalinux-zc706
+			xlnx,has-cd = <1>;
+			xlnx,has-power = <0>;
+			xlnx,has-wp = <1>;*/
 		};
 
 		sdhci1: sdhci@e0101000 {
@@ -293,6 +317,7 @@
 			compatible = "xlnx,zynq-slcr", "syscon", "simple-mfd";
 			reg = <0xF8000000 0x1000>;
 			ranges;
+
 			clkc: clkc@100 {
 				u-boot,dm-pre-reloc;
 				#clock-cells = <1>;
@@ -399,6 +424,8 @@
 			interrupts = <0 21 4>;
 			reg = <0xe0002000 0x1000>;
 			phy_type = "ulpi";
+			/* merge from petalinux-zc706
+			usb-reset = <&gpio 7 0>;*/
 		};
 
 		usb1: usb@e0003000 {

@@ -52,26 +52,12 @@
 			linux,code = <106>; // Right
 			gpios = <&gpio0 60 0>;
 		};
-		/* comment to enable the interrupt of UART0
+
 		sw9 {
 			label = "Select";
 			linux,code = <28>; // Enter
 			gpios = <&gpio0 59 0>;
-		};*/
-	};
-
-	fpga_axi: fpga-axi@0 {
-		compatible = "simple-bus";
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
-		ranges;
-	};
-
-	fpga_axi1: fpga-axi@1 {
-		compatible = "simple-bus";
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
-		ranges;
+		};
 	};
 };
 

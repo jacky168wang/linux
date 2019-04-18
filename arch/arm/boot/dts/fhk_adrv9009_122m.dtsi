@@ -448,20 +448,18 @@ History:
 		adi,aux-dac-resolution11 = <0>;
 		adi,aux-dac-values11 = <0>;
 
-		adi,arm-gpio-config-orx1-tx-sel0-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel0-pin-gpio-pin-sel = <5>;
 		adi,arm-gpio-config-orx1-tx-sel0-pin-polarity = <0>;
-		adi,arm-gpio-config-orx1-tx-sel0-pin-enable = <0>;
-
-		adi,arm-gpio-config-orx1-tx-sel1-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel0-pin-enable = <1>;
+		adi,arm-gpio-config-orx1-tx-sel1-pin-gpio-pin-sel = <4>;
 		adi,arm-gpio-config-orx1-tx-sel1-pin-polarity = <0>;
-		adi,arm-gpio-config-orx1-tx-sel1-pin-enable = <0>;
-		adi,arm-gpio-config-orx2-tx-sel0-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel1-pin-enable = <1>;
+		adi,arm-gpio-config-orx2-tx-sel0-pin-gpio-pin-sel = <7>;
 		adi,arm-gpio-config-orx2-tx-sel0-pin-polarity = <0>;
-		adi,arm-gpio-config-orx2-tx-sel0-pin-enable = <0>;
-
-		adi,arm-gpio-config-orx2-tx-sel1-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx2-tx-sel0-pin-enable = <1>;
+		adi,arm-gpio-config-orx2-tx-sel1-pin-gpio-pin-sel = <6>;
 		adi,arm-gpio-config-orx2-tx-sel1-pin-polarity = <0>;
-		adi,arm-gpio-config-orx2-tx-sel1-pin-enable = <0>;
+		adi,arm-gpio-config-orx2-tx-sel1-pin-enable = <1>;
 		adi,arm-gpio-config-en-tx-tracking-cals-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-en-tx-tracking-cals-polarity = <0>;
 		adi,arm-gpio-config-en-tx-tracking-cals-enable = <0>;

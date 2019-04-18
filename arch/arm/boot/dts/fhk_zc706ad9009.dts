@@ -20,115 +20,30 @@ History:
 */
 /dts-v1/;
 
-/include/ "zynq-zc706.dtsi"
+/include/ "zynq-zc706fhk.dtsi"
 
 
-&uart0 {
-	status = "okay";
-};
 
-&i2c0 {
-	status = "okay";
-	/* uspace: i2c-si5324-xgeth.sh
-	i2c_mux: i2cswitch@74 {
-		compatible = "nxp,pca9548";
+&i2c_mux {
+	i2c@5 { /* FMC-HPC IIC */
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x74>;
-	};
-	clk2xge@68 {
-		compatible = "si5324";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x68>;
-	};*/
-};
+		reg = <5>;
 
-&fpga_axi {
-
-	i2c@41600000 {
-		compatible = "xlnx,axi-iic-1.02.a", "xlnx,xps-iic-2.00.a";
-		reg = <0x41600000 0x10000>;
-		interrupt-parent = <&intc>;
-		interrupts = <0 58 4>;
-		clocks = <&clkc 15>;
-		clock-names = "pclk";
-
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		i2c_mux: i2cswitch@74 {
-			compatible = "nxp,pca9548";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x74>;
-
-			i2c@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <0>;
-				osc@5d {
-					compatible = "si570";
-					temperature-stability = <50>;
-					reg = <0x5d>;
-					factory-fout = <156250000>;
-					initial-fout = <148500000>;
-				};
-			};
-
-			i2c@2 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <2>;
-				eeprom@54 {
-					compatible = "at,24c08";
-					reg = <0x54>;
-				};
-			};
-
-			i2c@3 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <3>;
-				gpio@21 {
-					compatible = "ti,tca6416";
-					reg = <0x21>;
-					gpio-controller;
-					#gpio-cells = <2>;
-				};
-			};
-
-			i2c@4 {
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <4>;
-				rtc@54 {
-					compatible = "nxp,pcf8563";
-					reg = <0x51>;
-				};
-			};
-
-			i2c@5 { /* FMC-HPC IIC */
-				#address-cells = <1>;
-				#size-cells = <0>;
-				reg = <5>;
-
-				eeprom@50 {
-					compatible = "at24,24c02";
-					reg = <0x50>;
-				};
-
-				eeprom@54 {
-					compatible = "at24,24c02";
-					reg = <0x54>;
-				};
-				/*
-				ad7291@2f {
-					compatible = "adi,ad7291";
-					reg = <0x2f>;
-				};*/
-			};
+		eeprom@50 {
+			compatible = "at24,24c02";
+			reg = <0x50>;
 		};
+
+		eeprom@54 {
+			compatible = "at24,24c02";
+			reg = <0x54>;
+		};
+		/*
+		ad7291@2f {
+			compatible = "adi,ad7291";
+			reg = <0x2f>;
+		};*/
 	};
 };
 
@@ -137,7 +52,7 @@ History:
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c400000 0x10000>;
 		#dma-cells = <1>;
-		interrupts = <0 57 0>; // UG858, Table 7-4: IRQF2P[13] -> IRQ[89-32]
+		interrupts = <0 57 0>; //UG585, Table 7-4: IRQF2P[13] -> IRQ[89-32]
 		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
 		//clocks = <&clkc 15>, <&clkc 17>, <&misc_clk_0>;
 		//clock-names = "s_axi_aclk", "m_dest_axi_aclk", "fifo_wr_clk";
@@ -160,7 +75,7 @@ History:
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
-		interrupts = <0 55 0>; // UG858, Table 7-4: IRQF2P[11] -> IRQ[87-32]
+		interrupts = <0 55 0>; //UG585, Table 7-4: IRQF2P[11] -> IRQ[87-32]
 		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
 		//clocks = <&clkc 15>, <&clkc 17>, <&misc_clk_0>;
 		//clock-names = "s_axi_aclk", "m_dest_axi_aclk", "fifo_wr_clk";
@@ -183,7 +98,7 @@ History:
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c420000 0x10000>;
 		#dma-cells = <1>;
-		interrupts = <0 56 0>; // UG858, Table 7-4: IRQF2P[12] -> IRQ[88-32]
+		interrupts = <0 56 0>; //UG585, Table 7-4: IRQF2P[12] -> IRQ[88-32]
 		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
 		//clocks = <&clkc 15>, <&clkc 17>, <&clkc 17>;
 		//clock-names = "s_axi_aclk", "m_src_axi_aclk", "m_axis_aclk";
@@ -235,7 +150,7 @@ History:
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44aa0000 0x1000>;
 
-		interrupts = <0 54 0>; // UG858, Table 7-4: IRQF2P[10] -> IRQ[86-32]
+		interrupts = <0 54 0>; //UG585, Table 7-4: IRQF2P[10] -> IRQ[86-32]
 
 		clocks = <&clkc 15>, <&jesd204rx_clkgen>, <&jesd204rx_layer1 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -257,7 +172,7 @@ History:
 		compatible = "adi,axi-jesd204-tx-1.0";
 		reg = <0x44a90000 0x1000>;
 
-		interrupts = <0 53 0>; // UG858, Table 7-4: IRQF2P[9] -> IRQ[85-32]
+		interrupts = <0 53 0>; //UG585, Table 7-4: IRQF2P[9] -> IRQ[85-32]
 
 		clocks = <&clkc 15>, <&jesd204tx_clkgen>, <&jesd204tx_layer1 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -281,7 +196,7 @@ History:
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44ab0000 0x1000>;
 
-		interrupts = <0 52 0>; // UG858, Table 7-4: IRQF2P[8] -> IRQ[84-32]
+		interrupts = <0 52 0>; //UG585, Table 7-4: IRQF2P[8] -> IRQ[84-32]
 
 		clocks = <&clkc 15>, <&jesd204ro_clkgen>, <&jesd204ro_layer1 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
@@ -459,7 +374,7 @@ History:
 		//clocks = <&jesd204tx_clkgen>, <&jesd204tx_clkgen>, <&clkc 16>, <&clkc 16>; // 16/fclk1/200MHz
 		//compatible = "xlnx,dpd-8.1", "generic-uio";
 		compatible = "generic-uio";
-		interrupts = <0 29 1>; // UG858, Table 7-4: IRQF2P[0] -> IRQ[61-32]
+		interrupts = <0 29 1>; //UG585, Table 7-4: IRQF2P[0] -> IRQ[61-32]
 		reg = <0xA0000000 0x04000000 0xA4000000 0x00020000>;
 	};
 };
@@ -470,12 +385,12 @@ History:
 
 #define fmc_spi spi0
 
-#if 1
+#if 0
 #include "fhk_adrv9009_122m.dtsi"
 #else
 //#include "fhk_adrv9009_245m_dc245.dtsi"
-//#include "fhk_adrv9009_491m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc122.dtsi"
+#include "fhk_adrv9009_491m_dc245.dtsi"
 	&jesd204ro_layer2 {
 		adi,octets-per-frame = <2>;
 	};
@@ -514,8 +429,8 @@ History:
 &trx0_adrv9009 {
 	reset-gpios = <&gpio0 106 0>;
 	test-gpios = <&gpio0 107 0>;
-	sysref-req-gpios = <&gpio0 112 0>;/*
-	rx2-enable-gpios = <&gpio0 108 0>;
+	sysref-req-gpios = <&gpio0 112 0>;
+	/*rx2-enable-gpios = <&gpio0 108 0>;
 	rx1-enable-gpios = <&gpio0 109 0>;
 	tx2-enable-gpios = <&gpio0 110 0>;
 	tx1-enable-gpios = <&gpio0 111 0>;*/
