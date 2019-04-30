@@ -385,9 +385,19 @@ History:
 
 #define fmc_spi spi0
 
-#if 0
+#if 1
 #include "fhk_adrv9009_122m.dtsi"
+	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
+	&jesd204rx_layer1 {
+		adi,sys-clk-select = <0>;
+		adi,use-cpll-enable;
+	};
+	&jesd204ro_layer1 {
+		adi,sys-clk-select = <0>;
+		adi,use-cpll-enable;
+	};
 #else
+/* using QPLL-only for Tx/Rx/ORx */
 //#include "fhk_adrv9009_245m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc122.dtsi"
 #include "fhk_adrv9009_491m_dc245.dtsi"

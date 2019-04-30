@@ -91,7 +91,7 @@
 
 &usb0 {
 	xlnx,phy-reset-gpio = <&gpio0 7 0>;
-	status = "disable";
+	status = "disabled";
 };
 
 &qspi {
