@@ -67,6 +67,12 @@ It is recommended to use a new stream if there is change in any of below:
 #define STREAM_STITCH	"TaliseStreamStitch.bin"
 #define FHK_ORX_STITCH_FIXUP
 
+#include <linux/ioport.h>
+#include <asm/io.h>
+#define FHK_FPGA_TDDC_IO_BASE 0x43C30000
+#define FHK_FPGA_TDDC_IO_SIZE 0x60
+
+
 // 10 -bit:
 //
 // factor  v=(1+0.5*0)+((0.00143136(1+1)*(1.094*c-511))/(1+0)
@@ -726,6 +732,13 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		goto out_disable_tx_clk;
 	}
 
+	/* Configure (FHK_UB_ORX2_EN)ORX1_ENABLE->GPIO8, (FHK_UA_ORX1_EN)ORX2_ENABLE->GPIO9 */
+	ret = TALISE_setRadioCtlPinMode(phy->talDevice, TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		ret = -EFAULT;
+		goto out_disable_tx_clk;
+	}
 	ret = TALISE_setArmGpioPins(phy->talDevice, &phy->arm_gpio_config);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -801,24 +814,102 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*************************************************************************/
 	/*****  TALISE ARM Initialization External LOL Calibrations with PA  *****/
 	/*************************************************************************/
+	if (!request_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE, phy->indio_dev->name)) {
+		dev_err(&phy->spi->dev, "%s:%d Couldn't lock memory region 0x%08llX[0:0x%X]",
+			__func__, __LINE__, FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+		 ret = -EBUSY;
+		 goto out_disable_tx_clk;
+	}
+	phy->tddc_regs = ioremap(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+	if (IS_ERR(phy->tddc_regs)) {
+		ret = PTR_ERR(phy->tddc_regs);
+		dev_err(&phy->spi->dev, "Failed to remap TDDC_IOMEM, err = %d\n", ret);
+		release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+		goto out_disable_tx_clk;
+	}
+
+	/* io_config_manually enable */
+	//devmem 0x43C3002C 32 0x80000000
+	writel(0x80000000, phy->tddc_regs + 0x2C);
+	dev_info(&phy->spi->dev, "%s : inw(0x43C3002C)=0x%x", __func__, readl(phy->tddc_regs + 0x2C));
+
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
+	/* page174.step4: Turn on PA1 and close switches to connect TX1 to ORX2: FHK-design has ORX2 only */
+	//devmem 0x43C30058 32 0x0554fc08 # ECAL for UA_TX1<->UA_ORX2
+	writel(0x0554fc08, phy->tddc_regs + 0x58);
+	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%x", __func__, readl(phy->tddc_regs + 0x58));
+
+	/* page174.step5&6: Advise AD9009 of the current TX to ORX connection: FHK-design has ORX2 only */
+	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX1_ORX);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		ret = -EFAULT;
+		release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+		goto out_disable_tx_clk;
+	}
+	/* page174.step7&8: trigger TX_LOL_ECAL */
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
 		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
-		if (ret != TALACT_NO_ACTION)
+		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
 
 		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
-		if (ret != TALACT_NO_ACTION)
+		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-
-		if (errorFlag)
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
+		if (errorFlag) {
 			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
 				__func__, __LINE__, errorFlag);
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
 	}
+
+	/* page174.step4: Turn on PA2 and close switches to connect TX2 to ORX2: FHK-design has ORX2 only */
+	writel(0x0554bc0c, phy->tddc_regs + 0x58);
+	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%x", __func__, readl(phy->tddc_regs + 0x58));
+
+	/* page174.step5&6: Advise AD9009 of the current TX to ORX connection: FHK-design has ORX2 only */
+	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX2_ORX);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		ret = -EFAULT;
+		goto out_disable_tx_clk;
+	}
+
+	/* page174.step7&8: trigger TX_LOL_ECAL */
+	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
+		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
+		if (ret != TALACT_NO_ACTION) {
+			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
+
+		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
+		if (ret != TALACT_NO_ACTION) {
+			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
+		if (errorFlag) {
+			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
+				__func__, __LINE__, errorFlag);
+			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			goto out_disable_tx_clk;
+		}
+	}
+
+	release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
 #endif
 
 	/***************************************************/
-	/**** Enable Talise JESD204B Framer ***/
+	/**** Enable Talise JESD204B FramerA ***/
 	/***************************************************/
 
 	if (!IS_ERR_OR_NULL(phy->jesd_rx_clk) && phy->talInit.jesd204Settings.framerA.M) {
@@ -836,11 +927,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_tx_clk;
 		}
 
-		/*************************************************/
-		/**** Enable SYSREF to Talise JESD204B Framer ***/
-		/*************************************************/
-		/*** < User: Make sure SYSREF is stopped/disabled > ***/
-
+		/**** Enable SYSREF to Talise JESD204B FramerA ***/
+		/* < User: Make sure SYSREF is stopped/disabled > */
+		//adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
 		ret = TALISE_enableSysrefToFramer(phy->talDevice, TAL_FRAMER_A, 1);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -850,7 +939,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/***************************************************/
-	/**** Enable Talise JESD204B Framer ***/
+	/**** Enable Talise JESD204B FramerB ***/
 	/***************************************************/
 
 	if (!IS_ERR_OR_NULL(phy->jesd_rx_os_clk) && phy->talInit.jesd204Settings.framerB.M) {
@@ -868,11 +957,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_tx_clk;
 		}
 
-		/*************************************************/
-		/**** Enable SYSREF to Talise JESD204B Framer ***/
-		/*************************************************/
+		/**** Enable SYSREF to Talise JESD204B FramerB ***/
 		/*** < User: Make sure SYSREF is stopped/disabled > ***/
-
+		//adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
 		ret = TALISE_enableSysrefToFramer(phy->talDevice, TAL_FRAMER_B, 1);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -880,8 +967,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_tx_clk;
 		}
 	}
+
 	/***************************************************/
-	/**** Enable  Talise JESD204B Deframer ***/
+	/**** Enable  Talise JESD204B DeframerA ***/
 	/***************************************************/
 	if (!IS_ERR_OR_NULL(phy->jesd_tx_clk) && phy->talInit.jesd204Settings.deframerA.M) {
 		ret = TALISE_enableDeframerLink(phy->talDevice, TAL_DEFRAMER_A, 0);
@@ -898,9 +986,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_tx_clk;
 		}
 
-		/***************************************************/
-		/**** Enable SYSREF to Talise JESD204B Deframer ***/
-		/***************************************************/
+		/**** Enable SYSREF to Talise JESD204B DeframerA ***/
 		ret = TALISE_enableSysrefToDeframer(phy->talDevice, TAL_DEFRAMER_A, 1);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -909,9 +995,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		}
 	}
 
-	/*** < User Sends SYSREF Here > ***/
-
-
+	/*** < User Sends SYSREF Here AFTER Enable ALL Framers/Deframers > ***/
 	adrv9009_sysref_req(phy, SYSREF_CONT_ON);
 
 	if (has_rx_and_en(phy)) {
@@ -953,7 +1037,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/************************************/
-	/**** Check Talise Framer Status ***/
+	/**** Check Talise FramerA Status ***/
 	/************************************/
 	if (!IS_ERR_OR_NULL(phy->jesd_rx_clk) && phy->talInit.jesd204Settings.framerA.M) {
 		ret = TALISE_readFramerStatus(phy->talDevice, TAL_FRAMER_A, &framerStatus);
@@ -967,7 +1051,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			dev_warn(&phy->spi->dev, "TAL_FRAMER_A framerStatus 0x%X", framerStatus);
 	}
 	/************************************/
-	/**** Check Talise Framer Status ***/
+	/**** Check Talise FramerB Status ***/
 	/************************************/
 	if (!IS_ERR_OR_NULL(phy->jesd_rx_os_clk) && phy->talInit.jesd204Settings.framerB.M) {
 		ret = TALISE_readFramerStatus(phy->talDevice, TAL_FRAMER_B, &framerStatus);
@@ -5005,8 +5089,6 @@ static int adrv9009_probe(struct spi_device *spi)
 		 __func__, spi_get_device_id(spi)->name, rev, talArmVersionInfo.majorVer,
 		 talArmVersionInfo.minorVer, talArmVersionInfo.rcVer,
 		 api_vers[0], api_vers[1], api_vers[2], api_vers[3]);
-
-	TALISE_setRadioCtlPinMode(phy->talDevice, TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
 
 	return 0;
 

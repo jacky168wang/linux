@@ -205,6 +205,7 @@ struct adrv9009_rf_phy {
 	struct bin_attribute 	bin_gt;
 	struct iio_dev 		*indio_dev;
 
+	void __iomem *tddc_regs;
 	struct gpio_desc	*sysref_req_gpio;
 	struct gain_table_info  gt_info[NUM_GT];
 
