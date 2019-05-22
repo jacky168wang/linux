@@ -54,6 +54,7 @@
 #define FIRMWARE_TX	"TaliseTxArmFirmware.bin"
 #define FIRMWARE_RX	"TaliseRxArmFirmware.bin"
 #define STREAM		"TaliseStream.bin"
+#define STREAM_STITCH	"TaliseStreamStitch.bin"
 /* Action: generate a new stream firmware
    Reason: The page95 of UG1295: 
 "The stream processor executes the Tx/Rx/ORx enable and disable operations. 
@@ -64,8 +65,7 @@ It is recommended to use a new stream if there is change in any of below:
   4,the DAC mode choice in TDD modes (e.g, whether or not DAC is powered off when Tx is disabled). 
   5,if floating point formatting is used on ORx and Rx paths.
 */
-#define STREAM_STITCH	"TaliseStreamStitch.bin"
-#define FHK_ORX_STITCH_FIXUP
+//#define FHK_ORX_STITCH_FIXUP
 
 #include <linux/ioport.h>
 #include <asm/io.h>
@@ -522,13 +522,10 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
 			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
 #else
-		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |
-			TAL_TIA_3DB_CORNER /*| TAL_DC_OFFSET | 
-			TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
-			TAL_PATH_DELAY | TAL_TX_QEC_INIT |
-			TAL_LOOPBACK_RX_LO_DELAY | TAL_LOOPBACK_RX_RX_QEC_INIT | 
-			TAL_RX_QEC_INIT | TAL_ORX_QEC_INIT |
-			TAL_TX_DAC  | TAL_ADC_STITCHING*/;
+		//initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER | TAL_TIA_3DB_CORNER | 
+			//TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
+			//TAL_PATH_DELAY ;
+		initCalMask = 0;
 #endif
 		/* JACKY-20190307: internal TX_LO would incorrect external TX_LO result */
 		initCalMask &= ~TAL_TX_LO_LEAKAGE_INTERNAL;
@@ -732,14 +729,16 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		goto out_disable_tx_clk;
 	}
 
-	/* Configure (FHK_UB_ORX2_EN)ORX1_ENABLE->GPIO8, (FHK_UA_ORX1_EN)ORX2_ENABLE->GPIO9 */
-	ret = TALISE_setRadioCtlPinMode(phy->talDevice, TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+	ret = TALISE_setArmGpioPins(phy->talDevice, &phy->arm_gpio_config);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
 		ret = -EFAULT;
 		goto out_disable_tx_clk;
 	}
-	ret = TALISE_setArmGpioPins(phy->talDevice, &phy->arm_gpio_config);
+	/* Configure (FHK_UB_ORX2_EN)ORX1_ENABLE->GPIO8, (FHK_UA_ORX1_EN)ORX2_ENABLE->GPIO9;
+	   TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE -> TAL_ORX_PIN_MODE work samely */
+	ret = TALISE_setRadioCtlPinMode(phy->talDevice, 
+		TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
 		ret = -EFAULT;
@@ -749,7 +748,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*******************************/
 	/**Set RF PLL LO Frequencies ***/
 	/*******************************/
-#if 0	/* JACKY-20190228 */
+#if 1	/* JACKY-20190228 */
 	phy->current_loopBandwidth_kHz[0] = 50;
 #else
 	phy->current_loopBandwidth_kHz[0] = 300;
@@ -815,71 +814,63 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*****  TALISE ARM Initialization External LOL Calibrations with PA  *****/
 	/*************************************************************************/
 	if (!request_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE, phy->indio_dev->name)) {
-		dev_err(&phy->spi->dev, "%s:%d Couldn't lock memory region 0x%08llX[0:0x%X]",
-			__func__, __LINE__, FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-		 ret = -EBUSY;
-		 goto out_disable_tx_clk;
+		dev_err(&phy->spi->dev, "%s:%d Couldn't lock memory region 0x%08lX[0:0x%x]",
+			__func__, __LINE__, (unsigned long)FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+		goto txlol_ecal_end;
 	}
 	phy->tddc_regs = ioremap(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
 	if (IS_ERR(phy->tddc_regs)) {
 		ret = PTR_ERR(phy->tddc_regs);
 		dev_err(&phy->spi->dev, "Failed to remap TDDC_IOMEM, err = %d\n", ret);
-		release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-		goto out_disable_tx_clk;
+		goto txlol_ecal_release;
 	}
 
-	/* io_config_manually enable */
+	/* FPGA-RFES-TDDC: io_config_manually enable */
 	//devmem 0x43C3002C 32 0x80000000
 	writel(0x80000000, phy->tddc_regs + 0x2C);
-	dev_info(&phy->spi->dev, "%s : inw(0x43C3002C)=0x%x", __func__, readl(phy->tddc_regs + 0x2C));
+	dev_info(&phy->spi->dev, "%s : inw(0x43C3002C)=0x%08x", __func__, readl(phy->tddc_regs + 0x2C));
 
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	/* page174.step4: Turn on PA1 and close switches to connect TX1 to ORX2: FHK-design has ORX2 only */
 	//devmem 0x43C30058 32 0x0554fc08 # ECAL for UA_TX1<->UA_ORX2
 	writel(0x0554fc08, phy->tddc_regs + 0x58);
-	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%x", __func__, readl(phy->tddc_regs + 0x58));
+	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%08x", __func__, readl(phy->tddc_regs + 0x58));
 
 	/* page174.step5&6: Advise AD9009 of the current TX to ORX connection: FHK-design has ORX2 only */
 	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX1_ORX);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		ret = -EFAULT;
-		release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-		goto out_disable_tx_clk;
+		goto txlol_ecal_abort;
 	}
 	/* page174.step7&8: trigger TX_LOL_ECAL */
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
 		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 
 		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 		if (errorFlag) {
 			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
 				__func__, __LINE__, errorFlag);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 	}
 
 	/* page174.step4: Turn on PA2 and close switches to connect TX2 to ORX2: FHK-design has ORX2 only */
 	writel(0x0554bc0c, phy->tddc_regs + 0x58);
-	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%x", __func__, readl(phy->tddc_regs + 0x58));
+	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%08x", __func__, readl(phy->tddc_regs + 0x58));
 
 	/* page174.step5&6: Advise AD9009 of the current TX to ORX connection: FHK-design has ORX2 only */
 	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX2_ORX);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		ret = -EFAULT;
-		goto out_disable_tx_clk;
+		goto txlol_ecal_abort;
 	}
 
 	/* page174.step7&8: trigger TX_LOL_ECAL */
@@ -887,25 +878,29 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 
 		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 		if (errorFlag) {
 			dev_err(&phy->spi->dev, "%s:%d Init Cal errorFlag (0x%X)",
 				__func__, __LINE__, errorFlag);
-			release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
-			goto out_disable_tx_clk;
+			goto txlol_ecal_abort;
 		}
 	}
-
+txlol_ecal_abort:
+	/* set RFFC+RFIC into Rx state */
+	writel(0x04aa03f0, phy->tddc_regs + 0x58);
+	dev_info(&phy->spi->dev, "%s : inw(0x43C30058)=0x%08x", __func__, readl(phy->tddc_regs + 0x58));
+	writel(0x00000000, phy->tddc_regs + 0x2C);
+	dev_info(&phy->spi->dev, "%s : inw(0x43C3002C)=0x%08x", __func__, readl(phy->tddc_regs + 0x2C));
+txlol_ecal_release:
 	release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+txlol_ecal_end:
 #endif
 
 	/***************************************************/
@@ -1096,8 +1091,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			goto out_disable_obs_rx_clk;
 		}
 	}
-	/* Function to turn radio on, Enables transmitters and receivers */
-	/* that were setup during TALISE_initialize() */
+
+	/* Function to turn radio on, Enables transmitters and receivers 
+		that were setup during TALISE_initialize() */
 	ret = TALISE_radioOn(phy->talDevice);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -4031,7 +4027,7 @@ static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 
 
 	ADRV9009_OF_PROP("adi,trx-pll-lo-frequency_hz", &phy->trx_lo_frequency,
-			 2400000000ULL);
+			 3500000000ULL);
 	ADRV9009_OF_PROP("adi,aux-pll-lo-frequency_hz", &phy->aux_lo_frequency,
 			 2500000000ULL);
 
@@ -4891,6 +4887,9 @@ static int adrv9009_probe(struct spi_device *spi)
 	if (ret < 0)
 		return -ret;
 
+	dev_info(&spi->dev, "phy->trx_lo_frequency=(%llu)\n", phy->trx_lo_frequency);
+	dev_info(&spi->dev, "phy->aux_lo_frequency=(%llu)\n", phy->aux_lo_frequency);
+
 	phy->talDevice = &phy->talise_device;
 	phy->linux_hal.spi = spi;
 	phy->linux_hal.logLevel = ADIHAL_LOG_ERR | ADIHAL_LOG_WARN;
@@ -4955,15 +4954,9 @@ static int adrv9009_probe(struct spi_device *spi)
 
 	if (of_property_read_string(spi->dev.of_node, "stream-firmware-name", &name))
 		name = STREAM;
-#ifdef FHK_ORX_STITCH_FIXUP
-	bool orx_adc_stitching_enabled =
-		(phy->talInit.obsRx.orxProfile.rfBandwidth_Hz > 200000000) ?
-		1 : 0;
-	if (orx_adc_stitching_enabled) {
-		if (of_property_read_string(spi->dev.of_node, "stream-stitch-firmware-name", &name))
-			name = STREAM_STITCH;
-	}
-#endif
+	if (phy->talInit.obsRx.orxProfile.rfBandwidth_Hz > 200000000)
+		name = STREAM_STITCH;
+
 	ret = request_firmware(&phy->stream, name, &spi->dev);
 	if (ret) {
 		dev_err(&spi->dev,
