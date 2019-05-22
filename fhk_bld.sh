@@ -83,8 +83,10 @@ if [ ${TARGET} = "fhk_zc706ad9009" ]; then
     make ${TARGET}_defconfig O=${OUT_DIR}
     #make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR} KCFLAGS=-DDEBUG
     make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR}
-    make ${TARGET}.dtb O=${OUT_DIR}
 fi
+make ${TARGET}.dtb O=${OUT_DIR}
+cd ${OUT_DIR}
+dtc -I dtb ${TARGET}.dtb -O dts -o ${TARGET}.dts
 
 #*******************************************************************************
 export ARCH=
