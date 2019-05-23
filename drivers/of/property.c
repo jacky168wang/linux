@@ -84,6 +84,9 @@ static void *of_find_property_value_of_size(const struct device_node *np,
 {
 	struct property *prop = of_find_property(np, propname, NULL);
 
+	/*if (0 == strcmp(propname, "adi,trx-pll-lo-frequency_hz")) {
+		pr_debug("prop->length=%d, prop->value=%ul\n", prop->length, *(__be32 *)prop->value);
+	}*/
 	if (!prop)
 		return ERR_PTR(-EINVAL);
 	if (!prop->value)
@@ -319,15 +322,16 @@ EXPORT_SYMBOL_GPL(of_property_read_variable_u32_array);
 int of_property_read_u64(const struct device_node *np, const char *propname,
 			 u64 *out_value)
 {
+	size_t sz;
 	const __be32 *val = of_find_property_value_of_size(np, propname,
-						sizeof(*out_value),
-						0,
-						NULL);
+						4,
+						8,
+						&sz);
 
 	if (IS_ERR(val))
 		return PTR_ERR(val);
 
-	*out_value = of_read_number(val, 2);
+	*out_value = of_read_number(val, sz/4);
 	return 0;
 }
 EXPORT_SYMBOL_GPL(of_property_read_u64);

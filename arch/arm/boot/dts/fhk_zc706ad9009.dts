@@ -48,7 +48,7 @@ History:
 };
 
 &fpga_axi {
-	jesd204rx_dma: jesd204rx-dmac@7c400000 {
+	jesd204rx_dma: rx-dmac@7c400000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c400000 0x10000>;
 		#dma-cells = <1>;
@@ -71,7 +71,7 @@ History:
 		};
 	};
 
-	jesd204ro_dma: jesd204ro-dmac@7c440000  {
+	jesd204ro_dma: rx-obs-dmac@7c440000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
@@ -94,7 +94,7 @@ History:
 		};
 	};
 
-	jesd204tx_dma: jesd204tx-dmac@7c420000 {
+	jesd204tx_dma: tx-dmac@7c420000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c420000 0x10000>;
 		#dma-cells = <1>;
@@ -149,7 +149,7 @@ History:
 		//adi,axi-pl-fifo-enable; see "plddrbypass-gpios"
 	};
 
-	jesd204rx_layer2: jesd204rx-layer2@44aa0000 {
+	jesd204rx_layer2: axi-jesd204-rx@44aa0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44aa0000 0x1000>;
 
@@ -171,7 +171,7 @@ History:
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_layer2: jesd204tx-layer2@44a90000 {
+	jesd204tx_layer2: axi-jesd204-tx@44a90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
 		reg = <0x44a90000 0x1000>;
 
@@ -195,7 +195,7 @@ History:
 		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
-	jesd204ro_layer2: jesd204ro-layer2@44ab0000 {
+	jesd204ro_layer2: axi-jesd204-rx-os@44ab0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44ab0000 0x1000>;
 
@@ -215,11 +215,12 @@ History:
 		//adi,converters-per-device = <2>;//PHY-Framer decide; must be 2 logically if ORX_rfbandwidth>200MHz
 		//L(Number of Lanes)=2; PHY-Framer decide
 		//S(Number of Samples)=1; PHY-Framer decide(1,2,or4)
-		adi,octets-per-frame = <4>; //F=N'/8*M*S/L =(16/8)*4*1/2
+		//F=N'/8*M*S/L: case1/orx-stitching=(16/8)*2*1/2=2; case2/orx-2chn=(16/8)*4*1/2=4;
+		adi,octets-per-frame = <2>;
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_clkgen: jesd204tx-clkgen@43c00000  {
+	jesd204tx_clkgen: axi-clkgen@43c00000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c00000 0x10000>;
 		#clock-cells = <0>;
@@ -227,7 +228,7 @@ History:
 		clock-output-names = "axi_tx_clkgen";
 	};
 
-	jesd204rx_clkgen: jesd204rx-clkgen@43c10000  {
+	jesd204rx_clkgen: axi-clkgen@43c10000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c10000 0x10000>;
 		#clock-cells = <0>;
@@ -235,7 +236,7 @@ History:
 		clock-output-names = "axi_rx_clkgen";
 	};
 
-	jesd204ro_clkgen: jesd204ro-clkgen@43c20000  {
+	jesd204ro_clkgen: axi-clkgen@43c20000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c20000 0x10000>;
 		#clock-cells = <0>;
@@ -243,23 +244,7 @@ History:
 		clock-output-names = "axi_ro_clkgen";
 	};
 
-	jesd204tx_layer1: jesd204tx-layer1@44a80000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
-		compatible = "adi,axi-adxcvr-1.0";
-		reg = <0x44a80000 0x1000>;
-
-		clocks = <&clk0_ad9528 8>, <&jesd204tx_clkgen>;
-		clock-names = "conv", "div40";
-
-		#clock-cells = <1>;
-		clock-output-names = "tx_gt_clk", "tx_out_clk";
-
-		adi,sys-clk-select = <3>;
-		adi,out-clk-select = <3>;
-	};
-
-	jesd204rx_layer1: jesd204rx-layer1@44a60000 {
+	jesd204rx_layer1: axi-adxcvr-rx@44a60000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
@@ -277,7 +262,7 @@ History:
 		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 
-	jesd204ro_layer1: jesd204ro-layer1@44a50000 {
+	jesd204ro_layer1: axi-adxcvr-rx-os@44a50000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
@@ -293,6 +278,22 @@ History:
 		adi,out-clk-select = <3>;
 		adi,use-lpm-enable;
 		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
+	};
+
+	jesd204tx_layer1: axi-adxcvr-tx@44a80000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		compatible = "adi,axi-adxcvr-1.0";
+		reg = <0x44a80000 0x1000>;
+
+		clocks = <&clk0_ad9528 8>, <&jesd204tx_clkgen>;
+		clock-names = "conv", "div40";
+
+		#clock-cells = <1>;
+		clock-output-names = "tx_gt_clk", "tx_out_clk";
+
+		adi,sys-clk-select = <3>;
+		adi,out-clk-select = <3>;
 	};
 };
 
@@ -390,6 +391,9 @@ History:
 
 #if 1
 #include "fhk_adrv9009_122m.dtsi"
+	&jesd204ro_layer2 {
+		adi,octets-per-frame = <4>;
+	};
 	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 	&jesd204rx_layer1 {
 		adi,sys-clk-select = <0>;
@@ -404,9 +408,6 @@ History:
 //#include "fhk_adrv9009_245m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc122.dtsi"
 #include "fhk_adrv9009_491m_dc245.dtsi"
-	&jesd204ro_layer2 {
-		adi,octets-per-frame = <2>;
-	};
 #endif
 
 // adrv9009_dac_fifo_bypass_s 60
@@ -443,7 +444,8 @@ History:
 	reset-gpios = <&gpio0 106 0>;
 	test-gpios = <&gpio0 107 0>;
 	sysref-req-gpios = <&gpio0 112 0>;
-	/*rx2-enable-gpios = <&gpio0 108 0>;
+	/* FHK design: PL.RFESS.TDDC -> IO-signals -> RFIC & RFFC
+	rx2-enable-gpios = <&gpio0 108 0>;
 	rx1-enable-gpios = <&gpio0 109 0>;
 	tx2-enable-gpios = <&gpio0 110 0>;
 	tx1-enable-gpios = <&gpio0 111 0>;*/

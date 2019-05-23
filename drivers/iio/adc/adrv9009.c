@@ -54,7 +54,7 @@
 #define FIRMWARE_TX	"TaliseTxArmFirmware.bin"
 #define FIRMWARE_RX	"TaliseRxArmFirmware.bin"
 #define STREAM		"TaliseStream.bin"
-#define STREAM_STITCH	"TaliseStreamStitch.bin"
+
 /* Action: generate a new stream firmware
    Reason: The page95 of UG1295: 
 "The stream processor executes the Tx/Rx/ORx enable and disable operations. 
@@ -65,8 +65,11 @@ It is recommended to use a new stream if there is change in any of below:
   4,the DAC mode choice in TDD modes (e.g, whether or not DAC is powered off when Tx is disabled). 
   5,if floating point formatting is used on ORx and Rx paths.
 */
-//#define FHK_ORX_STITCH_FIXUP
+#define FHK_ORX_STITCH_FIXUP
+#define STREAM_STITCH	"TaliseStreamStitch.bin"
 
+/* Action: 
+*/
 #include <linux/ioport.h>
 #include <asm/io.h>
 #define FHK_FPGA_TDDC_IO_BASE 0x43C30000
@@ -3341,6 +3344,11 @@ static int __adrv9009_of_get_u32(struct iio_dev *indio_dev,
 		tmp = defval;
 		ret = of_property_read_u32(np, propname, &tmp);
 	}
+	if (ret < 0) {
+		printk("%s dts read property %s failed with %d\n", 
+			__func__, propname, ret);
+		return ret;
+	}
 
 	if (out_value) {
 		switch (size) {
@@ -3357,7 +3365,7 @@ static int __adrv9009_of_get_u32(struct iio_dev *indio_dev,
 			*(u64 *)out_value = tmp64;
 			break;
 		default:
-			ret = -EINVAL;
+			return -EINVAL;
 		}
 	}
 
@@ -3368,15 +3376,13 @@ static int __adrv9009_of_get_u32(struct iio_dev *indio_dev,
 	phy->debugfs_entry[phy->adrv9009_debugfs_entry_index++] =
 	(struct adrv9009_debugfs_entry) {
 		.out_value = out_value,
-		 .propname = propname,
-		  .size = size,
-		   .phy = phy,
+		.propname = propname,
+		.size = size,
+		.phy = phy,
 	};
 
 	return ret;
 }
-#define adrv9009_of_get_u32(iodev, dnp, name, def, outp) \
-__adrv9009_of_get_u32(iodev, dnp, name, def, outp, sizeof(*outp))
 
 static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 {
@@ -3384,8 +3390,8 @@ static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 	struct adrv9009_rf_phy *phy = iio_priv(iodev);
 	int ret;
 
-#define adrv9009_of_get_u32(iodev, dnp, name, def, outp) \
-	__adrv9009_of_get_u32(iodev, dnp, name, def, outp, sizeof(*outp))
+/*#define adrv9009_of_get_u32(iodev, dnp, name, def, outp) \
+	__adrv9009_of_get_u32(iodev, dnp, name, def, outp, sizeof(*outp))*/
 
 #define ADRV9009_OF_PROP(_dt_name, _member_, _default) \
 	__adrv9009_of_get_u32(iodev, np, _dt_name, _default, _member_, sizeof(*_member_))
@@ -4027,7 +4033,7 @@ static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 
 
 	ADRV9009_OF_PROP("adi,trx-pll-lo-frequency_hz", &phy->trx_lo_frequency,
-			 3500000000ULL);
+			 2400000000ULL);
 	ADRV9009_OF_PROP("adi,aux-pll-lo-frequency_hz", &phy->aux_lo_frequency,
 			 2500000000ULL);
 
