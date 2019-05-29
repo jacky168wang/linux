@@ -63,6 +63,7 @@ index 036af22..8b5fe56 100644
 };
 
 &fmc_spi {
+
 	clk0_ad9528: ad9528-1@0 {
 		compatible = "adi,ad9528";
 		reg = <0>;
@@ -372,9 +373,12 @@ index 036af22..8b5fe56 100644
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3 Enable RFPLL phase sync init and track continuously
-		adi,trx-pll-lo-frequency_hz = <3500000000>;// JACKY-20190228: new per the driver
-		//adi,aux-pll-lo-frequency_hz = <>;// JACKY-20190228: new per the driver
+		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3: Enable RFPLL phase sync init and track continuously
+
+		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
+		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
+		adi,trx-pll-lo-frequency_hz = /bits/ 64 <0 3500000000>;
+		//adi,aux-pll-lo-frequency_hz = <>;
 
 		/* AGC */
 
@@ -406,7 +410,7 @@ index 036af22..8b5fe56 100644
 		adi,rxagc-peak-hb2-ovrg-sel = <0>;
 		adi,rxagc-peak-hb2-thresh-config = <3>;
 
-		adi,rxagc-power-power-enable-measurement = <1>;
+		adi,rxagc-power-power-enable-measurement = <0>;
 		adi,rxagc-power-power-use-rfir-out = <1>;
 		adi,rxagc-power-power-use-bbdc2 = <0>;
 		adi,rxagc-power-under-range-high-power-thresh = <9>;
@@ -505,13 +509,15 @@ index 036af22..8b5fe56 100644
 
 		adi,fhm-config-fhm-gpio-pin = <0>;
 		adi,fhm-config-fhm-min-freq_mhz = <100>;
-		adi,fhm-config-fhm-max-freq_mhz = <100>;
+		adi,fhm-config-fhm-max-freq_mhz = <200>;
 
 		adi,fhm-mode-fhm-enable = <0>;
 		adi,fhm-mode-enable-mcs-sync = <0>;
 		adi,fhm-mode-fhm-trigger-mode = <0>;
 		adi,fhm-mode-fhm-exit-mode = <0>;
-		adi,fhm-mode-fhm-init-frequency_hz = <2450000000>;
+		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
+		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
+		adi,fhm-mode-fhm-init-frequency_hz = /bits/ 64 <0 2450000000>;
 
 		adi,rx1-gain-ctrl-pin-inc-step = <1>;
 		adi,rx1-gain-ctrl-pin-dec-step = <1>;
