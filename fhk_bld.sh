@@ -73,6 +73,8 @@ OUT_DIR=../out_${TARGET}
 if [ ${TARGET} = "fhk_a10ad9371" ]; then
     git checkout fhk_altera4.9 # tracing "adi-linux:origin/altera4.9"
 
+    make mrproper # clean the pre-built in-source-tree
+    make mrproper O=${OUT_DIR} # clean the pre-built out-source-tree
     make ${TARGET}_defconfig O=${OUT_DIR}
     #make all -j5 O=${OUT_DIR} KCFLAGS=-DDEBUG
     make -j5 O=${OUT_DIR}
@@ -80,10 +82,13 @@ fi
 if [ ${TARGET} = "fhk_zc706ad9009" ]; then
     git checkout fhk_2018r2 # tracing "adi-linux:origin/2018_R2"
 
+    make mrproper # clean the pre-built in-source-tree
+    make mrproper O=${OUT_DIR} # clean the pre-built out-source-tree
     make ${TARGET}_defconfig O=${OUT_DIR}
     #make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR} KCFLAGS=-DDEBUG
     make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR}
 fi
+
 make ${TARGET}.dtb O=${OUT_DIR}
 cd ${OUT_DIR}
 dtc -I dtb ${TARGET}.dtb -O dts -o ${TARGET}.dts
