@@ -71,7 +71,7 @@ History:
 		};
 	};
 
-	jesd204ro_dma: rx-obs-dmac@7c440000  {
+	jesd204ro_dma: ro-dmac@7c440000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
@@ -195,7 +195,7 @@ History:
 		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
-	jesd204ro_layer2: axi-jesd204-rx-os@44ab0000 {
+	jesd204ro_layer2: axi-jesd204-ro@44ab0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44ab0000 0x1000>;
 
@@ -220,7 +220,7 @@ History:
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_clkgen: axi-clkgen@43c00000  {
+	jesd204tx_clkgen: axi-clkgen-tx@43c00000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c00000 0x10000>;
 		#clock-cells = <0>;
@@ -228,7 +228,7 @@ History:
 		clock-output-names = "axi_tx_clkgen";
 	};
 
-	jesd204rx_clkgen: axi-clkgen@43c10000  {
+	jesd204rx_clkgen: axi-clkgen-rx@43c10000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c10000 0x10000>;
 		#clock-cells = <0>;
@@ -236,7 +236,7 @@ History:
 		clock-output-names = "axi_rx_clkgen";
 	};
 
-	jesd204ro_clkgen: axi-clkgen@43c20000  {
+	jesd204ro_clkgen: axi-clkgen-ro@43c20000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c20000 0x10000>;
 		#clock-cells = <0>;
@@ -262,7 +262,7 @@ History:
 		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 
-	jesd204ro_layer1: axi-adxcvr-rx-os@44a50000 {
+	jesd204ro_layer1: axi-adxcvr-ro@44a50000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
@@ -405,9 +405,9 @@ History:
 	};
 #else
 /* using QPLL-only for Tx/Rx/ORx */
-//#include "fhk_adrv9009_245m_dc245.dtsi"
+#include "fhk_adrv9009_245m_dc245.dtsi"
 //#include "fhk_adrv9009_491m_dc122.dtsi"
-#include "fhk_adrv9009_491m_dc245.dtsi"
+//#include "fhk_adrv9009_491m_dc245.dtsi"
 #endif
 
 // adrv9009_dac_fifo_bypass_s 60

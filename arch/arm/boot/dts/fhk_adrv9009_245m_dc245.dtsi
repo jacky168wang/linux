@@ -288,7 +288,7 @@ History:
 		adi,orx-profile-rf-bandwidth_hz = <200000000>;
 		adi,orx-profile-rx-bbf3d-bcorner_khz = <225000>;
 		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0>;
+		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
 		adi,orx-profile-orx-ddc-mode = <0>;
 		adi,orx-profile-orx-merge-filter = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0>;
 
@@ -322,14 +322,17 @@ History:
 		adi,tx-profile-rf-bandwidth_hz = <225000000>;
 		adi,tx-profile-tx-dac3d-bcorner_khz = <225000>;
 		adi,tx-profile-tx-bbf3d-bcorner_khz = <113000>;
+#if 0		// original
 		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <206 132 168 90 1280 641 1307 53 1359 28 1039 30 48 48 37 210 0 0 0 0 53 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-
+#else		// 2019-06-12: TES script
+		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <212 140 175 90 1280 699 1304 59 1343 33  913 27 48 48 34 192 0 0 0 0 48 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+#endif
 		adi,tx-settings-deframer-sel = <0>;
 		adi,tx-settings-tx-channels = <3>;
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
 

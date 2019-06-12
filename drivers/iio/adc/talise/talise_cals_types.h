@@ -17,6 +17,7 @@ extern "C" {
 
 typedef enum
 {
+    TAL_INIT_NONE               = 0x00000000,   /*!< Disable all initional calibrations */
     TAL_TX_BB_FILTER            = 0x00000001,   /*!< Tx BB filter calibration */
     TAL_ADC_TUNER               = 0x00000002,   /*!< ADC tuner calibration */
     TAL_TIA_3DB_CORNER          = 0x00000004,   /*!< TIA 3dB corner calibration */
@@ -37,7 +38,8 @@ typedef enum
     TAL_ORX_QEC_INIT            = 0x00020000,   /*!< ORx quadrature error correction calibration */
     TAL_TX_DAC                  = 0x00040000,   /*!< Tx DAC passband calibration */
     TAL_ADC_STITCHING           = 0x00080000,   /*!< ADC stitching calibration */
-    TAL_FHM_CALS                = 0x00800000    /*!< FHM (Fast Frequency Hopping Mode) Calibrations */
+    TAL_FHM_CALS                = 0x00800000,   /*!< FHM (Fast Frequency Hopping Mode) Calibrations */
+    TAL_INIT_ALL                = 0x008FFFFF    /*!< ENUM specifies all initional calibrations */
 } taliseInitCalibrations_t;
 
 typedef enum
