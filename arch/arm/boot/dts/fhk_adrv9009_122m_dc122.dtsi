@@ -1,7 +1,9 @@
 /* Tx_BW100_IR122p88_Rx_BW100_OR122p88_ORx_BW100_OR122p88_DC122p88
 History:
-  base: branch "adrv9009_zc706/2018_R2/master", "arch\arm\boot\dts\adi-adrv9009.dtsi"
-  change: spi-frequency, ad9528-output-channels per FHK-RFB(1*AD9528+2*AD9009)
+  baseline: branch "2018_R2/master", "arch/arm/boot/dts/adi-adrv9009.dtsi"
+  change1: spi-frequency, ad9528-output-channels per FHK-RFB(1*AD9528+2*AD9009)
+  change2: FIR/ADC/DAC filters used by TES python scripts
+  change3: FHM setting from "arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi"
   NOTICE: commit "7cf276a19b991da0120de717cdc7ba327c0158c2":
     "Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76"
     are NOT valid for the CPLL range of the ZC706
@@ -244,12 +246,12 @@ History:
 		/* RX */
 
 		adi,rx-profile-rx-fir-gain_db = <(-6)>;
-#if 0		// original
+#if 0		/* baseline */
 		adi,rx-profile-rx-fir-num-fir-coefs = <48>;
 		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-8) (-22) (32) (50) (-68) (-106) (141) (199) (-258) (-352) (430) (572) (-691) (-903) (1069) (1392) (-1644) (-2172) (2569) (3574) (-4364) (-7129) (9355) (31095) (31095) (9355) (-7129) (-4364) (3574) (2569) (-2172) (-1644) (1392) (1069) (-903) (-691) (572) (430) (-352) (-258) (199) (141) (-106) (-68) (50) (32) (-22) (-8)>;
-#else		// 2019-06-12: TES script
+#else		/* 2019-06-12: TES script */
 		adi,rx-profile-rx-fir-num-fir-coefs = <72>;
-		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(0) (-1) (2) (3) (-4) (-7) (10) (16) (-21) (-31) (40) (56) (-71) (-96) (119) (157) (-187) (-241) (288) (363) (-431) (-538) (622) (772) (-891) (-1105) (1264) (1582) (-1819) (-2335) (2710) (3697) (-4461) (-7201) (9397) (31111) (31111) (9397) (-7201) (-4461) (3697) (2710) (-2335) (-1819) (1582) (1264) (-1105) (-891) (772) (622) (-538) (-431) (363) (288) (-241) (-187) (157) (119) (-96) (-71) (56) (40) (-31) (-21) (16) (10) (-7) (-4) (3) (2) (-1) (0)>
+		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(0) (-1) (2) (3) (-4) (-7) (10) (16) (-21) (-31) (40) (56) (-71) (-96) (119) (157) (-187) (-241) (288) (363) (-431) (-538) (622) (772) (-891) (-1105) (1264) (1582) (-1819) (-2335) (2710) (3697) (-4461) (-7201) (9397) (31111) (31111) (9397) (-7201) (-4461) (3697) (2710) (-2335) (-1819) (1582) (1264) (-1105) (-891) (772) (622) (-538) (-431) (363) (288) (-241) (-187) (157) (119) (-96) (-71) (56) (40) (-31) (-21) (16) (10) (-7) (-4) (3) (2) (-1) (0)>;
 #endif
 		adi,rx-profile-rx-fir-decimation = <2>;
 		adi,rx-profile-rx-dec5-decimation = <4>;
@@ -283,12 +285,12 @@ History:
 		/* ORX */
 
 		adi,orx-profile-rx-fir-gain_db = <(-6)>;
-#if 0		// original
+#if 0		/* baseline */
 		adi,orx-profile-rx-fir-num-fir-coefs = <48>;
-		adi,orx-profile-rx-fir-coefs = /bits/ 16 <(-9) (-18) (31) (42) (-65) (-89) (132) (168) (-240) (-298) (396) (486) (-632) (-770) (968) (1163) (-1530) (-1862) (2369) (3051) (-4066) (-5983) (9689) (29830) (29830) (9689) (-5983) (-4066) (3051) (2369) (-1862) (-1530) (1163) (968) (-770) (-632) (486) (396) (-298) (-240) (168) (132) (-89) (-65) (42) (31) (-18) (-9)>;
-#else		// 2019-06-12: TES script
+		adi,orx-profile-rx-fir-coefs = /bits/ 16  <(-9) (-18) (31) (42) (-65) (-89) (132) (168) (-240) (-298) (396) (486) (-632) (-770) (968) (1163) (-1530) (-1862) (2369) (3051) (-4066) (-5983) (9689) (29830) (29830) (9689) (-5983) (-4066) (3051) (2369) (-1862) (-1530) (1163) (968) (-770) (-632) (486) (396) (-298) (-240) (168) (132) (-89) (-65) (42) (31) (-18) (-9)>;
+#else		/* 2019-06-12: TES script */
 		adi,orx-profile-rx-fir-num-fir-coefs = <72>;
-		adi,orx-profile-rx-fir-coefs = /bits/ 16 <(0) (-1) (2) (2) (-4) (-6) (10) (13) (-20) (-26) (38) (47) (-66) (-81) (110) (133) (-172) (-205) (265) (309) (-395) (-460) (566) (661) (-809) (-947) (1138) (1331) (-1683) (-2008) (2490) (3163) (-4146) (-6051) (9721) (29849) (29849) (9721) (-6051) (-4146) (3163) (2490) (-2008) (-1683) (1331) (1138) (-947) (-809) (661) (566) (-460) (-395) (309) (265) (-205) (-172) (133) (110) (-81) (-66) (47) (38) (-26) (-20) (13) (10) (-6) (-4) (2) (2) (-1) (0)>
+		adi,orx-profile-rx-fir-coefs = /bits/ 16  <(0) (-1) (2) (2) (-4) (-6) (10) (13) (-20) (-26) (38) (47) (-66) (-81) (110) (133) (-172) (-205) (265) (309) (-395) (-460) (566) (661) (-809) (-947) (1138) (1331) (-1683) (-2008) (2490) (3163) (-4146) (-6051) (9721) (29849) (29849) (9721) (-6051) (-4146) (3163) (2490) (-2008) (-1683) (1331) (1138) (-947) (-809) (661) (566) (-460) (-395) (309) (265) (-205) (-172) (133) (110) (-81) (-66) (47) (38) (-26) (-20) (13) (10) (-6) (-4) (2) (2) (-1) (0)>;
 #endif
 		adi,orx-profile-rx-fir-decimation = <2>;
 		adi,orx-profile-rx-dec5-decimation = <4>;
@@ -297,7 +299,7 @@ History:
 		adi,orx-profile-rf-bandwidth_hz = <100000000>;
 		adi,orx-profile-rx-bbf3d-bcorner_khz = <225000>;
 		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
 		adi,orx-profile-orx-ddc-mode = <0>;
 		adi,orx-profile-orx-merge-filter = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0>;
 
@@ -336,8 +338,8 @@ History:
 		adi,tx-settings-deframer-sel = <0>;
 		adi,tx-settings-tx-channels = <3>;
 		adi,tx-settings-tx-atten-step-size = <0>;
-		adi,tx-settings-tx1-atten_md-b = <10000>;
-		adi,tx-settings-tx2-atten_md-b = <10000>;
+		adi,tx-settings-tx1-atten_md-b = <16000>;// 10dB->16dB
+		adi,tx-settings-tx2-atten_md-b = <16000>;// 10dB->16dB
 		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
@@ -481,13 +483,13 @@ History:
 		adi,orx-lo-cfg-gpio-select = <19>;
 
 		adi,fhm-config-fhm-gpio-pin = <0>;
-		adi,fhm-config-fhm-min-freq_mhz = <100>;
-		adi,fhm-config-fhm-max-freq_mhz = <200>;
+		adi,fhm-config-fhm-min-freq_mhz = <2400>;
+		adi,fhm-config-fhm-max-freq_mhz = <2500>;
 
 		adi,fhm-mode-fhm-enable = <0>;
 		adi,fhm-mode-enable-mcs-sync = <0>;
 		adi,fhm-mode-fhm-trigger-mode = <0>;
-		adi,fhm-mode-fhm-exit-mode = <0>;
+		adi,fhm-mode-fhm-exit-mode = <1>;
 		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,fhm-mode-fhm-init-frequency_hz = <2450000000>;

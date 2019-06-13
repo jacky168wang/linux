@@ -390,7 +390,7 @@ History:
 #define fmc_spi spi0
 
 #if 1
-#include "fhk_adrv9009_122m.dtsi"
+#include "fhk_adrv9009_122m_dc122.dtsi"
 	&jesd204ro_layer2 {
 		adi,octets-per-frame = <4>;
 	};
