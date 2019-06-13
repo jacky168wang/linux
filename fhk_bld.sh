@@ -89,6 +89,12 @@ if [ ${TARGET} = "fhk_zc706ad9009" ]; then
     make -j5 UIMAGE_LOADADDR=0x8000 uImage O=${OUT_DIR}
 fi
 
+# a broken symbolic link to include/dt-bindings could lead to compile error
+# https://www.toradex.com/community/questions/8105/
+#   device-tree-compilation-failed-no-such-file-or-dir.html
+ln -s include/dt-bindings arch/arm/boot/dts/include/dt-bindings
+#step1, modify dts or dtsi files
+make ${TARGET}.dtb O=${OUT_DIR} clean
 make ${TARGET}.dtb O=${OUT_DIR}
 cd ${OUT_DIR}
 dtc -I dtb ${TARGET}.dtb -O dts -o ${TARGET}.dts
