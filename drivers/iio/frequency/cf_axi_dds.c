@@ -831,6 +831,7 @@ static void cf_axi_dds_update_chan_spec(struct cf_axi_dds_state *st,
 	}
 }
 
+
 #define CF_AXI_DDS_CHAN(_chan, _address, _extend_name) { \
 	.type = IIO_ALTVOLTAGE,	\
 	.indexed = 1, \
