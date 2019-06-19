@@ -1,0 +1,57 @@
+/* uspace: i2c-si5324-xgeth.sh, refer clock to 10GE-Subsystem */
+&i2c0 {
+	status = "okay";
+	/*
+	i2c_mux: i2cswitch@74 {
+		compatible = "nxp,pca9548";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x74>;
+
+		clk2xge: i2c@68 {
+			compatible = "si5324";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x68>;
+		};
+	};*/
+};
+
+/* 10GE-Subsystem example
+	https://xilinx-wiki.atlassian.net/wiki/spaces/A/pages/18842485/Linux+AXI+Ethernet+driver
+   FHK_RRU: 10GE-Subsystem = XGE_MAC + XGE_PCS + XGE_PHY for ECPRI-IP, no driver needed
+&fpga_axi {
+	xgemac: ethernet@43c30000 {
+		reg = <0x43C30000 0x10000>;
+		axistream-connected = <&xgedma>;
+		axistream-control-connected = <&xgedma>;
+		clock-frequency = <156250000>;
+		compatible = "xlnx,ten-gig-eth-mac";
+		device_type = "network";
+		phy-mode = "base-r";
+		//phy-mode = "rgmii-id";
+		//phy-handle = <&phy5>;
+		xlnx = <0x0>;
+		xlnx,rxmem = <0x4000>;
+
+		phy5: phy@5 {// 10GE-PHY: M88X3310
+			#address-cells = <0x1>;
+			#size-cells = <0x0>;
+			device_type = "ethernet-phy";
+			reg = <0x5>;
+		};
+	};
+
+	xgedma: xge-dmac@40400000 {
+		reg = <0x40400000 0x10000>;
+		#dma-cells = <1>;
+		axistream-connected = <&xgemac>;
+		axistream-control-connected = <&xgemac>;
+		clock-names = "s_axi_lite_aclk", "m_axi_sg_aclk";
+		clocks = <&clkc 15>;//fclk0
+		compatible = "xlnx,eth-dma";
+		interrupt-names = "mm2s_introut", "s2mm_introut";
+		interrupt-parent = <&intc>;
+		interrupts = <0 29 4 0 30 4>;//UG585, todo Table 7-4: IRQF2P[?] -> IRQ[?-32]
+	};
+};*/

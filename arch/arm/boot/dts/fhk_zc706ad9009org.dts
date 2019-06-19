@@ -127,7 +127,7 @@ History:
 		};
 	};
 
-	jesd204rx_layer3: jesd204rx-layer3@44a00000 {
+	jesd204rx_layer3: axi-adrv9009-rx-hpc@44a00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44a00000 0x8000>;
 		dmas = <&jesd204rx_dma 0>;
@@ -135,7 +135,7 @@ History:
 		spibus-connected = <&trx0_adrv9009>;
 	};
 
-	jesd204ro_layer3: jesd204ro-layer3@44a08000 {
+	jesd204ro_layer3: axi-adrv9009-rx-obs-hpc@44a08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44a08000 0x1000>;
 		dmas = <&jesd204ro_dma 0>;
@@ -144,7 +144,7 @@ History:
 		clock-names = "sampl_clk";
 	};
 
-	jesd204tx_layer3: jesd204tx-layer3@44a04000 {
+	jesd204tx_layer3: axi-adrv9009-tx-hpc@44a04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44a04000 0x4000>;
 		dmas = <&jesd204tx_dma 0>;
