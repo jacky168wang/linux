@@ -511,7 +511,14 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
 /*****	TALISE ARM Initialization External LOL Calibrations with PA  *****/
 /*************************************************************************/
 #define RFFC_CTL_BY_SW
-#define RFIC_CTL_MODE_PIN
+//#define RFIC_CTL_MODE_PIN
+/* (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=false) means 
+		TXLOL_ECAL with RFIC SPI mode,
+   (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means 
+   		TXLOL_ECAL with RFIC PIN mode */
+#if defined(RFIC_CTL_MODE_PIN) && !defined(RFFC_CTL_BY_SW)
+#error "RFIC pin mode means RFFC has to been operated meanwhile"
+#endif
 #include <linux/ioport.h>
 #include <asm/io.h>
 #define FHK_FPGA_TDDC_IO_SIZE 0x60
@@ -552,7 +559,7 @@ static int txlol_ecal_tx1orx2(struct adrv9009_rf_phy *phy)
 		return -EFAULT;
 	}
 
-	for (tx_att=0; tx_att<32; tx_att++) {
+	for (tx_att=22; tx_att>=0; tx_att--) {
 		/* 20190529: later send (run-time) signal with the TARGET att
 		   (it's a MUST per manually test) */
 		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX1, &old);
@@ -632,7 +639,7 @@ static int txlol_ecal_tx2orx2(struct adrv9009_rf_phy *phy)
 		return -EFAULT;
 	}
 
-	for (tx_att=0; tx_att<32; tx_att++) {
+	for (tx_att=22; tx_att>=0; tx_att--) {
 		/* 20190529: later send (run-time) signal with the TARGET att
 		   (it's a MUST per manually test) */
 		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX2, &old);
@@ -673,7 +680,7 @@ static int txlol_ecal_tx2orx2(struct adrv9009_rf_phy *phy)
 				__func__, txlolret.errorCode, txlolret.percentComplete,
 				txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
 #endif
-			return TALACT_WARN_RERUN_TRCK_CAL;
+			return TALACT_ERR_RERUN_INIT_CALS;
 		}
 	}
 
@@ -683,7 +690,16 @@ static int txlol_ecal_tx2orx2(struct adrv9009_rf_phy *phy)
 static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 {
 	int ret = TALACT_NO_ACTION;
-return ret;
+
+	//return ret; /* to compile "uImage_ecal0_xxx" */
+#ifdef RFIC_CTL_MODE_PIN
+	ret = TALISE_setRadioCtlPinMode(phy->talDevice,
+		TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		return -EFAULT;
+	}
+#endif
 #ifdef RFFC_CTL_BY_SW
 	if (NULL == request_mem_region(FHK_FPGA_TDDC_IO_BASE, 
 			FHK_FPGA_TDDC_IO_SIZE, phy->indio_dev->name)) {
@@ -704,25 +720,17 @@ return ret;
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL));*/
 #endif
-#if 0
+	/* TX2 performance is worse than TX1, whatever disable TX1-ECAL or not  */
 	ret = txlol_ecal_tx1orx2(phy);
-	/*if (ret == -EFAULT) {
-		goto out_unmap_iomem;
-	} else if (ret == TALACT_WARN_RERUN_TRCK_CAL) {
-		//warning
-	} */
-#endif
-#if 1
+	/* not critical (performance issue), so continue
+	if (ret != TALACT_NO_ACTION)
+		goto out_unmap_iomem;*/
 	ret = txlol_ecal_tx2orx2(phy);
-	/*if (ret == -EFAULT) {
-		goto out_unmap_iomem;
-	} else if (ret == TALACT_WARN_RERUN_TRCK_CAL) {
-		//warning
-	} */
-#endif
+	/* not critical (performance issue), so continue
+	if (ret != TALACT_NO_ACTION)
+		goto out_unmap_iomem;*/
 
-	/* set RFFC+RFIC into normal Tx, Rx isolated state */
-#if 0
+	/* set RFFC+RFIC into normal Tx & Rx state */
 #ifdef RFFC_CTL_BY_SW
 	writel(0x04aa83f0, phy->tddc_regs+TDDC_REG_OUT);
 	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
@@ -738,16 +746,28 @@ return ret;
 		ret = -EFAULT;
 	}
 #endif
-#endif
-
 #ifdef RFFC_CTL_BY_SW
+	/* at last, ALWAYS set RFIC into pin mode 
+	   (ignore RFFC_CTL_BY_SW and RFIC_CTL_MODE_PIN) */
+	ret = TALISE_setRadioCtlPinMode(phy->talDevice,
+		TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+	/* to prove/verify "TX1/2_ENABLE" connection is correct or not */
+	//ret = TALISE_setRadioCtlPinMode(phy->talDevice,
+		//TAL_TXRX_PIN_MODE, TAL_ORX1ORX2_PAIR_NONE_SEL);
+	//ret = TALISE_setRadioCtlPinMode(phy->talDevice,
+		//TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		ret = -EFAULT;
+	}
 	/* FPGA-RFES-TDDC: io_config_manually disable
 	writel(0x00000001, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
 	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL)); */
-
+#endif
 out_unmap_iomem:
+#ifdef RFFC_CTL_BY_SW
 	iounmap(phy->tddc_regs);
 out_release_iomem:
 	release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
@@ -1279,9 +1299,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	 * Tx calibrations will only run if radioOn and *
 	 * the obsRx path is set to OBS_INTERNAL_CALS   *
 	 * **********************************************/
-	phy->tracking_cal_mask = TAL_TRACK_NONE;
-	//phy->tracking_cal_mask = TAL_TRACK_RX1_QEC | TAL_TRACK_RX2_QEC | TAL_TRACK_TX1_QEC | TAL_TRACK_TX2_QEC;
-	//phy->tracking_cal_mask = TAL_TRACK_ALL & ~(TAL_TRACK_RX1_HD2 | TAL_TRACK_RX2_HD2);
+	//phy->tracking_cal_mask = TAL_TRACK_NONE;
+	/* excluding "HD2 for GSM applications" */
+	phy->tracking_cal_mask = TAL_TRACK_ALL & ~(TAL_TRACK_RX1_HD2 | TAL_TRACK_RX2_HD2);
 
 	ret = TALISE_setGpIntMask(phy->talDevice, TAL_GP_MASK_AUX_SYNTH_UNLOCK);
 	if (ret != TALACT_NO_ACTION) {
@@ -1326,22 +1346,10 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			phy->talInit.tx.txProfile.txInputRate_kHz * 1000);
 	}
 
-	/* set RFFC+RFIC into normal Tx, Rx isolated state */
-#if 1//ndef RFIC_CTL_MODE_PIN
+#if 0
 	ret = TALISE_setRxTxEnable(phy->talDevice,
-			has_rx_and_en(phy) ? TAL_RX1RX2_EN : 0,
-			has_tx_and_en(phy) ? TAL_TX1TX2 : 0);
-	if (ret != TALACT_NO_ACTION) {
-		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		ret = -EFAULT;
-		goto out_disable_obs_rx_clk;
-	}
-#endif
-#if 1//def RFFC_CTL_BY_SW
-	ret = TALISE_setRadioCtlPinMode(phy->talDevice,
-		TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
-	//ret = TALISE_setRadioCtlPinMode(phy->talDevice,
-		//TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
+				   has_rx_and_en(phy) ? TAL_RX1RX2_EN : 0,
+				   has_tx_and_en(phy) ? TAL_TX1TX2 : 0);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
 		ret = -EFAULT;
@@ -1429,9 +1437,9 @@ static int adrv9009_setup(struct adrv9009_rf_phy *phy)
 		}
 	}
 
-	//disable_irq(phy->spi->irq);
+	disable_irq(phy->spi->irq);
 	ret = adrv9009_do_setup(phy);
-	//enable_irq(phy->spi->irq);
+	enable_irq(phy->spi->irq);
 
 	phy->talInit.jesd204Settings.framerB.M = framer_b_m;
 	phy->talInit.jesd204Settings.framerB.F = framer_b_f;
