@@ -20,12 +20,12 @@ History:
 */
 /dts-v1/;
 
-#if 1	/* Xilinx-ZC706-Customized */
-/include/ "zynq-zc706.dtsi"
-/include/ "zynq-zc706-adv7511.dtsi"
-#else	/* FHK-DFB */
+#if 1	/* Xilinx-ZC706 Board Design slight adjusted by FHK */
 /include/ "zynq-zc706_fhk.dtsi"
 /include/ "zynq-zc706-adv7511_fhk.dtsi"
+#else	/* FHK-DFB New Board Design based on Xilinx-ZC706 */
+/include/ "zynq-zc706_fhk_dfb.dtsi"
+/include/ "zynq-zc706-adv7511_fhk_dfb.dtsi"
 #endif
 /include/ "zynq-zc706-xge_fhk.dtsi"
 
@@ -45,8 +45,8 @@ History:
 			compatible = "at24,24c02";
 			reg = <0x54>;
 		};
-		/*
-		ad7291@2f {
+
+		/*ad7291@2f {
 			compatible = "adi,ad7291";
 			reg = <0x2f>;
 		};*/
@@ -57,12 +57,12 @@ History:
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
-	jesd204rx_dma: rx-dmac@7c400000 {
+	jesd204rx_dma: iiorx-dmac@7c400000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c400000 0x10000>;
 		#dma-cells = <1>;
 		interrupts = <0 57 0>; //UG585, Table 7-4: IRQF2P[13] -> IRQ[89-32]
-		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
+		clocks = <&clkc 15>; // 15/fclk0=100MHz <- 17/fclk2=250MHz
 		//clocks = <&clkc 15>, <&clkc 17>, <&misc_clk_0>;
 		//clock-names = "s_axi_aclk", "m_dest_axi_aclk", "fifo_wr_clk";
 
@@ -80,12 +80,12 @@ History:
 		};
 	};
 
-	jesd204ro_dma: ro-dmac@7c440000  {
+	jesd204ro_dma: iioro-dmac@7c440000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
 		interrupts = <0 55 0>; //UG585, Table 7-4: IRQF2P[11] -> IRQ[87-32]
-		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
+		clocks = <&clkc 15>; // 15/fclk0=100MHz <- 17/fclk2=250MHz
 		//clocks = <&clkc 15>, <&clkc 17>, <&misc_clk_0>;
 		//clock-names = "s_axi_aclk", "m_dest_axi_aclk", "fifo_wr_clk";
 
@@ -103,12 +103,12 @@ History:
 		};
 	};
 
-	jesd204tx_dma: tx-dmac@7c420000 {
+	jesd204tx_dma: iiotx-dmac@7c420000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c420000 0x10000>;
 		#dma-cells = <1>;
 		interrupts = <0 56 0>; //UG585, Table 7-4: IRQF2P[12] -> IRQ[88-32]
-		clocks = <&clkc 15>; // 15/fclk0 <- 17/fclk2
+		clocks = <&clkc 15>; // 15/fclk0=100MHz <- 17/fclk2=250MHz
 		//clocks = <&clkc 15>, <&clkc 17>, <&clkc 17>;
 		//clock-names = "s_axi_aclk", "m_src_axi_aclk", "m_axis_aclk";
 
@@ -412,7 +412,7 @@ History:
 
 #define fmc_spi spi0
 
-#if 1
+#if 1 /* using CPLL+QPLL for Tx/Rx/ORx */
 #include "adi-adrv9009_fhk122dc122.dtsi"
 	&jesd204ro_layer2 {
 		adi,octets-per-frame = <4>;
@@ -426,11 +426,11 @@ History:
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
-#else
-/* using QPLL-only for Tx/Rx/ORx */
-#include "adi-adrv9009_fhk245dc245.dtsi"
+#else /* using QPLL-only for Tx/Rx/ORx */
+//#include "adi-adrv9009_fhk245dc245.dtsi"
+
+#include "adi-adrv9009_fhk491dc245.dtsi"
 //#include "adi-adrv9009_fhk491dc122.dtsi"
-//#include "adi-adrv9009_fhk491dc245.dtsi"
 #endif
 
 // adrv9009_dac_fifo_bypass_s 60
@@ -482,4 +482,24 @@ History:
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
 
+
 //#include "fhk_zc706ad9009n2.dtsi"
+
+&spi1 {
+	status = "okay";
+
+	/*clksync_ad9544: clksync-ad9544@0 {
+		compatible = "adi,ad9544";
+		reg = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		spi-max-frequency = <1000000>;
+		//adi,spi-3wire-enable;
+
+		clock-output-names = ;
+		#clock-cells = <1>;
+	};*/
+};
+

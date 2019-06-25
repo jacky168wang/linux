@@ -1,13 +1,16 @@
-/* Tx_BW100_IR122p88_Rx_BW100_OR122p88_ORx_BW100_OR122p88_DC122p88
+/* Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76
 History:
-  base: branch "adrv9009_zc706", "arch\arm\boot\dts\adi-adrv9009.dtsi"
-  change: spi-frequency, ad9528-output-channels per FHK-RFB(1*AD9528+2*AD9009)
-  NOTICE: commit "7cf276a19b991da0120de717cdc7ba327c0158c2":
-    "Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76"
-    are NOT valid for the CPLL range of the ZC706
-  JACKY-20190314: ZC706-GTX-CPLL(<5.16GHz)=40*fmc_clk=40*dev_clk,
-    so sample_rate > 122.88M is not supported by ZC706-GTX-serdes,
-    although AD9009-Serdes support 9.8304GHz
+  baseline: branch "2018_R2/master", "arch/arm64/boot/dts/xilinx/adi-adrv9009.dtsi"
+    NOTICE: commit "7cf276a19b991da0120de717cdc7ba327c0158c2":
+      "Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76"
+      are NOT valid for the CPLL range of the ZC706
+    JACKY-20190314: ZC706-GTX-CPLL(<5.16GHz)=40*fmc_clk=40*dev_clk,
+      so sample_rate > 122.88M is not supported by ZC706-GTX-serdes,
+      although AD9009-Serdes support 9.8304GHz
+    Solution: enable QPLL of ZC706-GTH in drivers
+  change1: spi-frequency, ad9528-output-channels per FHK-RFB(1*AD9528+2*AD9009)
+  change2: FIR/ADC/DAC filters used by 'TES' python scripts
+
 */
 
 #include <dt-bindings/iio/frequency/ad9528.h>
@@ -16,13 +19,13 @@ History:
 
 / {
 	clocks {
-		adrv9009_clkin: clock@0 {
+		/*adrv9009n2_clkin: clock@1 { UNUSED
 			compatible = "fixed-clock";
 
-			clock-frequency = <12288000>;
+			clock-frequency = <24576000>;
 			clock-output-names = "adrv9009_ext_refclk";
 			#clock-cells = <0>;
-		};
+		};*/
 	};
 };
 
@@ -30,14 +33,46 @@ History:
 
 	&clk0_ad9528 {
 
-		ad9528_0_c1: channel@1 {
+		/*ad9528_0_c13: channel@13 {
+			reg = <13>;
+			adi,extended-name = "DEV_CLK_EV";
+			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,divider-phase = <0>;
+			adi,channel-divider = <5>;
+			adi,signal-source = <SOURCE_VCO>;
+		};*/
+
+
+
+
+
+
+
+
+		/*ad9528_0_c1: channel@1 {
 			reg = <1>;
 			adi,extended-name = "DEV_CLK_UB";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;// see NOTES "JACKY-20190314"
+			adi,channel-divider = <5>;
+			adi,signal-source = <SOURCE_VCO>;
+		};*/
+		/*ad9528_0_c8: channel@8 {
+			reg = <8>;
+			adi,extended-name = "FMC_CLK_FHK";
+			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,divider-phase = <0>;
+			adi,channel-divider = <5>;
 			adi,signal-source = <SOURCE_VCO>;
 		};
+		ad9528_0_c12: channel@12 {
+			reg = <12>;
+			adi,extended-name = "DEV_SYSREF_EV";
+			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,divider-phase = <0>;
+			adi,channel-divider = <5>;
+			adi,signal-source = <SOURCE_SYSREF_VCO>;
+		};*/
 		ad9528_0_c0: channel@0 {
 			reg = <0>;
 			adi,extended-name = "DEV_SYSREF_UB";
@@ -46,6 +81,22 @@ History:
 			adi,channel-divider = <5>;
 			adi,signal-source = <SOURCE_SYSREF_VCO>;
 		};
+		/*ad9528_0_c3: channel@3 {
+			reg = <3>;
+			adi,extended-name = "FMC_SYSREF_EV";
+			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,divider-phase = <0>;
+			adi,channel-divider = <5>;
+			adi,signal-source = <SOURCE_SYSREF_VCO>;
+		};
+		ad9528_0_c7: channel@7 {
+			reg = <7>;
+			adi,extended-name = "FMC_SYSREF_FHK";
+			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,divider-phase = <0>;
+			adi,channel-divider = <5>;
+			adi,signal-source = <SOURCE_SYSREF_VCO>;
+		};*/
 	};
 
 	trx0_adrv9009n2: adrv9009-phy@2 {
@@ -78,13 +129,13 @@ History:
 		adi,jesd204-framer-a-bank-id = <1>;
 		adi,jesd204-framer-a-device-id = <0>;
 		adi,jesd204-framer-a-lane0-id = <0>;
-		adi,jesd204-framer-a-m = <4>;
+		adi,jesd204-framer-a-m = <4>;//M(Converters)=4
 		adi,jesd204-framer-a-k = <32>;
-		adi,jesd204-framer-a-f = <4>;
-		adi,jesd204-framer-a-np = <16>;
+		adi,jesd204-framer-a-f = <4>;//F=N'/8*M*S/L=(16/8)*4*S/2; decide FPGA-DeframerA/RX setting
+		adi,jesd204-framer-a-np = <16>;//N'=16
 		adi,jesd204-framer-a-scramble = <1>;
 		adi,jesd204-framer-a-external-sysref = <1>;
-		adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;
+		adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;//L(Number of Lanes)=2
 		adi,jesd204-framer-a-serializer-lane-crossbar = <0xE4>;
 		adi,jesd204-framer-a-lmfc-offset = <31>;
 		adi,jesd204-framer-a-new-sysref-on-relink = <0>;
@@ -95,16 +146,20 @@ History:
 		adi,jesd204-framer-a-enable-manual-lane-xbar = <0>;
 
 		/* JESD204 OBS */
+		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
+		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
+		//option2: HW change into (Figure 13. Framer Data Packing for (M = 2, L = 1, S = 1))
+		//stitching mode must setting with (M = 2, L = 2, logically), (M = 4, L = 2 physically)
 		adi,jesd204-framer-b-bank-id = <0>;
 		adi,jesd204-framer-b-device-id = <0>;
 		adi,jesd204-framer-b-lane0-id = <0>;
-		adi,jesd204-framer-b-m = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
+		adi,jesd204-framer-b-m = <4>;//ORx1&2(M=4,L=2), or ORx2-ONLY(M=2,L=1), or ORX_rfbandwidth>200MHz(M=2,L=2)
 		adi,jesd204-framer-b-k = <32>;
-		adi,jesd204-framer-b-f = <2>;// must be 2 if ORX_rfbandwidth > 200MHz
-		adi,jesd204-framer-b-np = <16>;
+		adi,jesd204-framer-b-f = <4>;//F=N'/8*M*S/L; decide FPGA-DeframerB/ORX setting
+		adi,jesd204-framer-b-np = <16>;//N'=16
 		adi,jesd204-framer-b-scramble = <1>;
 		adi,jesd204-framer-b-external-sysref = <1>;
-		adi,jesd204-framer-b-serializer-lanes-enabled = <0x0C>;
+		adi,jesd204-framer-b-serializer-lanes-enabled = <0x0C>;//L(Number of Lanes)=2
 		adi,jesd204-framer-b-serializer-lane-crossbar = <0xE4>;
 		adi,jesd204-framer-b-lmfc-offset = <31>;
 		adi,jesd204-framer-b-new-sysref-on-relink = <0>;
@@ -118,22 +173,42 @@ History:
 		adi,jesd204-deframer-a-bank-id = <0>;
 		adi,jesd204-deframer-a-device-id = <0>;
 		adi,jesd204-deframer-a-lane0-id = <0>;
-		adi,jesd204-deframer-a-m = <4>;
+		adi,jesd204-deframer-a-m = <4>;//M(Converters)=4
 		adi,jesd204-deframer-a-k = <32>;
 		adi,jesd204-deframer-a-scramble = <1>;
 		adi,jesd204-deframer-a-external-sysref = <1>;
-		adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0F>;
+		adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0F>;//L(Number of Lanes)=4
 		adi,jesd204-deframer-a-deserializer-lane-crossbar = <0xE4>;
 		adi,jesd204-deframer-a-lmfc-offset = <17>;
 		adi,jesd204-deframer-a-new-sysref-on-relink = <0>;
 		adi,jesd204-deframer-a-syncb-out-select = <0>;
-		adi,jesd204-deframer-a-np = <16>;
+		adi,jesd204-deframer-a-np = <16>;//N'=16
 		adi,jesd204-deframer-a-syncb-out-lvds-mode = <1>;
 		adi,jesd204-deframer-a-syncb-out-lvds-pn-invert = <0>;
 		adi,jesd204-deframer-a-syncb-out-cmos-slew-rate = <0>;
 		adi,jesd204-deframer-a-syncb-out-cmos-drive-level = <0>;
 		adi,jesd204-deframer-a-enable-manual-lane-xbar = <0>;
-
+#if 1
+		/* JESD204 Unused */
+		adi,jesd204-deframer-b-bank-id = <0>;
+		adi,jesd204-deframer-b-device-id = <0>;
+		adi,jesd204-deframer-b-lane0-id = <0>;
+		adi,jesd204-deframer-b-m = <0>;//M(Converters)=4
+		adi,jesd204-deframer-b-k = <32>;
+		adi,jesd204-deframer-b-scramble = <1>;
+		adi,jesd204-deframer-b-external-sysref = <1>;
+		adi,jesd204-deframer-b-deserializer-lanes-enabled = <0x00>;//L(Number of Lanes)
+		adi,jesd204-deframer-b-deserializer-lane-crossbar = <0xE4>;
+		adi,jesd204-deframer-b-lmfc-offset = <17>;
+		adi,jesd204-deframer-b-new-sysref-on-relink = <0>;
+		adi,jesd204-deframer-b-syncb-out-select = <0>;
+		adi,jesd204-deframer-b-np = <16>;//N'=16
+		adi,jesd204-deframer-b-syncb-out-lvds-mode = <1>;
+		adi,jesd204-deframer-b-syncb-out-lvds-pn-invert = <0>;
+		adi,jesd204-deframer-b-syncb-out-cmos-slew-rate = <0>;
+		adi,jesd204-deframer-b-syncb-out-cmos-drive-level = <0>;
+		adi,jesd204-deframer-b-enable-manual-lane-xbar = <0>;
+#endif
 		adi,jesd204-ser-amplitude = <15>;
 		adi,jesd204-ser-pre-emphasis = <1>;
 		adi,jesd204-ser-invert-lane-polarity = <0>;
@@ -146,15 +221,15 @@ History:
 
 		adi,rx-profile-rx-fir-gain_db = <(-6)>;
 		adi,rx-profile-rx-fir-num-fir-coefs = <48>;
-		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-8) (-22) (32) (50) (-68) (-106) (141) (199) (-258) (-352) (430) (572) (-691) (-903) (1069) (1392) (-1644) (-2172) (2569) (3574) (-4364) (-7129) (9355) (31095) (31095) (9355) (-7129) (-4364) (3574) (2569) (-2172) (-1644) (1392) (1069) (-903) (-691) (572) (430) (-352) (-258) (199) (141) (-106) (-68) (50) (32) (-22) (-8)>;
+		adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-2) (23) (46) (-17) (-104) (10) (208) (23) (-370) (-97) (607) (240) (-942) (-489) (1407) (910) (-2065) (-1637) (3058) (2995) (-4912) (-6526) (9941) (30489) (30489) (9941) (-6526) (-4912) (2995) (3058) (-1637) (-2065) (910) (1407) (-489) (-942) (240) (607) (-97) (-370) (23) (208) (10) (-104) (-17) (46) (23) (-2)>;
 
 		adi,rx-profile-rx-fir-decimation = <2>;
 		adi,rx-profile-rx-dec5-decimation = <4>;
-		adi,rx-profile-rhb1-decimation = <2>;
-		adi,rx-profile-rx-output-rate_khz = <122880>;// see NOTES "JACKY-20190314"
-		adi,rx-profile-rf-bandwidth_hz = <100000000>;
-		adi,rx-profile-rx-bbf3d-bcorner_khz = <100000>;
-		adi,rx-profile-rx-adc-profile = /bits/ 16 <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,rx-profile-rhb1-decimation = <1>;
+		adi,rx-profile-rx-output-rate_khz = <245760>;
+		adi,rx-profile-rf-bandwidth_hz = <200000000>;
+		adi,rx-profile-rx-bbf3d-bcorner_khz = <200000>;
+		adi,rx-profile-rx-adc-profile = /bits/ 16 <182 142 173 90 1280 982 1335 96 1369 48 1012 18 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
 		adi,rx-profile-rx-ddc-mode = <0>;
 
 		adi,rx-nco-shifter-band-a-input-band-width_khz = <0>;
@@ -179,17 +254,21 @@ History:
 
 		/* ORX */
 
-		adi,orx-profile-rx-fir-gain_db = <(-6)>;
-		adi,orx-profile-rx-fir-num-fir-coefs = <48>;
-		adi,orx-profile-rx-fir-coefs = /bits/ 16  <(-9) (-18) (31) (42) (-65) (-89) (132) (168) (-240) (-298) (396) (486) (-632) (-770) (968) (1163) (-1530) (-1862) (2369) (3051) (-4066) (-5983) (9689) (29830) (29830) (9689) (-5983) (-4066) (3051) (2369) (-1862) (-1530) (1163) (968) (-770) (-632) (486) (396) (-298) (-240) (168) (132) (-89) (-65) (42) (31) (-18) (-9)>;
-		adi,orx-profile-rx-fir-decimation = <2>;
+		adi,orx-profile-rx-fir-gain_db = <6>;
+		adi,orx-profile-rx-fir-num-fir-coefs = <24>;
+		adi,orx-profile-rx-fir-coefs = /bits/ 16  <(-10) (7) (-10) (-12) (6) (-12) (16) (-16) (1) (63) (-431) (17235) (-431) (63) (1) (-16) (16) (-12) (6) (-12) (-10) (7) (-10) (0)>;
+		adi,orx-profile-rx-fir-decimation = <1>;
 		adi,orx-profile-rx-dec5-decimation = <4>;
 		adi,orx-profile-rhb1-decimation = <2>;
-		adi,orx-profile-orx-output-rate_khz = <122880>;// see NOTES "JACKY-20190314"
-		adi,orx-profile-rf-bandwidth_hz = <100000000>;
+		adi,orx-profile-orx-output-rate_khz = <245760>;
+		adi,orx-profile-rf-bandwidth_hz = <200000000>;
 		adi,orx-profile-rx-bbf3d-bcorner_khz = <225000>;
-		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16  <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+		adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16  <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+#if 1		/* baseline */
+		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0>;
+#else		/* 2019-06-12: TES script */
+		adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+#endif
 		adi,orx-profile-orx-ddc-mode = <0>;
 		adi,orx-profile-orx-merge-filter = /bits/ 16  <0 0 0 0 0 0 0 0 0 0 0 0>;
 
@@ -202,46 +281,53 @@ History:
 		adi,orx-gain-control-orx2-min-gain-index = <195>;
 
 		adi,obs-settings-framer-sel = <1>;
-		adi,obs-settings-obs-rx-channels-enable = <2>; // FHK HW design: ORX2-only
-		//adi,obs-settings-obs-rx-channels-enable = <1>; // 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz
+		// FHK HW design: ORX1-only
+		// 20190313: must be 1 for ORX_RF_bandwidth >= 200MHz per the adrv9009.c
+		adi,obs-settings-obs-rx-channels-enable = <1>;
 		adi,obs-settings-obs-rx-lo-source = <0>;
 
 		/* TX */
 
 		adi,tx-profile-tx-fir-gain_db = <6>;
-		adi,tx-profile-tx-fir-num-fir-coefs = <80>;
-		adi,tx-profile-tx-fir-coefs = /bits/ 16  <(0) (0) (0) (1) (0) (-3) (1) (7) (-3) (-13) (7) (25) (-14) (-42) (27) (69) (-46) (-107) (74) (160) (-115) (-229) (184) (336) (-264) (-468) (382) (653) (-538) (-904) (754) (1269) (-1056) (-1842) (1486) (2879) (-2031) (-4846) (3816) (16221) (16221) (3816) (-4846) (-2031) (2879) (1486) (-1842) (-1056) (1269) (754) (-904) (-538) (653) (382) (-468) (-264) (336) (184) (-229) (-115) (160) (74) (-107) (-46) (69) (27) (-42) (-14) (25) (7) (-13) (-3) (7) (1) (-3) (0) (1) (0) (0) (0)>;
+		adi,tx-profile-tx-fir-num-fir-coefs = <40>;
+		adi,tx-profile-tx-fir-coefs = /bits/ 16  <(-14) (5) (-9) (6) (-4) (19) (-29) (27) (-30) (46) (-63) (77) (-103) (150) (-218) (337) (-599) (1266) (-2718) (19537) (-2718) (1266) (-599) (337) (-218) (150) (-103) (77) (-63) (46) (-30) (27) (-29) (19) (-4) (6) (-9) (5) (-14) (0)>;
 
 		adi,tx-profile-dac-div = <1>;
 
-		adi,tx-profile-tx-fir-interpolation = <2>;
+		adi,tx-profile-tx-fir-interpolation = <1>;
 		adi,tx-profile-thb1-interpolation = <2>;
 		adi,tx-profile-thb2-interpolation = <2>;
 		adi,tx-profile-thb3-interpolation = <2>;
 		adi,tx-profile-tx-int5-interpolation = <1>;
-		adi,tx-profile-tx-input-rate_khz = <122880>;// see NOTES "JACKY-20190314"
-		adi,tx-profile-primary-sig-bandwidth_hz = <50000000>;
-		adi,tx-profile-rf-bandwidth_hz = <100000000>;
-		adi,tx-profile-tx-dac3d-bcorner_khz = <187000>;
-		adi,tx-profile-tx-bbf3d-bcorner_khz = <56000>;
-		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <265 146 181 90 1280 366 1257 27 1258 17 718 39 48 46 27 161 0 0 0 0 40 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
-
+		adi,tx-profile-tx-input-rate_khz = <245760>;
+		adi,tx-profile-primary-sig-bandwidth_hz = <100000000>;
+		adi,tx-profile-rf-bandwidth_hz = <225000000>;
+		adi,tx-profile-tx-dac3d-bcorner_khz = <225000>;
+		adi,tx-profile-tx-bbf3d-bcorner_khz = <113000>;
+#if 1		/* baseline */
+		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <206 132 168 90 1280 641 1307 53 1359 28 1039 30 48 48 37 210 0 0 0 0 53 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+#else		/* 2019-06-12: TES script */
+		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <212 140 175 90 1280 699 1304 59 1343 33  913 27 48 48 34 192 0 0 0 0 48 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;
+#endif
 		adi,tx-settings-deframer-sel = <0>;
 		adi,tx-settings-tx-channels = <3>;
 		adi,tx-settings-tx-atten-step-size = <0>;
-		adi,tx-settings-tx1-atten_md-b = <10000>;
-		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;
+		adi,tx-settings-tx1-atten_md-b = <16000>;// 10dB->16dB
+		adi,tx-settings-tx2-atten_md-b = <16000>;// 10dB->16dB
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
 
-		adi,dig-clocks-device-clock_khz = <122880>;// it means changes for AD9528-output-channel "DEV_CLK"
+		adi,dig-clocks-device-clock_khz = <245760>;// it means changes for AD9528-output-channel "DEV_CLK"
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;
-		adi,trx-pll-lo-frequency_hz = <3500000000>;// JACKY-20190228: new per the driver
-		//adi,aux-pll-lo-frequency_hz = <>;// JACKY-20190228: new per the driver
+		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3: Enable RFPLL phase sync init and track continuously
+
+		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
+		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
+		adi,trx-pll-lo-frequency_hz = <3500000000>;
+		adi,aux-pll-lo-frequency_hz = <3500000000>;
 
 		/* AGC */
 
@@ -351,20 +437,18 @@ History:
 		adi,aux-dac-resolution11 = <0>;
 		adi,aux-dac-values11 = <0>;
 
-		adi,arm-gpio-config-orx1-tx-sel0-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel0-pin-gpio-pin-sel = <7>;
 		adi,arm-gpio-config-orx1-tx-sel0-pin-polarity = <0>;
-		adi,arm-gpio-config-orx1-tx-sel0-pin-enable = <0>;
-
-		adi,arm-gpio-config-orx1-tx-sel1-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel0-pin-enable = <1>;
+		adi,arm-gpio-config-orx1-tx-sel1-pin-gpio-pin-sel = <6>;
 		adi,arm-gpio-config-orx1-tx-sel1-pin-polarity = <0>;
-		adi,arm-gpio-config-orx1-tx-sel1-pin-enable = <0>;
-		adi,arm-gpio-config-orx2-tx-sel0-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx1-tx-sel1-pin-enable = <1>;
+		adi,arm-gpio-config-orx2-tx-sel0-pin-gpio-pin-sel = <5>;
 		adi,arm-gpio-config-orx2-tx-sel0-pin-polarity = <0>;
-		adi,arm-gpio-config-orx2-tx-sel0-pin-enable = <0>;
-
-		adi,arm-gpio-config-orx2-tx-sel1-pin-gpio-pin-sel = <0>;
+		adi,arm-gpio-config-orx2-tx-sel0-pin-enable = <1>;
+		adi,arm-gpio-config-orx2-tx-sel1-pin-gpio-pin-sel = <4>;
 		adi,arm-gpio-config-orx2-tx-sel1-pin-polarity = <0>;
-		adi,arm-gpio-config-orx2-tx-sel1-pin-enable = <0>;
+		adi,arm-gpio-config-orx2-tx-sel1-pin-enable = <1>;
 		adi,arm-gpio-config-en-tx-tracking-cals-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-en-tx-tracking-cals-polarity = <0>;
 		adi,arm-gpio-config-en-tx-tracking-cals-enable = <0>;
@@ -380,6 +464,8 @@ History:
 		adi,fhm-mode-enable-mcs-sync = <0>;
 		adi,fhm-mode-fhm-trigger-mode = <0>;
 		adi,fhm-mode-fhm-exit-mode = <1>;
+		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
+		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,fhm-mode-fhm-init-frequency_hz = <2450000000>;
 
 		adi,rx1-gain-ctrl-pin-inc-step = <1>;
@@ -409,8 +495,8 @@ History:
 		adi,tx-pa-protection-tx1-power-threshold = <4096>;
 		adi,tx-pa-protection-tx2-power-threshold = <4096>;
 		adi,tx-pa-protection-peak-count = <4>;
-		adi,tx-pa-protection-tx1-peak-threshold = <140>;
-		adi,tx-pa-protection-tx2-peak-threshold = <140>;
+		adi,tx-pa-protection-tx1-peak-threshold = <130>;
+		adi,tx-pa-protection-tx2-peak-threshold = <130>;
 	};
 };
 

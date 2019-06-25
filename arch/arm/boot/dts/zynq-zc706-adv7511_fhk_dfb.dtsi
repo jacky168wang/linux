@@ -22,7 +22,7 @@
 				#size-cells = <0>;
 				reg = <0x74>;
 
-				i2c@0 {
+				/*i2c@0 {
 					#address-cells = <1>;
 					#size-cells = <0>;
 					reg = <0>;
@@ -33,7 +33,7 @@
 						factory-fout = <156250000>;
 						initial-fout = <148500000>;
 					};
-				};
+				};*/
 
 				/*i2c@1 {
 				    #address-cells = <1>;
@@ -80,27 +80,29 @@
 					};
 				};
 
-				i2c@3 {
+				/*i2c@3 {
 					#address-cells = <1>;
 					#size-cells = <0>;
 					reg = <3>;
-					gpio@21 {
-						compatible = "ti,tca6416";
-						reg = <0x21>;
-						gpio-controller;
-						#gpio-cells = <2>;
+					sensor@48 {
+						compatible = "ti,tmp75";// hwmon/lm75.c
+						reg = <0x48>;
 					};
-				};
+					sensor@49 {
+						compatible = "ti,tmp75";// hwmon/lm75.c
+						reg = <0x48>;
+					};
+				};*/
 
-				i2c@4 {
+				/*i2c@4 {
 					#address-cells = <1>;
 					#size-cells = <0>;
 					reg = <4>;
-					rtc@54 {
-						compatible = "nxp,pcf8563";
-						reg = <0x51>;
+					rtc@68 {
+						compatible = "idt,idt1337";// driver unknown
+						reg = <0x68>;
 					};
-				};
+				};*/
 			};
 		};
 		/*

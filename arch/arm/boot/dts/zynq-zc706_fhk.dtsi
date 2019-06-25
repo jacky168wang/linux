@@ -1,7 +1,7 @@
 /include/ "zynq.dtsi"
 
 / {
-	model = "FHK Zynq ZC706";
+	model = "Xilinx Zynq ZC706-FHK";
 	memory {
 		device_type = "memory";
 		reg = <0x00000000 0x40000000>;
@@ -69,16 +69,14 @@
 	phy-handle = <&phy0>;
 	phy-mode = "rgmii-id";
 
-	/* 1GE-PHY on FHK-DFB: Marvell-88E1510 */
-	phy0: phy@1 {
+	phy0: phy@7 {
 		device_type = "ethernet-phy";
-		reg = <0x1>;
+		reg = <0x7>;
 	};
 };
 
 &usb0 {
 	xlnx,phy-reset-gpio = <&gpio0 7 0>;
-	status = "disabled";
 };
 
 &qspi {
@@ -113,35 +111,5 @@
 			label = "spare";
 			reg = <0x00fc0000 0x00000000>;
 		};
-/*
-		spi-rx-bus-width = <8>;
-		spi-tx-bus-width = <8>;
-
-		compatible = "n25q512a", "micron,m25p80";
-		reg = <0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		spi-max-frequency = <50000000>;
-
-		partition@0x00000000 {
-			label = "boot";
-			reg = <0x0 0x500000>;
-		};
-
-		partition@0x00500000 {
-			label = "bootenv";
-			reg = <0x500000 0x20000>;
-		};
-
-		partition@0x00520000 {
-			label = "kernel";
-			reg = <0x520000 0xA80000>;
-		};
-
-		partition@0x00fa0000 {
-			label = "spare";
-			reg = <0xFA0000 0x0>;
-		};
-*/
 	};
 };

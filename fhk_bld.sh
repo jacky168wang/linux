@@ -92,12 +92,16 @@ fi
 # a broken symbolic link to include/dt-bindings could lead to compile error
 # https://www.toradex.com/community/questions/8105/
 #   device-tree-compilation-failed-no-such-file-or-dir.html
-ln -s include/dt-bindings arch/arm/boot/dts/include/dt-bindings
+#ln -s include/dt-bindings arch/arm/boot/dts/include/dt-bindings
 #step1, modify dts or dtsi files
-make ${TARGET}.dtb O=${OUT_DIR} clean
+
+#step2, remove the previous building
+rm -rf ${OUT_DIR}/arch/arm/boot/dts
+#step3, 
 make ${TARGET}.dtb O=${OUT_DIR}
-cd ${OUT_DIR}
-dtc -I dtb ${TARGET}.dtb -O dts -o ${TARGET}.dts
+#step4, convert this.dtb back to this.dts, then compare with the previous to compare
+dtc -I dtb ${OUT_DIR}/arch/arm/boot/dts/${TARGET}.dtb -O dts -o ${OUT_DIR}/arch/arm/boot/dts/${TARGET}.dts
+#vimdiff ${OUT_DIR}/arch/arm/boot/dts/${TARGET}.dts old.dts
 
 #*******************************************************************************
 export ARCH=
