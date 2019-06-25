@@ -1089,7 +1089,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*************************************************************************/
 	/*****  TALISE ARM Initialization External LOL Calibrations with PA  *****/
 	/*************************************************************************/
-
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
 		ret = adrv9009_txlol_ecal(phy);
@@ -1210,7 +1209,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		}
 
 		/* Enable SYSREF to Talise JESD204B DeframerA */
-		/* < User: Make sure SYSREF is stopped/disabled > */
 		ret = TALISE_enableSysrefToDeframer(phy->talDevice, TAL_DEFRAMER_A, 1);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -1465,7 +1463,6 @@ static int adrv9009_multi_chip_sync(struct adrv9009_rf_phy *phy, int step)
 	switch (step) {
 	case 0:
 		TALISE_radioOff(phy->talDevice);
-		disable_irq(phy->spi->irq);
 		adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
 
 		if (phy->is_initialized) {
@@ -1691,7 +1688,6 @@ static int adrv9009_multi_chip_sync(struct adrv9009_rf_phy *phy, int step)
 		}
 
 		TALISE_radioOn(phy->talDevice);
-		enable_irq(phy->spi->irq);
 		break;
 	default:
 		ret = -EINVAL;
@@ -1794,8 +1790,9 @@ static ssize_t adrv9009_phy_store(struct device *dev,
 		ret = kstrtol(buf, 10, &readin);
 		if (ret)
 			break;
-
+		disable_irq(phy->spi->irq);
 		ret = adrv9009_multi_chip_sync(phy, readin);
+		enable_irq(phy->spi->irq);
 		break;
 
 	default:
