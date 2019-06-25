@@ -20,7 +20,7 @@ History:
 */
 /dts-v1/;
 
-#if 1	/* Xilinx-ZC706 Board Design slight adjusted by FHK */
+#if 0	/* Xilinx-ZC706 Board Design slight adjusted by FHK */
 /include/ "zynq-zc706_fhk.dtsi"
 /include/ "zynq-zc706-adv7511_fhk.dtsi"
 #else	/* FHK-DFB New Board Design based on Xilinx-ZC706 */
@@ -483,7 +483,7 @@ History:
 };
 
 
-//#include "fhk_zc706ad9009n2.dtsi"
+#include "fhk_zc706ad9009n2.dtsi"
 
 &spi1 {
 	status = "okay";

@@ -56,7 +56,6 @@ index 036af22..8b5fe56 100644
 	};
 };
 
-&fmc_spi {
 
 	&clk0_ad9528 {
 
@@ -76,7 +75,7 @@ index 036af22..8b5fe56 100644
 
 
 
-		/*ad9528_0_c1: channel@1 {
+		/*ad9528_0_c1: channel@1 { enabled in 'clk0_ad9528', although 'extended-name' is different
 			reg = <1>;
 			adi,extended-name = "DEV_CLK_UB";
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
@@ -126,6 +125,7 @@ index 036af22..8b5fe56 100644
 		};*/
 	};
 
+&fmc_spi {
 	trx0_adrv9009n2: adrv9009-phy@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
