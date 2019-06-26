@@ -21,13 +21,14 @@ History:
 /dts-v1/;
 
 #if 0	/* Xilinx-ZC706 Board Design slight adjusted by FHK */
-/include/ "zynq-zc706_fhk.dtsi"
-/include/ "zynq-zc706-adv7511_fhk.dtsi"
+#include "zynq-zc706_fhk.dtsi"
+#include "zynq-zc706-adv7511_fhk.dtsi"
 #else	/* FHK-DFB New Board Design based on Xilinx-ZC706 */
-/include/ "zynq-zc706_fhk_dfb.dtsi"
-/include/ "zynq-zc706-adv7511_fhk_dfb.dtsi"
+#include "zynq-zc706_fhk_dfb.dtsi"
+#include "zynq-zc706-adv7511_fhk_dfb.dtsi"
 #endif
-/include/ "zynq-zc706-xge_fhk.dtsi"
+#include "zynq-zc706-xge_fhk.dtsi"
+#include "zynq-zc706-dfe_fhk.dtsi"
 
 
 &i2c_mux {
@@ -57,7 +58,7 @@ History:
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
-	jesd204rx_dma: iiorx-dmac@7c400000 {
+	rx_dma: rx-dmac@7c400000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c400000 0x10000>;
 		#dma-cells = <1>;
@@ -80,7 +81,7 @@ History:
 		};
 	};
 
-	jesd204ro_dma: iioro-dmac@7c440000  {
+	rx_obs_dma: rx-obs-dmac@7c440000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c440000  0x10000>;
 		#dma-cells = <1>;
@@ -103,7 +104,7 @@ History:
 		};
 	};
 
-	jesd204tx_dma: iiotx-dmac@7c420000 {
+	tx_dma: tx-dmac@7c420000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c420000 0x10000>;
 		#dma-cells = <1>;
@@ -127,27 +128,27 @@ History:
 		};
 	};
 
-	jesd204rx_layer3: jesd204rx-layer3@44a00000 {
+	axi_adrv9009_core_rx: axi-adrv9009-rx-hpc@44a00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44a00000 0x8000>;
-		dmas = <&jesd204rx_dma 0>;
+		dmas = <&rx_dma 0>;
 		dma-names = "rx";
 		spibus-connected = <&trx0_adrv9009>;
 	};
 
-	jesd204ro_layer3: jesd204ro-layer3@44a08000 {
+	axi_adrv9009_core_rx_obs: axi-adrv9009-rx-obs-hpc@44a08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44a08000 0x1000>;
-		dmas = <&jesd204ro_dma 0>;
+		dmas = <&rx_obs_dma 0>;
 		dma-names = "rx";
 		clocks = <&trx0_adrv9009 1>;
 		clock-names = "sampl_clk";
 	};
 
-	jesd204tx_layer3: jesd204tx-layer3@44a04000 {
+	axi_adrv9009_core_tx: axi-adrv9009-tx-hpc@44a04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44a04000 0x4000>;
-		dmas = <&jesd204tx_dma 0>;
+		dmas = <&tx_dma 0>;
 		dma-names = "tx";
 		clocks = <&trx0_adrv9009 2>;
 		clock-names = "sampl_clk";
@@ -169,7 +170,7 @@ History:
 
 		interrupts = <0 54 0>; //UG585, Table 7-4: IRQF2P[10] -> IRQ[86-32]
 
-		clocks = <&clkc 15>, <&jesd204rx_clkgen>, <&jesd204rx_layer1 0>;
+		clocks = <&clkc 15>, <&axi_rx_clkgen>, <&axi_adrv9009_adxcvr_rx 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		#clock-cells = <0>;
@@ -191,7 +192,7 @@ History:
 
 		interrupts = <0 53 0>; //UG585, Table 7-4: IRQF2P[9] -> IRQ[85-32]
 
-		clocks = <&clkc 15>, <&jesd204tx_clkgen>, <&jesd204tx_layer1 0>;
+		clocks = <&clkc 15>, <&axi_tx_clkgen>, <&axi_adrv9009_adxcvr_tx 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		#clock-cells = <0>;
@@ -209,17 +210,17 @@ History:
 		adi,control-bits-per-sample = <0>;// 20190314: different from 2/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
-	jesd204ro_layer2: axi-jesd204-ro@44ab0000 {
+	jesd204ro_layer2: axi-jesd204-rx-os@44ab0000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x44ab0000 0x1000>;
 
 		interrupts = <0 52 0>; //UG585, Table 7-4: IRQF2P[8] -> IRQ[84-32]
 
-		clocks = <&clkc 15>, <&jesd204ro_clkgen>, <&jesd204ro_layer1 0>;
+		clocks = <&clkc 15>, <&axi_rx_os_clkgen>, <&axi_adrv9009_adxcvr_rx_os 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		#clock-cells = <0>;
-		clock-output-names = "jesd_ro_lane_clk";
+		clock-output-names = "jesd_rx_os_lane_clk";
 
 		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
 		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
@@ -234,7 +235,7 @@ History:
 		adi,frames-per-multiframe = <32>;
 	};
 
-	jesd204tx_clkgen: axi-clkgen-tx@43c00000  {
+	axi_tx_clkgen: axi-clkgen@43c00000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c00000 0x10000>;
 		#clock-cells = <0>;
@@ -242,7 +243,7 @@ History:
 		clock-output-names = "axi_tx_clkgen";
 	};
 
-	jesd204rx_clkgen: axi-clkgen-rx@43c10000  {
+	axi_rx_clkgen: axi-clkgen@43c10000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c10000 0x10000>;
 		#clock-cells = <0>;
@@ -250,21 +251,21 @@ History:
 		clock-output-names = "axi_rx_clkgen";
 	};
 
-	jesd204ro_clkgen: axi-clkgen-ro@43c20000  {
+	axi_rx_os_clkgen: axi-clkgen@43c20000  {
 		compatible = "adi,axi-clkgen-2.00.a";
 		reg = <0x43c20000 0x10000>;
 		#clock-cells = <0>;
 		clocks = <&clk0_ad9528 8>;
-		clock-output-names = "axi_ro_clkgen";
+		clock-output-names = "axi_rx_os_clkgen";
 	};
 
-	jesd204rx_layer1: axi-adxcvr-rx@44a60000 {
+	axi_adrv9009_adxcvr_rx: axi-adxcvr-rx@44a60000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44a60000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204rx_clkgen 0>;
+		clocks = <&clk0_ad9528 8>, <&axi_rx_clkgen 0>;
 		clock-names = "conv", "div40";
 
 		#clock-cells = <1>;
@@ -276,17 +277,17 @@ History:
 		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 
-	jesd204ro_layer1: axi-adxcvr-ro@44a50000 {
+	axi_adrv9009_adxcvr_rx_os: axi-adxcvr-rx-os@44a50000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44a50000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204ro_clkgen>;
+		clocks = <&clk0_ad9528 8>, <&axi_rx_os_clkgen>;
 		clock-names = "conv", "div40";
 
 		#clock-cells = <1>;
-		clock-output-names = "ro_gt_clk", "ro_out_clk";
+		clock-output-names = "rx_os_gt_clk", "rx_os_out_clk";
 
 		adi,sys-clk-select = <3>;//0->3: 20190320: using the shared QPLL(by Tx/Rx/ORx)
 		adi,out-clk-select = <3>;
@@ -294,13 +295,13 @@ History:
 		//adi,use-cpll-enable;//20190320: using the shared QPLL(by Tx/Rx/ORx)
 	};
 
-	jesd204tx_layer1: axi-adxcvr-tx@44a80000 {
+	axi_adrv9009_adxcvr_tx: axi-adxcvr-tx@44a80000 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		compatible = "adi,axi-adxcvr-1.0";
 		reg = <0x44a80000 0x1000>;
 
-		clocks = <&clk0_ad9528 8>, <&jesd204tx_clkgen>;
+		clocks = <&clk0_ad9528 8>, <&axi_tx_clkgen>;
 		clock-names = "conv", "div40";
 
 		#clock-cells = <1>;
@@ -308,101 +309,6 @@ History:
 
 		adi,sys-clk-select = <3>;
 		adi,out-clk-select = <3>;
-	};
-};
-
-/ {
-	fpga_axi1: fpga-axi@1 {
-		compatible = "simple-bus";
-		#address-cells = <0x1>;
-		#size-cells = <0x1>;
-		ranges;
-	};
-};
-
-&fpga_axi1 {
-#if 0
-	CLKSS0_SCR_1: dfe_scratch@8c000000 {
-		compatible = "xlnx,dfe-scratch-1.0";
-		reg = <0x8c000000 0x1000>;
-		clock-names = "s_axi_ctrl_aclk";
-		clocks = <&misc_clk_6>;
-	};
-	CLKSS0_CLKCTL_1: dfe_clk_ctrl@8c001000 {
-		compatible = "xlnx,dfe-clk-ctrl-1.0";
-		reg = <0x8c001000 0x1000>;
-		clock-names = "s_axi_ctrl_aclk", "dfe_aclk";
-		clocks = <&misc_clk_6>, <&misc_clk_7>;
-	};
-	RFISS0_EXTS_1: dfe_rsi_ext_sync@8e002000 {
-		compatible = "xlnx,dfe-ext-sync-1.0";
-		reg = <0x8e002000 0x1000>;
-		xlnx,antennas = <0x1>;
-		xlnx,phases = <0x1>;
-		xlnx,rate = <0xa>;
-		clock-names = "s_axi_ctrl_aclk", "aclk";
-		clocks = <&misc_clk_6>, <&misc_clk_7>;
-	};
-	RFISS0_GPROT_1: dfe_rsi_glitch_protect@8e005000 {
-		compatible = "xlnx,dfe-glitch-protect-1.0";
-		reg = <0x8e005000 0x1000>;
-		xlnx,antennas = <0x1>;
-		xlnx,output-reg = <0x2>;
-		xlnx,phases = <0x1>;
-		clock-names = "s_axi_ctrl_aclk", "dac_aclk";
-		clocks = <&misc_clk_6>, <&misc_clk_7>;
-	};
-	TXCHAIN0_DFESS0_CFR_1: dfe_txchain_cfr@85000000 {
-		clock-names = "s_axi_aclk", "aclk";
-		clocks = <&misc_clk_6>, <&misc_clk_7>;
-		compatible = "xlnx,pc-cfr-6.2";
-		reg = <0x85000000 0x100000>;
-		xlnx,axis-dyn-ctrl-tdata-width = <0x1>;
-		xlnx,axis-dyn-ctrl-tuser-width = <0x1>;
-		xlnx,axis-tdata-width = <0x20>;
-		xlnx,axis-tuser-width = <0x8>;
-		xlnx,cfr-1x-data-mode = <0x0>;
-		xlnx,clks-per-samp = <0x1>;
-		xlnx,component-name = "system_CFR_1_0";
-		xlnx,data-width = <0x10>;
-		xlnx,elaboration-dir = "./";
-		xlnx,max-cp-len = <0x7ff>;
-		xlnx,max-peak-delay = <0xc8>;
-		xlnx,mif-size = <0x1>;
-		xlnx,num-antennas = <0x1>;
-		xlnx,num-cpgs-iter0 = <0x8>;
-		xlnx,num-cpgs-iter1 = <0x6>;
-		xlnx,num-cpgs-iter2 = <0x4>;
-		xlnx,num-cpgs-iter3 = <0x4>;
-		xlnx,num-cpgs-iter4 = <0x4>;
-		xlnx,num-cpgs-iter5 = <0x4>;
-		xlnx,num-cpgs-iter6 = <0x4>;
-		xlnx,num-cpgs-iter7 = <0x4>;
-		xlnx,num-filters = <0x1>;
-		xlnx,num-iterations = <0x4>;
-		xlnx,real-complex-cp = <0x1>;
-		xlnx,wcfr-mode = <0x0>;
-		xlnx,write-filters = <0x1>;
-		xlnx,xdevicefamily = "zynq";
-	};
-	TXCHAIN0_DFESS0_CPG_1: dfe_txchain_gainctrl@86001000 {
-		clock-names = "s_axi_ctrl_aclk", "aclk";
-		clocks = <&misc_clk_6>, <&misc_clk_7>;
-		compatible = "xlnx,dfe-gain-ctrl-1.0";
-		reg = <0x86001000 0x1000>;
-		xlnx,antennas = <0x1>;
-		xlnx,phases = <0x1>;
-	};
-#endif
-	/* "dpd-host-app" demands 0xA0000000 rather than 0x80000000, 
-	   refer to "fhk_zc706ad9009_dpd_debug.txt" for more info */
-	TXCHAIN0_DFESS0_DPD: dpd@A0000000 {
-		//clock-names = "dpd_aclk", "dpd_2x_aclk", "s_axi_ctrl_aclk", "s_axi_user_aclk";
-		//clocks = <&jesd204tx_clkgen>, <&jesd204tx_clkgen>, <&clkc 16>, <&clkc 16>; // 16/fclk1/200MHz
-		//compatible = "xlnx,dpd-8.1", "generic-uio";
-		compatible = "generic-uio";
-		interrupts = <0 29 1>; //UG585, Table 7-4: IRQF2P[0] -> IRQ[61-32]
-		reg = <0xA0000000 0x04000000 0xA4000000 0x00020000>;
 	};
 };
 
@@ -418,11 +324,11 @@ History:
 		adi,octets-per-frame = <4>;
 	};
 	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
-	&jesd204rx_layer1 {
+	&axi_adrv9009_adxcvr_rx {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
-	&jesd204ro_layer1 {
+	&axi_adrv9009_adxcvr_rx_os {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
@@ -478,12 +384,12 @@ History:
 	reset-gpios = <&gpio0 113 0>;
 };
 
-&jesd204tx_layer3 {
+&axi_adrv9009_core_tx {
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
 
 
-#include "fhk_zc706ad9009n2.dtsi"
+#include "zynq-zc706-adrv9009n2_fhk_org.dtsi"
 
 &spi1 {
 	status = "okay";

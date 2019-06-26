@@ -35,7 +35,7 @@ History:
 			adi,channel-divider = <10>;
 		};*/
 
-	&trx0_adrv9009n2 {
+	&trx1_adrv9009 {
         // it means changes for AD9528-output-channel "DEV_CLK"
 		adi,dig-clocks-device-clock_khz = <122880>;
 	};

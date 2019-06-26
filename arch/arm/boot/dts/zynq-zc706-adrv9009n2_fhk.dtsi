@@ -22,7 +22,7 @@ History:
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
-	jesd204rx_dma_n2: rx-dmac@7c460000 {
+	iiorx_dma_n2: rx-dmac@7c460000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c460000 0x10000>;
 		#dma-cells = <1>;
@@ -45,7 +45,7 @@ History:
 		};
 	};
 
-	jesd204ro_dma_n2: ro-dmac@7c4a0000  {
+	iioro_dma_n2: ro-dmac@7c4a0000  {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c4a0000  0x10000>;
 		#dma-cells = <1>;
@@ -68,7 +68,7 @@ History:
 		};
 	};
 
-	jesd204tx_dma_n2: tx-dmac@7c480000 {
+	iiotx_dma_n2: tx-dmac@7c480000 {
 		compatible = "adi,axi-dmac-1.00.a";
 		reg = <0x7c480000 0x10000>;
 		#dma-cells = <1>;
@@ -95,28 +95,28 @@ History:
 	jesd204rx_layer3_n2: jesd204rx-layer3@44b00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44b00000 0x8000>;
-		dmas = <&jesd204rx_dma_n2 0>;
+		dmas = <&iiorx_dma_n2 0>;
 		dma-names = "rx";
-		spibus-connected = <&trx0_adrv9009n2>;
+		spibus-connected = <&trx1_adrv9009>;
 	};
 
 	jesd204ro_layer3_n2: jesd204ro-layer3@44b08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44b08000 0x1000>;
-		dmas = <&jesd204ro_dma_n2 0>;
+		dmas = <&iioro_dma_n2 0>;
 		dma-names = "rx";
-		clocks = <&trx0_adrv9009n2 1>;
+		clocks = <&trx1_adrv9009 1>;
 		clock-names = "sampl_clk";
 	};
 
 	jesd204tx_layer3_n2: jesd204tx-layer3@44b04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44b04000 0x4000>;
-		dmas = <&jesd204tx_dma_n2 0>;
+		dmas = <&iiotx_dma_n2 0>;
 		dma-names = "tx";
-		clocks = <&trx0_adrv9009n2 2>;
+		clocks = <&trx1_adrv9009 2>;
 		clock-names = "sampl_clk";
-		spibus-connected = <&trx0_adrv9009n2>;
+		spibus-connected = <&trx1_adrv9009>;
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 
 		//adi,axi-dds-parity-enable; bool
@@ -279,22 +279,22 @@ History:
 
 #if 0 /* using CPLL+QPLL for Tx/Rx/ORx */
 #include "adi-adrv9009n2_fhk122dc122.dtsi"
-	&jesd204ro_layer2 {
+	&jesd204ro_layer2_n2 {
 		adi,octets-per-frame = <4>;
 	};
 	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
-	&jesd204rx_layer1 {
+	&jesd204rx_layer1_n2 {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
-	&jesd204ro_layer1 {
+	&jesd204ro_layer1_n2 {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
 #else /* using QPLL-only for Tx/Rx/ORx */
-#include "adi-adrv9009n2_fhk245dc245.dtsi"
+//#include "adi-adrv9009n2_fhk245dc245.dtsi"
 
-//#include "adi-adrv9009n2_fhk491dc245.dtsi"
+#include "adi-adrv9009n2_fhk491dc245.dtsi"
 //#include "adi-adrv9009n2_fhk491dc122.dtsi"
 #endif
 
@@ -325,7 +325,7 @@ History:
 // adrv9009_gpio_16,       //  7
 // adrv9009_gpio_18}));    //  6 + 54
 
-&trx0_adrv9009n2 {
+&trx1_adrv9009 {
 	reset-gpios = <&gpio0 80 0>;
 	test-gpios = <&gpio0 81 0>;
 	sysref-req-gpios = <&gpio0 112 0>;

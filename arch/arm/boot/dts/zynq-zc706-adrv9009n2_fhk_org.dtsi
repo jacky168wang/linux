@@ -97,7 +97,7 @@ History:
 		reg = <0x44b00000 0x8000>;
 		dmas = <&rx_dma_n2 0>;
 		dma-names = "rx";
-		spibus-connected = <&trx0_adrv9009n2>;
+		spibus-connected = <&trx1_adrv9009>;
 	};
 
 	axi_adrv9009n2_core_rx_obs: axi-adrv9009-rx-obs-hpc@44b08000 {
@@ -105,7 +105,7 @@ History:
 		reg = <0x44b08000 0x1000>;
 		dmas = <&rx_obs_dma_n2 0>;
 		dma-names = "rx";
-		clocks = <&trx0_adrv9009n2 1>;
+		clocks = <&trx1_adrv9009 1>;
 		clock-names = "sampl_clk";
 	};
 
@@ -114,9 +114,9 @@ History:
 		reg = <0x44b04000 0x4000>;
 		dmas = <&tx_dma_n2 0>;
 		dma-names = "tx";
-		clocks = <&trx0_adrv9009n2 2>;
+		clocks = <&trx1_adrv9009 2>;
 		clock-names = "sampl_clk";
-		spibus-connected = <&trx0_adrv9009n2>;
+		spibus-connected = <&trx1_adrv9009>;
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 
 		//adi,axi-dds-parity-enable; bool
@@ -325,7 +325,7 @@ History:
 // adrv9009_gpio_16,       //  7
 // adrv9009_gpio_18}));    //  6 + 54
 
-&trx0_adrv9009n2 {
+&trx1_adrv9009 {
 	reset-gpios = <&gpio0 80 0>;
 	test-gpios = <&gpio0 81 0>;
 	sysref-req-gpios = <&gpio0 112 0>;

@@ -1,0 +1,101 @@
+/* 
+History:
+  base: Xilinx DFE reference design based on ZC706
+*/
+
+//#include "zynq.dtsi"
+
+/ {
+	fpga_axi1: fpga-axi@1 {
+		compatible = "simple-bus";
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		ranges;
+	};
+};
+
+&fpga_axi1 {
+#if 0
+	CLKSS0_SCR_1: dfe_scratch@8c000000 {
+		compatible = "xlnx,dfe-scratch-1.0";
+		reg = <0x8c000000 0x1000>;
+		clock-names = "s_axi_ctrl_aclk";
+		clocks = <&misc_clk_6>;
+	};
+	CLKSS0_CLKCTL_1: dfe_clk_ctrl@8c001000 {
+		compatible = "xlnx,dfe-clk-ctrl-1.0";
+		reg = <0x8c001000 0x1000>;
+		clock-names = "s_axi_ctrl_aclk", "dfe_aclk";
+		clocks = <&misc_clk_6>, <&misc_clk_7>;
+	};
+	RFISS0_EXTS_1: dfe_rsi_ext_sync@8e002000 {
+		compatible = "xlnx,dfe-ext-sync-1.0";
+		reg = <0x8e002000 0x1000>;
+		xlnx,antennas = <0x1>;
+		xlnx,phases = <0x1>;
+		xlnx,rate = <0xa>;
+		clock-names = "s_axi_ctrl_aclk", "aclk";
+		clocks = <&misc_clk_6>, <&misc_clk_7>;
+	};
+	RFISS0_GPROT_1: dfe_rsi_glitch_protect@8e005000 {
+		compatible = "xlnx,dfe-glitch-protect-1.0";
+		reg = <0x8e005000 0x1000>;
+		xlnx,antennas = <0x1>;
+		xlnx,output-reg = <0x2>;
+		xlnx,phases = <0x1>;
+		clock-names = "s_axi_ctrl_aclk", "dac_aclk";
+		clocks = <&misc_clk_6>, <&misc_clk_7>;
+	};
+	TXCHAIN0_DFESS0_CFR_1: dfe_txchain_cfr@85000000 {
+		clock-names = "s_axi_aclk", "aclk";
+		clocks = <&misc_clk_6>, <&misc_clk_7>;
+		compatible = "xlnx,pc-cfr-6.2";
+		reg = <0x85000000 0x100000>;
+		xlnx,axis-dyn-ctrl-tdata-width = <0x1>;
+		xlnx,axis-dyn-ctrl-tuser-width = <0x1>;
+		xlnx,axis-tdata-width = <0x20>;
+		xlnx,axis-tuser-width = <0x8>;
+		xlnx,cfr-1x-data-mode = <0x0>;
+		xlnx,clks-per-samp = <0x1>;
+		xlnx,component-name = "system_CFR_1_0";
+		xlnx,data-width = <0x10>;
+		xlnx,elaboration-dir = "./";
+		xlnx,max-cp-len = <0x7ff>;
+		xlnx,max-peak-delay = <0xc8>;
+		xlnx,mif-size = <0x1>;
+		xlnx,num-antennas = <0x1>;
+		xlnx,num-cpgs-iter0 = <0x8>;
+		xlnx,num-cpgs-iter1 = <0x6>;
+		xlnx,num-cpgs-iter2 = <0x4>;
+		xlnx,num-cpgs-iter3 = <0x4>;
+		xlnx,num-cpgs-iter4 = <0x4>;
+		xlnx,num-cpgs-iter5 = <0x4>;
+		xlnx,num-cpgs-iter6 = <0x4>;
+		xlnx,num-cpgs-iter7 = <0x4>;
+		xlnx,num-filters = <0x1>;
+		xlnx,num-iterations = <0x4>;
+		xlnx,real-complex-cp = <0x1>;
+		xlnx,wcfr-mode = <0x0>;
+		xlnx,write-filters = <0x1>;
+		xlnx,xdevicefamily = "zynq";
+	};
+	TXCHAIN0_DFESS0_CPG_1: dfe_txchain_gainctrl@86001000 {
+		clock-names = "s_axi_ctrl_aclk", "aclk";
+		clocks = <&misc_clk_6>, <&misc_clk_7>;
+		compatible = "xlnx,dfe-gain-ctrl-1.0";
+		reg = <0x86001000 0x1000>;
+		xlnx,antennas = <0x1>;
+		xlnx,phases = <0x1>;
+	};
+#endif
+	/* "dpd-host-app" demands 0xA0000000 rather than 0x80000000, 
+	   refer to "fhk_zc706ad9009_dpd_debug.txt" for more info */
+	TXCHAIN0_DFESS0_DPD: dpd@A0000000 {
+		//clock-names = "dpd_aclk", "dpd_2x_aclk", "s_axi_ctrl_aclk", "s_axi_user_aclk";
+		//clocks = <&jesd204tx_clkgen>, <&jesd204tx_clkgen>, <&clkc 16>, <&clkc 16>; // 16/fclk1/200MHz
+		//compatible = "xlnx,dpd-8.1", "generic-uio";
+		compatible = "generic-uio";
+		interrupts = <0 29 1>; //UG585, Table 7-4: IRQF2P[0] -> IRQ[61-32]
+		reg = <0xA0000000 0x04000000 0xA4000000 0x00020000>;
+	};
+};

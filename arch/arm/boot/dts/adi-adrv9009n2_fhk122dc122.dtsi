@@ -98,7 +98,7 @@ History:
 	};
 
 &fmc_spi {
-	trx0_adrv9009n2: adrv9009-phy@2 {
+	trx1_adrv9009: adrv9009-phy-n2@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
 
@@ -313,8 +313,8 @@ History:
 		adi,tx-settings-deframer-sel = <0>;
 		adi,tx-settings-tx-channels = <3>;
 		adi,tx-settings-tx-atten-step-size = <0>;
-		adi,tx-settings-tx1-atten_md-b = <16000>;// 10dB->16dB
-		adi,tx-settings-tx2-atten_md-b = <16000>;// 10dB->16dB
+		adi,tx-settings-tx1-atten_md-b = <10000>;
+		adi,tx-settings-tx2-atten_md-b = <10000>;
 		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
