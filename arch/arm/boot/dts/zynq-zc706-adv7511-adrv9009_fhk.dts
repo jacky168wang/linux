@@ -1,5 +1,6 @@
 /* 
-NOTICE:
+Author	: Jacky.Wang <kenwj@sina.com>
+NOTICE	:
    clocks : means "clocks_input" actually
    clock-names : the name is "aligned" with the corresponding driver
 interrupts of zynq7k:
@@ -10,7 +11,7 @@ interrupts of zynq7k:
   PS to PL Interrupts:
     IRQP2F[27: 0] Output, I/O peripherals received and forwarded to the interrupt controller.
 
-History:
+History	:
   base: branch "adrv9009_zc706", "arch\arm\boot\dts\zynq-zc706-adv7511-adrv9009.dts"
   change: clock-tree/interrupts per FHK-RFB (1*AD9528+2*AD9009)
   reference: https://ez.analog.com/wide-band-rf-transceivers/
@@ -18,6 +19,7 @@ History:
     100583/adrv9009-custom-profile/300558
   change: Xilinx DPD integration, FHK DMA datapath verification
 */
+
 /dts-v1/;
 
 #if 0	/* Xilinx-ZC706 Board Design slight adjusted by FHK */
@@ -54,6 +56,7 @@ History:
 	};
 };
 
+
 &fpga_axi {
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
@@ -73,10 +76,10 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64
-				adi,source-bus-type = <2>;//2 = ADI-FIFO
-				adi,destination-bus-width = <64>;//ADI-HDL-2018R2 is 64
-				adi,destination-bus-type = <0>;//0 = AXI-MM
+				adi,source-bus-width = <64>;
+				adi,source-bus-type = <2>;
+				adi,destination-bus-width = <64>;
+				adi,destination-bus-type = <0>;
 			};
 		};
 	};
@@ -96,10 +99,10 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64
-				adi,source-bus-type = <2>;//2 = ADI-FIFO
-				adi,destination-bus-width = <64>;//ADI-HDL-2018R2 is 64
-				adi,destination-bus-type = <0>;//0 = AXI-MM
+				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64 -> master:128
+				adi,source-bus-type = <2>;
+				adi,destination-bus-width = <64>;
+				adi,destination-bus-type = <0>;
 			};
 		};
 	};
@@ -119,10 +122,10 @@ History:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <128>;//ADI-HDL-2018R2 is 64
-				adi,source-bus-type = <0>;//0 = AXI-MM
-				adi,destination-bus-width = <128>;//ADI-HDL-2018R2 is 64
-				adi,destination-bus-type = <2>;//2 = ADI-FIFO
+				adi,source-bus-width = <128>;
+				adi,source-bus-type = <0>;
+				adi,destination-bus-width = <128>;
+				adi,destination-bus-type = <2>;
 				//adi,cyclic;
 			};
 		};
@@ -307,7 +310,7 @@ History:
 		#clock-cells = <1>;
 		clock-output-names = "tx_gt_clk", "tx_out_clk";
 
-		adi,sys-clk-select = <3>;
+		adi,sys-clk-select = <3>;// using QPLL for Tx, QPLL+CPLL for Rx/ORx
 		adi,out-clk-select = <3>;
 	};
 };

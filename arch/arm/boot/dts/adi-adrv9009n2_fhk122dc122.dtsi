@@ -1,5 +1,6 @@
 /* Tx_BW100_IR122p88_Rx_BW100_OR122p88_ORx_BW100_OR122p88_DC122p88
-History:
+Author	: Jacky.Wang <kenwj@sina.com>
+History	:
   baseline: branch "2018_R2/master", "arch/arm/boot/dts/adi-adrv9009.dtsi"
   change1: spi-frequency, ad9528-output-channels per FHK-RFB(1*AD9528+2*AD9009)
   change2: FIR/ADC/DAC filters used by TES python scripts
