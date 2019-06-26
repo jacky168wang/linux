@@ -10,30 +10,15 @@ History:
 #include "adi-adrv9009n2_fhk491dc245.dtsi"
 
 
-		/*&ad9528_0_c13 {
-			adi,channel-divider = <10>;
-		};*/
-
-
-
-		/*&ad9528_0_c1 {
-			adi,channel-divider = <10>;
-		};*/
-		/*&ad9528_0_c8 {
-			adi,channel-divider = <10>;
-		};
-		&ad9528_0_c12 {
+		/*&ad9528_0_c7 {
 			adi,channel-divider = <10>;
 		};*/
 		&ad9528_0_c0 {
 			adi,channel-divider = <10>;
 		};
-		/*&ad9528_0_c3 {
+		&ad9528_0_c9 {
 			adi,channel-divider = <10>;
 		};
-		&ad9528_0_c7 {
-			adi,channel-divider = <10>;
-		};*/
 
 	&trx1_adrv9009 {
         // it means changes for AD9528-output-channel "DEV_CLK"

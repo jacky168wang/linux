@@ -99,7 +99,7 @@ History	:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64 -> master:128
+				adi,source-bus-width = <128>;// TODO: master for 122profile: 128
 				adi,source-bus-type = <2>;
 				adi,destination-bus-width = <64>;
 				adi,destination-bus-type = <0>;
@@ -223,7 +223,7 @@ History	:
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 
 		#clock-cells = <0>;
-		clock-output-names = "jesd_ro_lane_clk";
+		clock-output-names = "jesd_rx_os_lane_clk";
 
 		//RO_PATH: *FPGA.JESD204B-DeframerB -> PHY.JESD204B-FramerB
 		//option1: HW keep ORx1&2 setting(Figure 27. JESD204B Framer Configuration (M = 4, L = 2, S = 1)) but SW enable ORx2-only
@@ -234,7 +234,7 @@ History	:
 		//L(Number of Lanes)=2; PHY-Framer decide
 		//S(Number of Samples)=1; PHY-Framer decide(1,2,or4)
 		//F=N'/8*M*S/L: case1/orx-stitching=(16/8)*2*1/2=2; case2/orx-2chn=(16/8)*4*1/2=4;
-		adi,octets-per-frame = <2>;
+		adi,octets-per-frame = <4>;
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -259,7 +259,7 @@ History	:
 		reg = <0x43c20000 0x10000>;
 		#clock-cells = <0>;
 		clocks = <&clk0_ad9528 8>;
-		clock-output-names = "axi_ro_clkgen";
+		clock-output-names = "axi_rx_os_clkgen";
 	};
 
 	jesd204rx_layer1: axi-adxcvr-rx@44a60000 {
@@ -290,7 +290,7 @@ History	:
 		clock-names = "conv", "div40";
 
 		#clock-cells = <1>;
-		clock-output-names = "ro_gt_clk", "ro_out_clk";
+		clock-output-names = "rx_os_gt_clk", "rx_os_out_clk";
 
 		adi,sys-clk-select = <3>;//0->3: 20190320: using the shared QPLL(by Tx/Rx/ORx)
 		adi,out-clk-select = <3>;
@@ -321,12 +321,8 @@ History	:
 
 #define fmc_spi spi0
 
-#if 1 /* using CPLL+QPLL for Tx/Rx/ORx */
+#if 1 /* 122.88M-SPS: using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 #include "adi-adrv9009_fhk122dc122.dtsi"
-	&jesd204ro_layer2 {
-		adi,octets-per-frame = <4>;
-	};
-	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 	&jesd204rx_layer1 {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
@@ -335,11 +331,16 @@ History	:
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
-#else /* using QPLL-only for Tx/Rx/ORx */
-//#include "adi-adrv9009_fhk245dc245.dtsi"
-
+#endif
+#if 0 /* 245.76M-SPS: using QPLL-only for Tx/Rx/ORx */
+#include "adi-adrv9009_fhk245dc245.dtsi"
+#endif
+#if 0 /* 491.52M-SPS: using QPLL-only for Tx/Rx/ORx */
 #include "adi-adrv9009_fhk491dc245.dtsi"
 //#include "adi-adrv9009_fhk491dc122.dtsi"
+	&jesd204ro_layer2 {
+		adi,octets-per-frame = <2>;
+	};
 #endif
 
 // adrv9009_dac_fifo_bypass_s 60

@@ -99,7 +99,7 @@ History	:
 
 			dma-channel@0 {
 				reg = <0>;
-				adi,source-bus-width = <64>;//ADI-HDL-2018R2 is 64 -> master:128
+				adi,source-bus-width = <128>;// TODO: master for 122profile: 128
 				adi,source-bus-type = <2>;
 				adi,destination-bus-width = <64>;
 				adi,destination-bus-type = <0>;
@@ -234,7 +234,7 @@ History	:
 		//L(Number of Lanes)=2; PHY-Framer decide
 		//S(Number of Samples)=1; PHY-Framer decide(1,2,or4)
 		//F=N'/8*M*S/L: case1/orx-stitching=(16/8)*2*1/2=2; case2/orx-2chn=(16/8)*4*1/2=4;
-		adi,octets-per-frame = <2>;
+		adi,octets-per-frame = <4>;
 		adi,frames-per-multiframe = <32>;
 	};
 
@@ -321,12 +321,8 @@ History	:
 
 #define fmc_spi spi0
 
-#if 1 /* using CPLL+QPLL for Tx/Rx/ORx */
+#if 1 /* 122.88M-SPS: using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 #include "adi-adrv9009_fhk122dc122.dtsi"
-	&jesd204ro_layer2 {
-		adi,octets-per-frame = <4>;
-	};
-	/* using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 	&axi_adrv9009_adxcvr_rx {
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
@@ -335,11 +331,16 @@ History	:
 		adi,sys-clk-select = <0>;
 		adi,use-cpll-enable;
 	};
-#else /* using QPLL-only for Tx/Rx/ORx */
-//#include "adi-adrv9009_fhk245dc245.dtsi"
-
+#endif
+#if 0 /* 245.76M-SPS: using QPLL-only for Tx/Rx/ORx */
+#include "adi-adrv9009_fhk245dc245.dtsi"
+#endif
+#if 0 /* 491.52M-SPS: using QPLL-only for Tx/Rx/ORx */
 #include "adi-adrv9009_fhk491dc245.dtsi"
 //#include "adi-adrv9009_fhk491dc122.dtsi"
+	&jesd204ro_layer2 {
+		adi,octets-per-frame = <2>;
+	};
 #endif
 
 // adrv9009_dac_fifo_bypass_s 60

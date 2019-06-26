@@ -405,14 +405,12 @@
 		adi,arm-gpio-config-orx1-tx-sel0-pin-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-orx1-tx-sel0-pin-polarity = <0>;
 		adi,arm-gpio-config-orx1-tx-sel0-pin-enable = <0>;
-
 		adi,arm-gpio-config-orx1-tx-sel1-pin-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-orx1-tx-sel1-pin-polarity = <0>;
 		adi,arm-gpio-config-orx1-tx-sel1-pin-enable = <0>;
 		adi,arm-gpio-config-orx2-tx-sel0-pin-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-orx2-tx-sel0-pin-polarity = <0>;
 		adi,arm-gpio-config-orx2-tx-sel0-pin-enable = <0>;
-
 		adi,arm-gpio-config-orx2-tx-sel1-pin-gpio-pin-sel = <0>;
 		adi,arm-gpio-config-orx2-tx-sel1-pin-polarity = <0>;
 		adi,arm-gpio-config-orx2-tx-sel1-pin-enable = <0>;

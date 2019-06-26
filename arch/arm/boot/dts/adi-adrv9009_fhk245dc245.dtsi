@@ -20,13 +20,13 @@ History	:
 
 / {
 	clocks {
-		/*adrv9009_clkin: clock@0 { UNUSED
+		adrv9009_clkin: clock@0 {
 			compatible = "fixed-clock";
 
 			clock-frequency = <24576000>;
 			clock-output-names = "adrv9009_ext_refclk";
 			#clock-cells = <0>;
-		};*/
+		};
 	};
 };
 
