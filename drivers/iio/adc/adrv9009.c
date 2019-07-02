@@ -5418,8 +5418,7 @@ static int adrv9009_probe(struct spi_device *spi)
 
 	phy->linux_hal.reset_gpio = devm_gpiod_get(&spi->dev, "reset", GPIOD_OUT_LOW);
 
-	phy->sysref_req_gpio = devm_gpiod_get(&spi->dev, "sysref-req",
-					      GPIOD_OUT_HIGH);
+	phy->sysref_req_gpio = devm_gpiod_get(&spi->dev, "sysref-req", GPIOD_OUT_HIGH);
 
 	if (id == ID_ADRV90082)
 		phy->jesd_tx_clk = clk;
@@ -5433,31 +5432,32 @@ static int adrv9009_probe(struct spi_device *spi)
 		phy->jesd_rx_os_clk = devm_clk_get(&spi->dev, "jesd_rx_os_clk");
 
 	phy->dev_clk = devm_clk_get(&spi->dev, "dev_clk");
-	if (IS_ERR(phy->dev_clk))
+	if (IS_ERR(phy->dev_clk)) {
+		dev_err(&spi->dev, "%s : devm_clk_get *dev_clk* failed!", __func__);
 		return PTR_ERR(phy->dev_clk);
+	}
+	ret = clk_prepare_enable(phy->dev_clk);
+	if (ret)
+		return ret;
 
 	phy->fmc_clk = devm_clk_get(&spi->dev, "fmc_clk");
-	if (IS_ERR(phy->fmc_clk))
+	if (IS_ERR(phy->fmc_clk)) {
+		dev_err(&spi->dev, "%s : devm_clk_get *fmc_clk* failed!", __func__);
 		return PTR_ERR(phy->fmc_clk);
-
-	phy->fmc2_clk = devm_clk_get(&spi->dev, "fmc2_clk");
-
-	phy->sysref_dev_clk = devm_clk_get(&spi->dev, "sysref_dev_clk");
-	phy->sysref_fmc_clk = devm_clk_get(&spi->dev, "sysref_fmc_clk");
-
+	}
 	ret = clk_prepare_enable(phy->fmc_clk);
 	if (ret)
 		return ret;
 
+	phy->fmc2_clk = devm_clk_get(&spi->dev, "fmc2_clk");
 	if (!IS_ERR(phy->fmc2_clk)) {
 		ret = clk_prepare_enable(phy->fmc2_clk);
 		if (ret)
 			return ret;
 	}
 
-	ret = clk_prepare_enable(phy->dev_clk);
-	if (ret)
-		return ret;
+	phy->sysref_dev_clk = devm_clk_get(&spi->dev, "sysref_dev_clk");
+	phy->sysref_fmc_clk = devm_clk_get(&spi->dev, "sysref_fmc_clk");
 
 	if (of_property_read_string(spi->dev.of_node, "arm-firmware-name", &name))
 		switch (id) {

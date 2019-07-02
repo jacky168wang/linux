@@ -376,6 +376,7 @@ History	:
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,trx-pll-lo-frequency_hz = <3500000000>;
 		adi,aux-pll-lo-frequency_hz = <3500000000>;
+		//adi,default-initial-calibrations-mask = <0x000e5fef>;
 
 		/* AGC */
 

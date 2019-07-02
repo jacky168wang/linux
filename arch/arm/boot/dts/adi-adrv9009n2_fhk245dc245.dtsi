@@ -79,7 +79,7 @@ History	:
 			<&jesd204ro_layer2_n2>, <&clk0_ad9528 1>,
 			<&clk0_ad9528 9>, <&clk0_ad9528 0>, <&clk0_ad9528 7>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk",
-			"dev_clk", "fmc2_clk", "sysref_dev_clk",
+			"dev_clk", "fmc_clk", "sysref_dev_clk",
 			"sysref_fmc_clk";
 
 		clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";
@@ -290,6 +290,7 @@ History	:
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,trx-pll-lo-frequency_hz = <3500000000>;
 		adi,aux-pll-lo-frequency_hz = <3500000000>;
+		//adi,default-initial-calibrations-mask = <0x000e5fef>;
 
 		/* AGC */
 

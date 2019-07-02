@@ -99,6 +99,7 @@ History	:
 		dmas = <&iiorx_dma_n2 0>;
 		dma-names = "rx";
 		spibus-connected = <&trx1_adrv9009>;
+		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 	};
 
 	jesd204ro_layer3_n2: jesd204ro-layer3@44b08000 {

@@ -32,6 +32,8 @@ History	:
 #include "zynq-zc706-xge_fhk.dtsi"
 #include "zynq-zc706-dfe_fhk.dtsi"
 
+#define AD9009N1_ENABLE 1
+#define AD9009N2_ENABLE 1
 
 &i2c_mux {
 	i2c@5 { /* HPC IIC */
@@ -56,7 +58,7 @@ History	:
 	};
 };
 
-
+#if AD9009N1_ENABLE
 &fpga_axi {
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
@@ -137,6 +139,7 @@ History	:
 		dmas = <&iiorx_dma 0>;
 		dma-names = "rx";
 		spibus-connected = <&trx0_adrv9009>;
+		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 	};
 
 	jesd204ro_layer3: jesd204ro-layer3@44a08000 {
@@ -314,6 +317,7 @@ History	:
 		adi,out-clk-select = <3>;
 	};
 };
+#endif
 
 &spi0 {
 	status = "okay";
@@ -321,6 +325,7 @@ History	:
 
 #define fmc_spi spi0
 
+#if AD9009N1_ENABLE
 #if 1 /* 122.88M-SPS: using QPLL for Tx, QPLL+CPLL for Rx/ORx */
 #include "adi-adrv9009_fhk122dc122.dtsi"
 	&jesd204rx_layer1 {
@@ -342,7 +347,8 @@ History	:
 		adi,octets-per-frame = <2>;
 	};
 #endif
-
+#endif
+#if AD9009N1_ENABLE
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
 // ad9528_sysref_req,    // 58
@@ -383,17 +389,20 @@ History	:
 	tx2-enable-gpios = <&gpio0 110 0>;
 	tx1-enable-gpios = <&gpio0 111 0>;*/
 };
+#endif
 
 &clk0_ad9528 {
 	reset-gpios = <&gpio0 113 0>;
 };
-
+#if AD9009N1_ENABLE
 &jesd204tx_layer3 {
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
+#endif
 
-
+#if AD9009N2_ENABLE
 #include "zynq-zc706-adrv9009n2_fhk.dtsi"
+#endif
 
 &spi1 {
 	status = "okay";

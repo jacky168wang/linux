@@ -28,6 +28,9 @@ History	:
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
+#define AD9009N1_ENABLE 1
+#define AD9009N2_ENABLE 1
+
 &i2c_mux {
 	i2c@5 { /* HPC IIC */
 		#address-cells = <1>;
@@ -178,7 +181,7 @@ History	:
 			adi,signal-source = <SOURCE_VCO>;
 		};
 	};
-
+#if AD9009N1_ENABLE
 	trx0_adrv9009: adrv9009-phy@1 {
 		compatible = "adi,adrv9009";
 		reg = <1>;
@@ -401,6 +404,7 @@ History	:
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,trx-pll-lo-frequency_hz = <3500000000>;
 		adi,aux-pll-lo-frequency_hz = <3500000000>;
+		//adi,default-initial-calibrations-mask = <0x000e5fef>;
 
 		/* AGC */
 
@@ -571,7 +575,8 @@ History	:
 		adi,tx-pa-protection-tx1-peak-threshold = <130>;
 		adi,tx-pa-protection-tx2-peak-threshold = <130>;
 	};
-
+#endif
+#if AD9009N2_ENABLE
 	trx1_adrv9009: adrv9009-phy-n2@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
@@ -590,7 +595,7 @@ History	:
 			<&jesd204ro_layer2_n2>, <&clk0_ad9528 1>,
 			<&clk0_ad9528 9>, <&clk0_ad9528 0>, <&clk0_ad9528 7>;
 		clock-names = "jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk",
-			"dev_clk", "fmc2_clk", "sysref_dev_clk",
+			"dev_clk", "fmc_clk", "sysref_dev_clk",
 			"sysref_fmc_clk";
 
 		clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";
@@ -794,6 +799,7 @@ History	:
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,trx-pll-lo-frequency_hz = <3500000000>;
 		adi,aux-pll-lo-frequency_hz = <3500000000>;
+		//adi,default-initial-calibrations-mask = <0x000e5fef>;
 
 		/* AGC */
 
@@ -964,10 +970,12 @@ History	:
 		adi,tx-pa-protection-tx1-peak-threshold = <130>;
 		adi,tx-pa-protection-tx2-peak-threshold = <130>;
 	};
+#endif
 };
 
 
 &fpga_axi {
+#if AD9009N1_ENABLE
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
@@ -1224,7 +1232,8 @@ History	:
 		adi,sys-clk-select = <3>;// using QPLL for Tx, QPLL+CPLL for Rx/ORx
 		adi,out-clk-select = <3>;
 	};
-
+#endif
+#if AD9009N2_ENABLE
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
@@ -1298,7 +1307,7 @@ History	:
 		};
 	};
 
-	jesd204rx_layer3_n2: jesd204rx-layer3@44b00000 {
+	jesd204rx_layer3_n2: axi-adrv9009-rx-hpc@44b00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44b00000 0x8000>;
 		dmas = <&iiorx_dma_n2 0>;
@@ -1307,7 +1316,7 @@ History	:
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 	};
 
-	jesd204ro_layer3_n2: jesd204ro-layer3@44b08000 {
+	jesd204ro_layer3_n2: axi-adrv9009-rx-obs-hpc@44b08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44b08000 0x1000>;
 		dmas = <&iioro_dma_n2 0>;
@@ -1316,7 +1325,7 @@ History	:
 		clock-names = "sampl_clk";
 	};
 
-	jesd204tx_layer3_n2: jesd204tx-layer3@44b04000 {
+	jesd204tx_layer3_n2: axi-adrv9009-tx-hpc@44b04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44b04000 0x4000>;
 		dmas = <&iiotx_dma_n2 0>;
@@ -1481,8 +1490,9 @@ History	:
 		adi,sys-clk-select = <3>;// using QPLL for Tx, QPLL+CPLL for Rx/ORx
 		adi,out-clk-select = <3>;
 	};
+#endif
 };
-
+#if AD9009N1_ENABLE
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
 // ad9528_sysref_req,    // 58
@@ -1523,7 +1533,8 @@ History	:
 	tx2-enable-gpios = <&gpio0 110 0>;
 	tx1-enable-gpios = <&gpio0 111 0>;*/
 };
-
+#endif
+#if AD9009N2_ENABLE
 // adrv9009_tx1_enable,    // 31
 // adrv9009_tx2_enable,    // 30
 // adrv9009_rx1_enable,    // 29
@@ -1561,18 +1572,21 @@ History	:
 	tx2-enable-gpios = <&gpio0 84 0>;
 	tx1-enable-gpios = <&gpio0 85 0>;*/
 };
+#endif
 
 &clk0_ad9528 {
 	reset-gpios = <&gpio0 113 0>;
 };
-
+#if AD9009N1_ENABLE
 &jesd204tx_layer3 {
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
-
+#endif
+#if AD9009N2_ENABLE
 &jesd204tx_layer3_n2 {
 	plddrbypass-gpios = <&gpio0 114 0>;
 };
+#endif
 
 &spi1 {
 	status = "okay";
