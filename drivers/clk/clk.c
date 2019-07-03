@@ -8,8 +8,8 @@
  *
  * Standard functionality for the common clock API.  See Documentation/clk.txt
  */
-#define DEBUG
-#define _DEBUG
+//#define DEBUG
+//#define _DEBUG
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
 #include <linux/clk/clk-conf.h>

@@ -5,8 +5,8 @@
  *
  * Licensed under the GPL-2.
  */
-#define DEBUG
-#define _DEBUG
+//#define DEBUG
+//#define _DEBUG
 #include <linux/device.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
@@ -892,7 +892,7 @@ static int ad9528_setup(struct iio_dev *indio_dev)
 
 	ret = ad9528_write(indio_dev, AD9528_SERIAL_PORT_CONFIG,
 			AD9528_SER_CONF_SOFT_RESET |
-			((st->spi->mode & SPI_3WIRE || pdata->spi3wire)? 0 :
+			((st->spi->mode & SPI_3WIRE || pdata->spi3wire) ? 0 :
 			 AD9528_SER_CONF_SDO_ACTIVE));
 	if (ret < 0) {
 		dev_err(&indio_dev->dev, "L%d: write SERIAL_PORT_CONFIG\n", __LINE__);
@@ -1310,17 +1310,27 @@ static struct ad9528_platform_data *ad9528_parse_dt(struct device *dev)
 	tmp = 1;
 	of_property_read_u32(np, "adi,refb-r-div", &tmp);
 	pdata->refb_r_div = tmp;
+
+	tmp = 1;
 	of_property_read_u32(np, "adi,pll1-feedback-div", &tmp);
 	pdata->pll1_feedback_div = tmp;
+
+	tmp = 1;
 	of_property_read_u32(np, "adi,pll1-feedback-src-vcxo", &tmp);
 	pdata->pll1_feedback_src_vcxo = tmp;
+
+	tmp = 5000;
 	of_property_read_u32(np, "adi,pll1-charge-pump-current-nA", &tmp);
 	pdata->pll1_charge_pump_current_nA = tmp;
+
 	pdata->pll1_bypass_en = of_property_read_bool(np, "adi,pll1-bypass-enable");
 
 	/* Reference */
+	tmp = REF_MODE_EXT_REF;
 	of_property_read_u32(np, "adi,ref-mode", &tmp);
 	pdata->ref_mode = tmp;
+
+	tmp = SYSREF_SRC_INTERNAL;
 	of_property_read_u32(np, "adi,sysref-src", &tmp);
 	pdata->sysref_src = tmp;
 
@@ -1328,6 +1338,7 @@ static struct ad9528_platform_data *ad9528_parse_dt(struct device *dev)
 	of_property_read_u32(np, "adi,sysref-pattern-mode", &tmp);
 	pdata->sysref_pattern_mode = tmp;
 
+	tmp = 512;
 	of_property_read_u32(np, "adi,sysref-k-div", &tmp);
 	pdata->sysref_k_div = tmp;
 
@@ -1368,10 +1379,15 @@ static struct ad9528_platform_data *ad9528_parse_dt(struct device *dev)
 
 	/* Loop Filter PLL2 */
 
+	tmp = RPOLE2_900_OHM;
 	of_property_read_u32(np, "adi,rpole2", &tmp);
 	pdata->rpole2 = tmp;
+
+	tmp = RZERO_1850_OHM;
 	of_property_read_u32(np, "adi,rzero", &tmp);
 	pdata->rzero = tmp;
+
+	tmp = CPOLE1_16_PF;
 	of_property_read_u32(np, "adi,cpole1", &tmp);
 	pdata->cpole1 = tmp;
 

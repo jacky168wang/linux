@@ -7,8 +7,8 @@
  *
  * http://wiki.analog.com/resources/fpga/xilinx/fmc/ad9467
  */
-#define DEBUG
-#define _DEBUG
+//#define DEBUG
+//#define _DEBUG
 #include <linux/module.h>
 #include <linux/errno.h>
 #include <linux/slab.h>

@@ -7,8 +7,8 @@
  *
  * https://wiki.analog.com/resources/fpga/docs/axi_adxcvr
  */
-#define DEBUG
-#define _DEBUG
+//#define DEBUG
+//#define _DEBUG
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <linux/of_device.h>
