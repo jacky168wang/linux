@@ -60,7 +60,7 @@ History	:
 	};
 
 &fmc_spi {
-	trx1_adrv9009: adrv9009-phy-n2@2 {
+	trx1_adrv9009: adrv9009n2-phy@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
 

@@ -93,7 +93,8 @@ History	:
 		};
 	};
 
-	jesd204rx_layer3_n2: jesd204rx-layer3@44b00000 {
+	/* name for libiio-GUI(i.e. IIO-OSC) and libiio-apps(e.g.iio_stream.arm) */
+	jesd204rx_layer3_n2: jesd204rx-layer3-n2@44b00000 {
 		compatible = "adi,axi-adrv9009-rx-1.0";
 		reg = <0x44b00000 0x8000>;
 		dmas = <&iiorx_dma_n2 0>;
@@ -101,8 +102,7 @@ History	:
 		spibus-connected = <&trx1_adrv9009>;
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
 	};
-
-	jesd204ro_layer3_n2: jesd204ro-layer3@44b08000 {
+	jesd204ro_layer3_n2: jesd204ro-layer3-n2@44b08000 {
 		compatible = "adi,axi-adrv9009-obs-1.0";
 		reg = <0x44b08000 0x1000>;
 		dmas = <&iioro_dma_n2 0>;
@@ -110,8 +110,7 @@ History	:
 		clocks = <&trx1_adrv9009 1>;
 		clock-names = "sampl_clk";
 	};
-
-	jesd204tx_layer3_n2: jesd204tx-layer3@44b04000 {
+	jesd204tx_layer3_n2: jesd204tx-layer3-n2@44b04000 {
 		compatible = "adi,axi-adrv9009-tx-1.0";
 		reg = <0x44b04000 0x4000>;
 		dmas = <&iiotx_dma_n2 0>;

@@ -82,7 +82,7 @@ diff --git a/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
 	};
 
 &fmc_spi {
-	trx1_adrv9009: adrv9009-phy-n2@2 {
+	trx1_adrv9009: adrv9009n2-phy@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
 
@@ -304,6 +304,7 @@ diff --git a/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
 		adi,trx-pll-lo-frequency_hz = <3500000000>;
 		adi,aux-pll-lo-frequency_hz = <3500000000>;
+		//adi,default-initial-calibrations-mask = <0x000e5fef>;
 
 		/* AGC */
 
