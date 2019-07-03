@@ -522,7 +522,7 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
 /*****	TALISE ARM Initialization External LOL Calibrations with PA  *****/
 /*************************************************************************/
 #define RFFC_CTL_BY_SW
-//#define RFIC_CTL_MODE_PIN
+#define RFIC_CTL_MODE_PIN
 /* (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=false) means
 		TXLOL_ECAL with RFIC SPI mode,
    (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means
@@ -565,7 +565,7 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 		writel(hwio_n1[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
 	else /*if (AD9009N2_SPI_CS == phy->spi->chip_select)*/
 		writel(hwio_n2[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
-	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x\n", __func__,
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x\n", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -668,7 +668,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 
 	/* FPGA-RFES-TDDC: io_config_manually enable
 	writel(0x00000000, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL));*/
 #endif
@@ -685,7 +685,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	/* set RFFC+RFIC into normal Tx & Rx state */
 #ifdef RFFC_CTL_BY_SW
 	writel(0x04aa83f0, phy->tddc_regs+TDDC_REG_OUT);
-	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -714,7 +714,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	}
 	/* FPGA-RFES-TDDC: io_config_manually disable
 	writel(0x00000001, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL)); */
 #endif
