@@ -629,6 +629,13 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 	}
 	disable_irq(phy->spi->irq);/* revert interrupt to overcome 'hung_task' timeout */
 
+	/* recover the TxAttenuation configured in DTS */
+	ret = TALISE_setTxAttenuation(phy->talDevice, itx, 
+		TAL_TX1==itx ? phy->talInit.tx.tx1Atten_mdB : phy->talInit.tx.tx2Atten_mdB);
+	if (ret != TALACT_NO_ACTION) {
+		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
+		return ret;
+	}
 	return ret;
 }
 
