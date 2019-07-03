@@ -7,6 +7,7 @@
  */
 #define DEBUG
 #define _DEBUG
+
 #include <linux/module.h>
 #include <linux/device.h>
 #include <linux/kernel.h>
@@ -73,18 +74,27 @@ Notes:
 */
 #define FHK_ORX_STITCH_FIXUP
 #define STREAM_STITCH	"TaliseStreamStitch.bin"
+
 #if 0
-#define TALISE_ICAL_RXONLY (TAL_RX_GAIN_DELAY | TAL_RX_QEC_INIT |
+#define TALISE_ICAL_RXONLY (TAL_RX_GAIN_DELAY | TAL_RX_QEC_INIT | \
 				TAL_LOOPBACK_RX_LO_DELAY | TAL_LOOPBACK_RX_RX_QEC_INIT)
-#define TALISE_ICAL_COMMON (TAL_ADC_TUNER | TAL_TIA_3DB_CORNER |
+#define TALISE_ICAL_COMMON (TAL_ADC_TUNER | TAL_TIA_3DB_CORNER | \
 				TAL_DC_OFFSET | TAL_FLASH_CAL | TAL_PATH_DELAY)
-#define TALISE_ICAL_TXONLY (TAL_TX_BB_FILTER | TAL_TX_LO_LEAKAGE_INTERNAL |
-				TAL_TX_QEC_INIT | TAL_ORX_QEC_INIT | TAL_TX_DAC |
+#define TALISE_ICAL_TXONLY (TAL_TX_BB_FILTER | TAL_TX_LO_LEAKAGE_INTERNAL | \
+				TAL_TX_QEC_INIT | TAL_ORX_QEC_INIT | TAL_TX_DAC | \
 				TAL_ADC_STITCHING)
-#define ADRV9009_ICAL_DEFAULT (TAL_INIT_ALL & ~(TAL_RX_LO_DELAY |
-				TAL_ORX_LO_DELAY | TAL_TX_ATTENUATION_DELAY |
+#define ADRV9009_ICAL_DEFAULT (TAL_INIT_ALL & ~(TAL_RX_LO_DELAY | \
+				TAL_ORX_LO_DELAY | TAL_TX_ATTENUATION_DELAY | \
 				TAL_TX_LO_LEAKAGE_EXTERNAL))
 #endif
+// initCalMask == 0x000e5def
+#define ADRV9009_ICAL_DEFAULT \
+				(TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER | \
+				TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL | \
+				TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL | \
+				TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY | \
+				TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT | \
+				TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING)
 
 // 10 -bit:
 //
@@ -526,51 +536,67 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
 #define FHK_FPGA_TDDC_IO_BASE 0x43C50000
 #define TDDC_REG_CTL 0x00
 #define TDDC_REG_OUT 0xBC
+#define AD9009N1_SPI_CS 1
+//#define AD9009N2_SPI_CS 2
 
-static int txlol_ecal_tx1orx2(struct adrv9009_rf_phy *phy)
+static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 {
 	int tx_att;
 	//taliseTxLolStatus_t txlolret;
 	//uint16_t old=0, new=0;
 	uint8_t errorFlag = 0;
 	int ret = TALACT_NO_ACTION;
+#ifdef RFFC_CTL_BY_SW
+	uint32_t hwio_n1[] = { 0x0554fc08, 0x0554bc0c };
+	uint32_t hwio_n2[] = { 0x05557c02, 0x05553c03 };
+#endif
+
+	if ((itx != TAL_TX1) || (itx != TAL_TX2) ||
+		(iorx != TAL_ORX1_EN) || (iorx != TAL_ORX2_EN)) {
+		return -E2BIG;
+	}
 
 	/* page174.step4: Turn on PA1 and switch TX1 to ORX2: FHK-RFFC has ORX2 only */
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	/* ECAL for UA_TX1<->UA_ORX2, Tx1EN and ORx2EN pins are controlled by FPGA */
 #ifdef RFFC_CTL_BY_SW
-	writel(0x0554fc08, phy->tddc_regs+TDDC_REG_OUT);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	if (phy->spi->chip_select == AD9009N1_SPI_CS)
+		writel(hwio_n1[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
+	else /*if (phy->spi->chip_select == AD9009N2_SPI_CS)*/
+		writel(hwio_n2[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
+	msleep(100);
+	pr_info("%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
 #ifndef RFIC_CTL_MODE_PIN
 	ret = TALISE_setRxTxEnable(phy->talDevice,
-				   has_rx_and_en(phy) ? TAL_ORX2_EN : 0,
-				   has_tx_and_en(phy) ? TAL_TX1 : 0);
+				   has_rx_and_en(phy) ? iorx : 0,
+				   has_tx_and_en(phy) ? itx : 0);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		return -EFAULT;
+		return ret;
 	}
 #endif
 	/* page174.step5&6: Advise AD9009 current TX to ORX connection */
-	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX1_ORX);
+	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, 
+		TAL_TX1==itx ? TAL_MAP_TX1_ORX : TAL_MAP_TX2_ORX);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		return -EFAULT;
+		return ret;
 	}
 
 	for (tx_att=22; tx_att>=0; tx_att--) {
 		/* 20190529: later send (run-time) signal with the TARGET att
 		   (it's a MUST per manually test) */
-		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX1, &old);
-		ret = TALISE_setTxAttenuation(phy->talDevice, TAL_TX1, tx_att*1000);
+		//TALISE_getTxAttenuation(phy->talDevice, itx, &old);
+		ret = TALISE_setTxAttenuation(phy->talDevice, itx, tx_att*1000);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
+			return ret;
 		}
-		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX1, &new);
-		//dev_info(&phy->spi->dev, "%s: Tx1Attenuation %d mdB -> %d mdB",
+		//TALISE_getTxAttenuation(phy->talDevice, itx, &new);
+		//dev_dbg(&phy->spi->dev, "%s: Tx1Attenuation %d mdB -> %d mdB",
 			//__func__, old, new); ISSUE: old,new always equal to 36000
 
 		//Link.Talise.SetObsRxManualGain(Talise.ObsRxChannel.ObsRx2, 255)
@@ -579,110 +605,25 @@ static int txlol_ecal_tx1orx2(struct adrv9009_rf_phy *phy)
 		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
+			return ret;
 		}
 		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
 		if (ret != TALACT_NO_ACTION) {
-			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
+			dev_err(&phy->spi->dev, "%s:%d (ret %d, TxLolError 0x%X)",
+				__func__, __LINE__, ret, errorFlag);
+			return ret;
 		}
-		if (errorFlag) {
-#if 1
-			dev_err(&phy->spi->dev, "%s:%d TxLolError 0x%X",
-				__func__, __LINE__, errorFlag);
-#else
-			ret = TALISE_getTxLolStatus(phy->talDevice, TAL_TX1, &txlolret);
-			if (ret != TALACT_NO_ACTION) {
-				dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-				return -EFAULT;
-			}
-			dev_info(&phy->spi->dev, "%s: TxLolStatus: error=0x%X "
-				"percent=%d variance=%d iter=%d update=%d",
-				__func__, txlolret.errorCode, txlolret.percentComplete,
-				txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
-#endif
-			return TALACT_WARN_RERUN_TRCK_CAL;
-		}
-	}
-
-	return TALACT_NO_ACTION;
-}
-
-static int txlol_ecal_tx2orx2(struct adrv9009_rf_phy *phy)
-{
-	int tx_att;
-	//taliseTxLolStatus_t txlolret;
-	//uint16_t old=0, new=0;
-	uint8_t errorFlag = 0;
-	int ret = TALACT_NO_ACTION;
-
-	/* page174.step9: Turn on PA2 and switch TX2 to ORX2: FHK-RFFC has ORX2 only */
-	/*** < Action: Please ensure PA is enabled operational at this time > ***/
-#ifdef RFFC_CTL_BY_SW
-	writel(0x0554bc0c, phy->tddc_regs+TDDC_REG_OUT);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
-		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
-		readl(phy->tddc_regs+TDDC_REG_OUT));
-#endif
-#ifndef RFIC_CTL_MODE_PIN
-	ret = TALISE_setRxTxEnable(phy->talDevice,
-				   has_rx_and_en(phy) ? TAL_ORX2_EN : 0,
-				   has_tx_and_en(phy) ? TAL_TX2 : 0);
-	if (ret != TALACT_NO_ACTION) {
-		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		return -EFAULT;
-	}
-#endif
-	/* page174.step10&11: Advise AD9009 current TX to ORX connection */
-	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, TAL_MAP_TX2_ORX);
-	if (ret != TALACT_NO_ACTION) {
-		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		return -EFAULT;
-	}
-
-	for (tx_att=22; tx_att>=0; tx_att--) {
-		/* 20190529: later send (run-time) signal with the TARGET att
-		   (it's a MUST per manually test) */
-		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX2, &old);
-		ret = TALISE_setTxAttenuation(phy->talDevice, TAL_TX2, tx_att*1000);
+#if 0
+		ret = TALISE_getTxLolStatus(phy->talDevice, itx, &txlolret);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
+			return ret;
 		}
-		//TALISE_getTxAttenuation(phy->talDevice, TAL_TX2, &new);
-		//dev_info(&phy->spi->dev, "%s: Tx2Attenuation %d mdB -> %d mdB",
-		//	__func__, old, new); ISSUE: old,new always equal to 36000
-
-		//Link.Talise.SetObsRxManualGain(Talise.ObsRxChannel.ObsRx2, 255)
-
-		/* page174.step12&13: trigger TX_LOL_ECAL */
-		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
-		if (ret != TALACT_NO_ACTION) {
-			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
-		}
-		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
-		if (ret != TALACT_NO_ACTION) {
-			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return -EFAULT;
-		}
-		if (errorFlag) {
-#if 1
-			dev_err(&phy->spi->dev, "%s:%d TxLolError 0x%X",
-				__func__, __LINE__, errorFlag);
-#else
-			ret = TALISE_getTxLolStatus(phy->talDevice, TAL_TX1, &txlolret);
-			if (ret != TALACT_NO_ACTION) {
-				dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-				return -EFAULT;
-			}
-			dev_info(&phy->spi->dev, "%s: TxLolStatus: error=0x%X "
-				"percent=%d variance=%d iter=%d update=%d",
-				__func__, txlolret.errorCode, txlolret.percentComplete,
-				txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
+		dev_info(&phy->spi->dev, "%s: TxLolStatus: error=0x%X "
+			"percent=%d variance=%d iter=%d update=%d",
+			__func__, txlolret.errorCode, txlolret.percentComplete,
+			txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
 #endif
-			return TALACT_ERR_RERUN_INIT_CALS;
-		}
 	}
 
 	return TALACT_NO_ACTION;
@@ -722,11 +663,11 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 		readl(phy->tddc_regs+TDDC_REG_CTL));*/
 #endif
 	/* TX2 performance is worse than TX1, whatever disable TX1-ECAL or not  */
-	ret = txlol_ecal_tx1orx2(phy);
+	ret = txlol_ecal(phy, phy->spi->chip_select==AD9009N1_SPI_CS?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
-	ret = txlol_ecal_tx2orx2(phy);
+	ret = txlol_ecal(phy, phy->spi->chip_select==AD9009N1_SPI_CS?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX2);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
@@ -796,18 +737,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	switch (phy->spi_device_id) {
 	case ID_ADRV9009:
 	case ID_ADRV9009_X2:
-		initCalMask = TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER |
-			TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
-			TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL |
-			TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY |
-			TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT |
-			TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING;
-		/* JACKY-20190307: TxLOL_ICAL would incorrect TX_LOL_ECAL result */
-		//initCalMask == 0xE5DEF right now
-		//initCalMask &= ~TAL_ADC_STITCHING; // TES: 0x65DEF
+		initCalMask = ADRV9009_ICAL_DEFAULT;
 		//initCalMask &= ~TAL_TX_LO_LEAKAGE_INTERNAL;
 		initCalMask |= TAL_TX_LO_LEAKAGE_EXTERNAL;
-
 		dev_info(&phy->spi->dev, "%s : initCalMask=0x%08x", __func__, initCalMask);
 		break;
 	case ID_ADRV90081:
@@ -3929,12 +3861,7 @@ static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 	} \
 
 	ADRV9009_OF_PROP("adi,default-initial-calibrations-mask", &phy->init_cal_mask,
-			 TAL_TX_BB_FILTER | TAL_ADC_TUNER | TAL_TIA_3DB_CORNER |
-			 TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL |
-			 TAL_PATH_DELAY | TAL_TX_LO_LEAKAGE_INTERNAL | TAL_TX_QEC_INIT |
-			 TAL_LOOPBACK_RX_LO_DELAY | TAL_LOOPBACK_RX_RX_QEC_INIT |
-			 TAL_RX_QEC_INIT | TAL_ORX_QEC_INIT | TAL_TX_DAC | TAL_ADC_STITCHING |
-			 TAL_RX_PHASE_CORRECTION | TAL_FHM_CALS);
+				ADRV9009_ICAL_DEFAULT);
 
 	ADRV9009_OF_PROP("adi,rxagc-peak-agc-under-range-low-interval_ns",
 			 &phy->rxAgcCtrl.agcPeak.agcUnderRangeLowInterval_ns, 205);
@@ -5408,8 +5335,8 @@ static int adrv9009_probe(struct spi_device *spi)
 	if (ret < 0)
 		return -ret;
 
-	dev_info(&spi->dev, "phy->trx_lo_frequency=(%llu)\n", phy->trx_lo_frequency);
-	dev_info(&spi->dev, "phy->aux_lo_frequency=(%llu)\n", phy->aux_lo_frequency);
+	dev_dbg(&spi->dev, "phy->trx_lo_frequency=(%llu)\n", phy->trx_lo_frequency);
+	dev_dbg(&spi->dev, "phy->aux_lo_frequency=(%llu)\n", phy->aux_lo_frequency);
 
 	phy->talDevice = &phy->talise_device;
 	phy->linux_hal.spi = spi;
