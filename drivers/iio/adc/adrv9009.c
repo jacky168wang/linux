@@ -579,21 +579,23 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 	}
 #endif
 	/* page174.step5&6: Advise AD9009 current TX to ORX connection */
-	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1, TAL_MAP_NONE, 
-		TAL_TX1==itx ? TAL_MAP_TX1_ORX : TAL_MAP_TX2_ORX);
+	ret = TALISE_setTxToOrxMapping(phy->talDevice, 1,
+		TAL_ORX1_EN==iorx ? (TAL_TX1==itx?TAL_MAP_TX1_ORX:TAL_MAP_TX2_ORX) : TAL_MAP_NONE,
+		TAL_ORX2_EN==iorx ? (TAL_TX1==itx?TAL_MAP_TX1_ORX:TAL_MAP_TX2_ORX) : TAL_MAP_NONE);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
 		return ret;
 	}
 
-	for (tx_att=22; tx_att>=0; tx_att--) {
+	enable_irq(phy->spi->irq);/* allow  interrupt to overcome 'hung_task' timeout */
+	for (tx_att=20; tx_att>0; tx_att--) {
 		/* 20190529: later send (run-time) signal with the TARGET att
 		   (it's a MUST per manually test) */
 		//TALISE_getTxAttenuation(phy->talDevice, itx, &old);
 		ret = TALISE_setTxAttenuation(phy->talDevice, itx, tx_att*1000);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return ret;
+			break;
 		}
 		//TALISE_getTxAttenuation(phy->talDevice, itx, &new);
 		//dev_dbg(&phy->spi->dev, "%s: Tx1Attenuation %d mdB -> %d mdB",
@@ -605,19 +607,19 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 		ret = TALISE_runInitCals(phy->talDevice, TAL_TX_LO_LEAKAGE_EXTERNAL);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return ret;
+			break;
 		}
 		ret = TALISE_waitInitCals(phy->talDevice, 20000, &errorFlag);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d, TxLolError 0x%X)",
 				__func__, __LINE__, ret, errorFlag);
-			return ret;
+			break;
 		}
 #if 0
 		ret = TALISE_getTxLolStatus(phy->talDevice, itx, &txlolret);
 		if (ret != TALACT_NO_ACTION) {
 			dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-			return ret;
+			break;
 		}
 		dev_info(&phy->spi->dev, "%s: TxLolStatus: error=0x%X "
 			"percent=%d variance=%d iter=%d update=%d",
@@ -625,8 +627,9 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 			txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
 #endif
 	}
+	disable_irq(phy->spi->irq);/* revert interrupt to overcome 'hung_task' timeout */
 
-	return TALACT_NO_ACTION;
+	return ret;
 }
 
 static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
@@ -728,6 +731,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	int ret = TALACT_NO_ACTION;
 	long dev_clk, fmc_clk;
 	uint32_t lmfc = 0;
+	static int n1_flag = 0, n2_flag = 0;
 
 	phy->talInit.spiSettings.MSBFirst = 1;
 	phy->talInit.spiSettings.autoIncAddrUp = 1;
@@ -1023,10 +1027,16 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*************************************************************************/
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
-		ret = adrv9009_txlol_ecal(phy);
-		if (ret != TALACT_NO_ACTION) {
-			ret = -EFAULT;
-			goto out_disable_tx_clk;
+		if ((!n1_flag) || (!n2_flag)) {
+			ret = adrv9009_txlol_ecal(phy);
+			if (ret != TALACT_NO_ACTION) {
+				ret = -EFAULT;
+				goto out_disable_tx_clk;
+			}
+			if (AD9009N1_SPI_CS==phy->spi->chip_select)
+				n1_flag=1;
+			else
+				n2_flag=1;
 		}
 	}
 
