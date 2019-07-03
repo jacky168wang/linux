@@ -551,8 +551,9 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 	uint32_t hwio_n2[] = { 0x05557c02, 0x05553c03 };
 #endif
 
-	if ((itx != TAL_TX1) || (itx != TAL_TX2) ||
-		(iorx != TAL_ORX1_EN) || (iorx != TAL_ORX2_EN)) {
+	if ((itx != TAL_TX1) && (itx != TAL_TX2) &&
+		(iorx != TAL_ORX1_EN) && (iorx != TAL_ORX2_EN)) {
+		dev_err(&phy->spi->dev, "%s:%d in-arg ERROR!", __func__, __LINE__);
 		return -E2BIG;
 	}
 
@@ -560,12 +561,11 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	/* ECAL for UA_TX1<->UA_ORX2, Tx1EN and ORx2EN pins are controlled by FPGA */
 #ifdef RFFC_CTL_BY_SW
-	if (phy->spi->chip_select == AD9009N1_SPI_CS)
+	if (AD9009N1_SPI_CS == phy->spi->chip_select)
 		writel(hwio_n1[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
-	else /*if (phy->spi->chip_select == AD9009N2_SPI_CS)*/
+	else /*if (AD9009N2_SPI_CS == phy->spi->chip_select)*/
 		writel(hwio_n2[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
-	msleep(100);
-	pr_info("%s: inw(0x%08X)=0x%08x", __func__,
+	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x\n", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -658,16 +658,16 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 
 	/* FPGA-RFES-TDDC: io_config_manually enable
 	writel(0x00000000, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL));*/
 #endif
 	/* TX2 performance is worse than TX1, whatever disable TX1-ECAL or not  */
-	ret = txlol_ecal(phy, phy->spi->chip_select==AD9009N1_SPI_CS?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
+	ret = txlol_ecal(phy, AD9009N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
-	ret = txlol_ecal(phy, phy->spi->chip_select==AD9009N1_SPI_CS?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX2);
+	ret = txlol_ecal(phy, AD9009N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX2);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
@@ -675,7 +675,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	/* set RFFC+RFIC into normal Tx & Rx state */
 #ifdef RFFC_CTL_BY_SW
 	writel(0x04aa83f0, phy->tddc_regs+TDDC_REG_OUT);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
@@ -704,7 +704,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	}
 	/* FPGA-RFES-TDDC: io_config_manually disable
 	writel(0x00000001, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
+	dev_dbg(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
 		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
 		readl(phy->tddc_regs+TDDC_REG_CTL)); */
 #endif
@@ -3792,7 +3792,7 @@ static int __adrv9009_of_get_u32(struct iio_dev *indio_dev,
 		ret = of_property_read_u32(np, propname, &tmp);
 	}
 	if (ret < 0) {
-		printk("%s dts read property %s failed with %d\n",
+		pr_debug("%s: property %s failed with %d\n",
 			__func__, propname, ret);
 		return ret;
 	}
