@@ -1,0 +1,25 @@
+uenvcmd=run adi_sdboot
+#---- uboot-2014.07 from adi-release2018r1
+ adi_sdboot=echo *ADI*  Copying Linux from SD to RAM... && fatload mmc 0 0x03000000 ${kernel_image} && fatload mmc 0 0x2A00000 ${devicetree_image} && if fatload mmc 0 0x2000000 ${ramdisk_image}; then bootm 0x3000000 0x2000000 0x2A00000; else bootm 0x3000000 - 0x2A00000; fi
+#---- uboot-2018.01 built by Jacky (without linux-legacy-image support) for petalinux-xlnx-kernel
+#adi_sdboot=echo *FHK1* Copying Linux from SD to RAM... && fatload mmc 0 0x10000000 ${kernel_img} && bootm 0x10000000
+#---- uboot-2018.01 built by Jacky (with    linux-legacy-image support) for seperated-adi-kernel
+#adi_sdboot=echo *FHK2* Copying Linux from SD to RAM... && fatload mmc 0 0x03000000 ${kernel_img} && fatload mmc 0 0x2A00000 ${dtb_img} && bootm 0x3000000 - 0x2A00000
+
+#---- before enabling UART0 in dtb & kernel
+#   log: e0001000.serial: ttyPS0 at MMIO 0xe0001000 (irq = 26, base_baud = 3125000) is a xuartps
+#bootargs=console=ttyPS0,115200 earlyprintk rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw
+#---- after  enabling UART0 in dtb & kernel
+#   log: e0000000.serial: ttyPS0 at MMIO 0xe0000000 (irq = 25, base_baud = 3125000) is a xuartps
+#   log: e0001000.serial: ttyPS1 at MMIO 0xe0001000 (irq = 26, base_baud = 3125000) is a xuartps
+#bootargs=console=ttyPS1,115200 earlyprintk rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw
+
+#---- AMP on Zynq SoC
+#bootargs=console=ttyPS1,115200 earlyprintk maxcpus=1 mem=256M clk_ignore_unused rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw
+#---- AMP on Zynq MPSoC
+#bootargs=console=ttyPS1,115200 earlyprintk earlycon=cdns,mmio,0xFF000000,115200n8 maxcpus=1 mem=256M clk_ignore_unused rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw
+
+#---- SMP on Zynq SoC
+ bootargs=console=ttyPS1,115200 earlyprintk loglevel=8 uio_pdrv_genirq.of_id=generic-uio rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw
+#---- SMP on Zynq MPSoC
+#bootargs=console=ttyPS1,115200 earlyprintk earlycon=cdns,mmio,0xFF000000,115200n8 uio_pdrv_genirq.of_id=generic-uio rootwait rootfstype=ext4 root=/dev/mmcblk0p2 rw

@@ -1,0 +1,135 @@
+#
+#### BOOT.bin = "FSBL.elf" + "FPGA/RTL" + "U-Boot.elf"
+#
+
+FPGA/RTL 
+	v0.01: Aiyu: orginal adi-hdl-2018r2; spi0 <-> ad9528 + adrv9009
+	v0.02: Jiefei: enable uart0 (FSBL need to be changed meanwhile)
+	v0.03: Xiaojie: Vivado-2018r2 -> Vivado-2018r3
+	v0.04: Xiaojie: "CFR+GAIN+DPD8.1rev1" added from "Xilinx DFE_Subsystem_Reference_Design_v2_1"
+	v0.05: Xiaojie: "DPD8.1rev1" only to debug the sequence between "axi-ctrl-reset" and "dpd-reset"
+			(axi-ctrl-interface access failed because Vivado-2018r3 not compatible with DPD8.1rev1)
+	v0.06: Xiaojie: branch1:
+			Tx-Datapath(IIODMA_Tx->SC_Map->DeComp->IFFT->CP_INS->JESD204B_Tx)
+			Rx-Datapath(IIODMA_Rx<-SC_DeMap<-Comp<- FFT<-CP_REM<-JESD204B_Rx)
+	v0.07: Xiaojie: "DPDv9.0" only without JESD204B nodes, added from "Wireless_DPD_IP_Release_Archive_v9_0.2454068"
+	v0.08: Xiaojie: "DPDv9.0" + "adi-hdl-2018r2" added from "Xilinx_Wireless_DPD_IP_Release_Archive_v9_0.2454068"
+	v0.09: Xiaojie0320: the base address of DPD is changed into 0xA0000000 from 0x80000000, because of the default 'dpd-host-app' release
+	v0.10: Xiaojie0320: branch2: "QPLL for JESD204B-Tx, CPLL for JESD204B-ORx/Rx" -> QPLL shared by JESD204B-Tx/ORx/Rx
+	v0.11: Xiaojie0326: JESD204B-ORX datapath feedback to DPD subsystem
+	v0.12: Xiaojie0403: JESD-RX-DMA width revert back to 64
+	v0.13: Xiaojie0408: DPD interrupt change into IRQF2P[0] rather than IRQF2P[7]
+	v0.14: Xiaojie0408: merge "branch2-QPLL"
+	v0.15: Xiaojie0416: "JESD204B-ORX" module: ADI's RD is for ORX1&2 with 122MSPS
+			to use ORX1-only with 491MSPS, the output interface to "CPACK" module has to be changed 
+	v0.16: Jiefei0419: "TDD-Timing-Control" automatic
+			1, RFIC/AD9009 channel enable;
+			2, TDD timing for CMCC;
+			3, tracking-calibration;
+			4, external-calibration.
+	v0.17: Jiefei0429: "TDD-Timing-Control(v1)" manual:
+			1, "io-output" to RFFE & RFIC: replace direct IO signals with one register, add one switch to select control from SW or FPGA
+			2, datapath-TDD-framing for TX/RX time-slot mapping succeed 
+			3, problem: TXLOL_ECAL does NOT work
+			4, problem: datapath-TDD-framing is isolated from RFFE+RFIC_TDD-GPIO-CTL
+	v0.18: Xiaojie0517:
+			1, integrate Datapath(L1L) and function verification succeed
+			2, datapath-TDD-framing and RFFE+RFIC_TDD-GPIO-CTL sync with 1PPS succeed
+	v0.19: Xiaojie0612: TDDCv2
+			1, merge datapath-TDD-framing with RFFE+RFIC_TDD-GPIO-CTL so that them share only one kind of TX/RX time-slot sync+framing.
+			2, TO-BE-Verified: new (shared-)DPD-ORX-channel-switch function controlled by RFFE+RFIC_TDD-GPIO-CTL
+			3, the (output-)bit-pattern from RFFE+RFIC_TDD-GPIO-CTL is able to be re-defined by the registers
+			4, the ( input-)bit-pattern of datapath-TDD-framing is able to be re-defined by the registers
+	v0.20: Xiaojie0620:
+			1, datapath(L1L): new 'phase-compensation' module
+			2, datapath(L1L): new 'scalar-adjust' module to adjust the EXP from Xilinx-IFFT module for better handle for fixed-point
+
+FSBL.elf
+	v0.01: Xilinx: depend on ZC706 Board Design (mainly Processor, MIO, PLL, Clock, DDRC, NANDC, SPI-FLASH-C, SD-C)
+	v0.02: Jacky0603: create 'zynq-ddrtest' project and 'FSBL' project based on 'system.hdf'
+		   Jacky0603: hands-on(build and test) 'zynq-ddrtest' project and 'FSBL' project on ZC706 EVB: PASS
+		   Jacky0612: hands-on(build and test) 'zynq-ddrtest' project and 'FSBL' project on FHK-DFB: PASS
+
+U-Boot.elf
+	v0.01: Xilinx: depend on ZC706 Board Design (mainly Processor, MIO, PLL, Clock, DDRC, NANDC, SPI-FLASH-C, SD-C)
+	v0.02: console is changed because uart0 is enabled (rather than uart1) -- temply
+
+uEnv.txt: Jacky
+	v0.01: orginal adi-hdl-2018r1
+	v0.02: console is changed because uart0 is enabled (rather than uart1) -- temply
+	v0.03: new boot arguments for "uio" to support DPD driver "dpd-smp.elf"
+
+devicetree.dtb: Jacky
+	v0.01: orginal adi-linux-2018r2
+	v0.02: small spi-rate due to external FHK components
+	v0.03: ad9528 clocks to axi-jesd204b nodes
+	v0.04: address, interrupts, gpios for axi-jesd204b nodes
+	v0.05: 1st adrv9009 only ORX1 is used
+	v0.06: enable uart0 and i2c0
+	v0.07: new 245MHz profile and 491MHz profile, but failed
+	v0.08: 1, continue use 122MHz profile
+	       2, axi-jesd204ro_layer2: "adi,octets-per-frame" : 4 -> 2 to follow "adrv9009-orx"
+	       3, add "adi,trx-pll-lo-frequency_hz" = 3.5GHz
+	v0.09: "CFR+GAIN+DPDv8.1rev1" added from "Xilinx DFE_Subsystem_Reference_Design_v2_1" with 
+	v0.10/0311: "DPDv8.1rev1" node only, without jesd204b nodes; new one "axi@1" node for 0x80000000~0xC0000000
+	v0.11/0311: "DPDv9.0" added over v0.08 (DPDv9_0-IP and DPDv9_0-Driver bring-up succeed)
+	v0.12/0315: JESD-RX-DMA width change into 128 from 64; "fhk_adrv9009_245m.dtsi" and "fhk_adrv9009_491m.dtsi" are produced but failed on board
+	v0.13/0319: the base address of DPD is changed into 0xA0000000 from 0x80000000, because of the default 'dpd-host-app' release
+	v0.14/0322: 245m-profile workable: JESD-RX-L1/JESD-ORX-L1 change per FPGA-GTH2-CPLL -> FPGA-GTH2-QPLL (shared with JESD-TX-L1)
+	v0.15/0329: put JESD-TX-L1 before of JESD-RX-L1 to init the shared QPLL at first; more adjust for 491m-profile/dts
+	v0.16/0408: 491m-profile workable: more important comments; tx-primary-sig-bandwidth_hz(100->200, not the key); 
+			JESD-RX-DMA width revert back to 64; DPD interrupt change into IRQF2P[0] rather than IRQF2P[7]
+	v0.17/0411: 122m-profile ORx-iio-stream error fixed: M=2,L=2(should be 1),F=2 -> M=4,L=2,F=4
+	v0.18/0418: merge zynq-zc706-adv7511.dtsi into fhk_zc706ad9009fhk.dts;
+			remove nodes for HDMI+ADV7511();
+			remove adrv9009-tx1/tx2/rx1/rx2-enable-gpios, add "arm-gpio-config-orx1-tx-sel[2]" setting
+	v0.19/0423: 122m-profile is restore to CPLL from QPLL
+	v0.20/0430: ADRV9009-GPIOs are re-assign after after my reviewing on TDDC design
+	v0.21/0523: revert 'jesd204ro_layer3' nodes name into 'axi-adrv900-xx-hpc' to use IIO-OSC GUI for DDS-signal-send;
+			debug the issue 'adi,trx-pll-lo-frequency_hz = <3500000000> does NOT work' (fixed by my workaround for 'drivers/of/property.c')
+			recovert jesd204b layer1/2 device nodes names
+	v0.22/0529: 245m/491m-profiles: adjust fhm-max > fhm-min, power-enable-measure 1->0
+	v0.23/0612: rename jesd204b layer1/2 + axi-dma device nodes names
+			245m-profile: adjust a few settings about filters to align with TES scripts
+			122m-profile: adjust a few settings about filters to align with TES scripts
+
+uImage(Linux-Kernel): Jacky
+	v0.01: orginal adi-linux-2018r2
+	v0.02: merge with adi-linux-dev-adrv9009-zc706
+	v0.03: merge with the previous codes "fhk_a10ad9371"
+	v0.04: enable "DEBUG" for all ADI-drivers
+	v0.05: adrv9009-InitCal use the mask value same as TES
+	v0.06: adrv9009.c merge from "2018r2" branch, it means that adrv900.c version is 192, 
+		Firmware version is 6.0.2, API version is 3.6.0.5; then adrv9009 current_loopBandwidth_kHz: 50 -> 300
+	v0.07: adrv9009.c:init-calibration-mask:enable all except TAL_TX_LO_LEAKAGE_INTERNAL;
+		then move external TX-LOL calibration after framer initialization finished.
+	v0.08/0315: enable more 'DEBUG' macro, to debug Linux clock subsystem
+	v0.09/0322: 245m-profile workable: aligned with dtb0.14: drivers/iio/jesd204/axi_adxcvr.c,drivers/iio/jesd204/xilinx_transceiver.c
+	v0.10/0329: drivers/iio/jesd204/xilinx_transceiver.c: revert back; drivers/iio/jesd204/axi_adxcvr.c: QPLL init with the 1/40/1
+	v0.11/0408: 491m-profile workable: add firmware "TaliseStreamStitch.bin"; disable "phy->talInit.obsRx.obsRxChannelsEnable = 1;" for ORx stitching mode
+	v0.12/0418: add 'TALISE_setRadioCtlPinMode' to assign GPIO_8/9 as ORX1/2-ENABLE
+	v0.13/0430: adrv9009.c: add TX_LOL_ECAL function with accessing the iomem region
+	v0.14/0523: adrv9009.c: debug TX_LOL_ECAL similar with TES-script TX2->ORX2: Tx attention should be set before TXLOL_ECAL
+				drivers/of/property.c: fix '3.5GHz setting in DTS does NOT work'
+	V0.15/0612: adrv9009.c: TX_LOL_ECAL function is changed due to TDDC-new have different physical/iomem address
+
+rootfs/userspace: FW team lead by Jacky
+	v0.01: original Linaro Ubuntu14.04
+	v0.02: system-level configuration update and download "adi-scripts" from ADI-drivers
+	v0.03: add network applications/deamons e.g. sshd, ntpd, ptpd ... and yuma123-server
+	v0.04: /root/fhk-xge-ecpri
+		"i2c-si5324-xgeth.sh": Jacky's debug script to configure si5324 to generate 156.25M clock to Xilinx 10GE subsystem
+		"xgemac_smi.sh": Jacky's debug script to write/read one SMI device of the Xilinx 10GE MAC
+	v0.05: 
+		/root/fhk-libiio-app: 
+			libiio applications, "iio_cfg" and "iio_stream"; 
+			and official adrv9009 profiles from "https://github.com/analogdevicesinc/iio-oscilloscope/tree/master/filters/adrv9009".
+		/root/xlnx-dpd:
+			"dpd-smp": xilinx prebuilt DPDv9.0 uio driver
+			"dbg8.sh": Jacky's debug script to bring up DPD HW&SW with base address 0x80000000
+			"dbg.sh" : Jacky's debug script to bring up DPD HW&SW with base address 0xA0000000
+			"dpd-host-app": xilinx prebuilt DPD-parameters-control-SW, which operate the DPD-axi_user-interface to interact with DPD-shared-memory
+	v0.06: 
+		/root/tddc_cal.sh:  function2, Tracking_CAL with [IO_]ORX2_TX_SEL control (GPIO style): test result: SW ok, wait to system-level verify
+			function2, TX_LOL_ECAL with [IO_]ORX2_TX_SEL control (GPIO style): test result "failed"
+							

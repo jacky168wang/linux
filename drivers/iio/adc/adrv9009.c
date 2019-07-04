@@ -73,7 +73,9 @@ Notes:
 	(https://linux.die.net/man/1/xxd) $ xxd -i TaliseStream.bin > TaliseStream.h
 */
 #define FHK_ORX_STITCH_FIXUP
+#ifdef FHK_ORX_STITCH_FIXUP
 #define STREAM_STITCH	"TaliseStreamStitch.bin"
+#endif
 
 #if 0
 #define TALISE_ICAL_RXONLY (TAL_RX_GAIN_DELAY | TAL_RX_QEC_INIT | \
@@ -87,7 +89,7 @@ Notes:
 				TAL_ORX_LO_DELAY | TAL_TX_ATTENUATION_DELAY | \
 				TAL_TX_LO_LEAKAGE_EXTERNAL))
 #endif
-// initCalMask == 0x000e5def
+/* exclude TXLOL_ECAL & FHM: initCalMask == 0x000e5def */
 #define ADRV9009_ICAL_DEFAULT \
 				(TAL_TX_BB_FILTER | TAL_ADC_TUNER |  TAL_TIA_3DB_CORNER | \
 				TAL_DC_OFFSET | TAL_RX_GAIN_DELAY | TAL_FLASH_CAL | \
@@ -95,6 +97,10 @@ Notes:
 				TAL_TX_QEC_INIT | TAL_LOOPBACK_RX_LO_DELAY | \
 				TAL_LOOPBACK_RX_RX_QEC_INIT | TAL_RX_QEC_INIT | \
 				TAL_ORX_QEC_INIT | TAL_TX_DAC  | TAL_ADC_STITCHING)
+
+/* exclude "HD2 for GSM applications" */
+#define ADRV9009_TCAL_DEFAULT \
+				(TAL_TRACK_ALL & ~(TAL_TRACK_RX1_HD2 | TAL_TRACK_RX2_HD2))
 
 // 10 -bit:
 //
@@ -738,7 +744,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	int ret = TALACT_NO_ACTION;
 	long dev_clk, fmc_clk;
 	uint32_t lmfc = 0;
-	static int n1_flag = 0, n2_flag = 0;
 
 	phy->talInit.spiSettings.MSBFirst = 1;
 	phy->talInit.spiSettings.autoIncAddrUp = 1;
@@ -748,9 +753,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	switch (phy->spi_device_id) {
 	case ID_ADRV9009:
 	case ID_ADRV9009_X2:
-		initCalMask = ADRV9009_ICAL_DEFAULT;
-		//initCalMask &= ~TAL_TX_LO_LEAKAGE_INTERNAL;
-		initCalMask |= TAL_TX_LO_LEAKAGE_EXTERNAL;
+		dev_dbg(&phy->spi->dev, "%s : phy->init_cal_mask=0x%08x", __func__, phy->init_cal_mask);
+		initCalMask = phy->init_cal_mask ? phy->init_cal_mask : ADRV9009_ICAL_DEFAULT;
+		initCalMask |= TAL_TX_LO_LEAKAGE_EXTERNAL;/* comment if no FPGA-TDDC in your design */
 		dev_info(&phy->spi->dev, "%s : initCalMask=0x%08x", __func__, initCalMask);
 		break;
 	case ID_ADRV90081:
@@ -955,18 +960,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		ret = -EFAULT;
 		goto out_disable_tx_clk;
 	}
-#if 0//def RFIC_CTL_MODE_PIN
-	ret = TALISE_setRadioCtlPinMode(phy->talDevice,
-		TAL_TXRX_PIN_MODE | TAL_ORX_PIN_MODE, TAL_ORX1ORX2_PAIR_89_SEL);
-	if (ret != TALACT_NO_ACTION) {
-		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
-		ret = -EFAULT;
-		goto out_disable_tx_clk;
-	}
-#endif
 
 	/*******************************/
-	/** Set RF PLL LO Frequencies ***/
+	/**Set RF PLL LO Frequencies ***/
 	/*******************************/
 	/* JACKY-20190530: align with TES-python and refer to 'adrv9009_phy_lo_write' */
 	if (phy->trx_lo_frequency >= 3000000000ULL)
@@ -1034,7 +1030,8 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*************************************************************************/
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
-		if ((!n1_flag) || (!n2_flag)) {
+		static int n1_flag = 0, n2_flag = 0;
+		if ((!n1_flag) || (!n2_flag)) {/* to avoid TXLOL_ECAL more than one time */
 			ret = adrv9009_txlol_ecal(phy);
 			if (ret != TALACT_NO_ACTION) {
 				ret = -EFAULT;
@@ -1170,6 +1167,22 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 
 	adrv9009_sysref_req(phy, SYSREF_CONT_ON);
 
+	/* JACKY-FIX2ADI: put ahead of 'has_rx_and_en(phy)' otherwise QPLL-491SPS failed! */
+	if (has_tx_and_en(phy)) {
+		u8 phy_ctrl;
+		/* Fixme: Need to wait until TX DIV40 MMCM is enabled */
+		//msleep(100);
+		ret = clk_prepare_enable(phy->jesd_tx_clk);
+		if (ret < 0) {
+			dev_err(&phy->spi->dev, "jesd_tx_clk enable failed (%d)", ret);
+			goto out;
+		}
+		/* RESET CDR */
+		phy_ctrl = adrv9009_spi_read(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1);
+		adrv9009_spi_write(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1, phy_ctrl & ~BIT(7));
+		adrv9009_spi_write(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1, phy_ctrl);
+	}
+
 	if (has_rx_and_en(phy)) {
 		ret = clk_prepare_enable(phy->jesd_rx_clk);
 		if (ret < 0) {
@@ -1184,19 +1197,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			dev_err(&phy->spi->dev, "jesd_rx_os_clk enable failed (%d)", ret);
 			goto out_disable_rx_clk;
 		}
-	}
-
-	if (has_tx_and_en(phy)) {
-		u8 phy_ctrl;
-		ret = clk_prepare_enable(phy->jesd_tx_clk);
-		if (ret < 0) {
-			dev_err(&phy->spi->dev, "jesd_tx_clk enable failed (%d)", ret);
-			goto out;
-		}
-		/* RESET CDR */
-		phy_ctrl = adrv9009_spi_read(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1);
-		adrv9009_spi_write(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1, phy_ctrl & ~BIT(7));
-		adrv9009_spi_write(phy->spi, TALISE_ADDR_DES_PHY_GENERAL_CTL_1, phy_ctrl);
 	}
 
 	adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
@@ -1251,9 +1251,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	 * Tx calibrations will only run if radioOn and *
 	 * the obsRx path is set to OBS_INTERNAL_CALS   *
 	 * **********************************************/
-	//phy->tracking_cal_mask = TAL_TRACK_NONE;
-	/* excluding "HD2 for GSM applications" */
-	phy->tracking_cal_mask = TAL_TRACK_ALL & ~(TAL_TRACK_RX1_HD2 | TAL_TRACK_RX2_HD2);
 
 	ret = TALISE_setGpIntMask(phy->talDevice, TAL_GP_MASK_AUX_SYNTH_UNLOCK);
 	if (ret != TALACT_NO_ACTION) {
@@ -1262,6 +1259,8 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		goto out_disable_obs_rx_clk;
 	}
 
+	dev_dbg(&phy->spi->dev, "%s : phy->init_cal_mask=0x%08x", __func__, phy->tracking_cal_mask);
+	phy->tracking_cal_mask = ADRV9009_TCAL_DEFAULT;
 	ret = TALISE_enableTrackingCals(phy->talDevice, phy->tracking_cal_mask);
 	if (ret != TALACT_NO_ACTION) {
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
@@ -1298,7 +1297,7 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 			phy->talInit.tx.txProfile.txInputRate_kHz * 1000);
 	}
 
-#if 0
+	/* if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) do twice; else do one time */
 	ret = TALISE_setRxTxEnable(phy->talDevice,
 				   has_rx_and_en(phy) ? TAL_RX1RX2_EN : 0,
 				   has_tx_and_en(phy) ? TAL_TX1TX2 : 0);
@@ -1307,7 +1306,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 		ret = -EFAULT;
 		goto out_disable_obs_rx_clk;
 	}
-#endif
 
 	adrv9009_sysref_req(phy, SYSREF_CONT_ON);
 
@@ -1383,7 +1381,7 @@ static int adrv9009_setup(struct adrv9009_rf_phy *phy)
 
 			phy->talInit.jesd204Settings.framerB.M = 2;
 			phy->talInit.jesd204Settings.framerB.F = 2;
-#ifndef FHK_ORX_STITCH_FIXUP
+#ifndef FHK_ORX_STITCH_FIXUP	/* JACKY-FIX2ADI */
 			phy->talInit.obsRx.obsRxChannelsEnable = 1;
 #endif
 		}
@@ -3878,7 +3876,9 @@ static int adrv9009_phy_parse_dt(struct iio_dev *iodev, struct device *dev)
 	} \
 
 	ADRV9009_OF_PROP("adi,default-initial-calibrations-mask", &phy->init_cal_mask,
-				ADRV9009_ICAL_DEFAULT);
+			 ADRV9009_ICAL_DEFAULT);
+	ADRV9009_OF_PROP("adi,default-tracking-calibrations-mask", &phy->tracking_cal_mask,
+			 ADRV9009_TCAL_DEFAULT);
 
 	ADRV9009_OF_PROP("adi,rxagc-peak-agc-under-range-low-interval_ns",
 			 &phy->rxAgcCtrl.agcPeak.agcUnderRangeLowInterval_ns, 205);
@@ -5428,8 +5428,10 @@ static int adrv9009_probe(struct spi_device *spi)
 
 	if (of_property_read_string(spi->dev.of_node, "stream-firmware-name", &name))
 		name = STREAM;
+#ifdef FHK_ORX_STITCH_FIXUP
 	if (phy->talInit.obsRx.orxProfile.rfBandwidth_Hz > 200000000)
 		name = STREAM_STITCH;
+#endif
 
 	ret = request_firmware(&phy->stream, name, &spi->dev);
 	if (ret) {
