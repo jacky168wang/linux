@@ -399,7 +399,7 @@ History	:
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;// 0: TAL_TXDIS_TX_NOT_DISABLED; 2: TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
 
@@ -407,7 +407,7 @@ History	:
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3: Enable RFPLL phase sync init and track continuously
+		adi,dig-clocks-rf-pll-phase-sync-mode = <3>;// 0: Disable; 3: init and track continuously
 
 		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
@@ -803,7 +803,7 @@ History	:
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
-		adi,tx-settings-dis-tx-data-if-pll-unlock = <2>;// 0->2: TAL_TXDIS_TX_NOT_DISABLED->TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
+		adi,tx-settings-dis-tx-data-if-pll-unlock = <0>;// 0: TAL_TXDIS_TX_NOT_DISABLED; 2: TAL_TXDIS_TX_RAMP_DOWN_TO_ZERO
 
 		/* Clocks */
 
@@ -811,7 +811,7 @@ History	:
 		adi,dig-clocks-clk-pll-vco-freq_khz = <9830400>;
 		adi,dig-clocks-clk-pll-hs-div = <1>;// TAL_HSDIV_2P5
 		adi,dig-clocks-rf-pll-use-external-lo = <0>;
-		adi,dig-clocks-rf-pll-phase-sync-mode = <0>;// 0->3: Enable RFPLL phase sync init and track continuously
+		adi,dig-clocks-rf-pll-phase-sync-mode = <3>;// 0: Disable; 3: init and track continuously
 
 		// JACKY-20190523: property value <u64>(e.g. 0x1122334455667788) is represented as two cells(e.g. <0x11223344 0x55667788>)
 		// TODO: it's 4-byte size after debugging and cannot find a right way to represent; so drivers/of/property.c is changed
@@ -1093,6 +1093,7 @@ History	:
 		clock-names = "sampl_clk";
 		spibus-connected = <&trx0_adrv9009>;
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
+		//plddrbypass-gpios = <&gpio0 114 0>;
 
 		//adi,axi-dds-parity-enable; bool
 		//adi,axi-dds-parity-type-odd; bool
@@ -1350,6 +1351,7 @@ History	:
 		clock-names = "sampl_clk";
 		spibus-connected = <&trx1_adrv9009>;
 		//adi,axi-pl-fifo-enable;/* "iio-stream" fail/succeed when true/false */
+		//plddrbypass-gpios = <&gpio0 114 0>;
 
 		//adi,axi-dds-parity-enable; bool
 		//adi,axi-dds-parity-type-odd; bool
@@ -1593,16 +1595,6 @@ History	:
 &clk0_ad9528 {
 	reset-gpios = <&gpio0 113 0>;
 };
-#if AD9009N1_ENABLE
-&axi_adrv9009_core_tx {
-	plddrbypass-gpios = <&gpio0 114 0>;
-};
-#endif
-#if AD9009N2_ENABLE
-&axi_adrv9009n2_core_tx {
-	plddrbypass-gpios = <&gpio0 114 0>;
-};
-#endif
 
 &spi1 {
 	status = "okay";
