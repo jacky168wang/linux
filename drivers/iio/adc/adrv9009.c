@@ -534,7 +534,7 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
    (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means
    		TXLOL_ECAL with RFIC PIN mode */
 #define RFFC_CTL_BY_SW
-#define RFIC_CTL_MODE_PIN
+//#define RFIC_CTL_MODE_PIN
 #if defined(RFIC_CTL_MODE_PIN) && !defined(RFFC_CTL_BY_SW)
 #error "RFIC pin mode means RFFC has to been operated meanwhile"
 #endif
@@ -674,22 +674,22 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 		dev_err(&phy->spi->dev, "Failed to remap TDDC_IOMEM, err = %d\n", ret);
 		goto out_release_iomem;
 	}
-
 	/* FPGA-RFES-TDDC: io_config_manually enable */
 	val = readl(phy->tddc_regs+TDDC_REG_CTL);
 	if (((val & 0xff000000) >> 24) != 0x7a) { /* 'z01': 0x7a3031 */
-		dev_err(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x: *** wrong PL-TDDC version ***\n",
-			__func__, (uint32_t)phy->tddc_regs+TDDC_REG_CTL, val);
+		dev_err(&phy->spi->dev, "%s: FHK-PL-TDDC(0x%08X->0x%08X, 0x%08x) *** wrong version ***",
+			__func__, FHK_PL_TDDC_IO_BASE+TDDC_REG_CTL,
+			(uint32_t)phy->tddc_regs+TDDC_REG_OUT, val);
 		goto out_unmap_iomem;
 	}
-	val &= ~ BIT(0);/* default is 0/ARM-control */
-	val |= BIT(4);/* PA_Power Enable */
-	writel(val, phy->tddc_regs+TDDC_REG_CTL);
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x: PL-TDDC(%c%c%c) is detected",
-		__func__, (uint32_t)phy->tddc_regs+TDDC_REG_CTL, val, 
+	dev_info(&phy->spi->dev, "%s: FHK-PL-TDDC(0x%08X->0x%08x, %c%c%c) is detected",
+		__func__, FHK_PL_TDDC_IO_BASE+TDDC_REG_CTL, val, 
 		(val & 0xff000000) >> 24,
 		(val & 0x00ff0000) >> 16,
 		(val & 0x0000ff00) >>  8);
+	val &= ~ BIT(0);/* default is 0/ARM-control */
+	val |= BIT(4);/* PA_Power Enable */
+	writel(val, phy->tddc_regs+TDDC_REG_CTL);
 #endif
 	/* TX2 performance is worse than TX1, whatever disable TX1-ECAL or not  */
 	ret = txlol_ecal(phy, N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
