@@ -527,23 +527,25 @@ static const char * const adrv9009_ilas_mismatch_table[] = {
 /*************************************************************************/
 /*****	TALISE ARM Initialization External LOL Calibrations with PA  *****/
 /*************************************************************************/
-#define RFFC_CTL_BY_SW
-#define RFIC_CTL_MODE_PIN
+#define FHK_RFIC_TXLOL_ECAL
+#ifdef FHK_RFIC_TXLOL_ECAL
 /* (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=false) means
 		TXLOL_ECAL with RFIC SPI mode,
    (RFFC_CTL_BY_SW=true + RFIC_CTL_MODE_PIN=true ) means
    		TXLOL_ECAL with RFIC PIN mode */
+#define RFFC_CTL_BY_SW
+#define RFIC_CTL_MODE_PIN
 #if defined(RFIC_CTL_MODE_PIN) && !defined(RFFC_CTL_BY_SW)
 #error "RFIC pin mode means RFFC has to been operated meanwhile"
 #endif
 #include <linux/ioport.h>
 #include <asm/io.h>
-#define FHK_FPGA_TDDC_IO_SIZE 0x60
-#define FHK_FPGA_TDDC_IO_BASE 0x43C50000
+#define FHK_PL_TDDC_IO_SIZE 0x60
+#define FHK_PL_TDDC_IO_BASE 0x43C50000
 #define TDDC_REG_CTL 0x00
 #define TDDC_REG_OUT 0xBC
-#define AD9009N1_SPI_CS 1
-//#define AD9009N2_SPI_CS 2
+#define N1_SPI_CS 1
+//#define N2_SPI_CS 2
 
 static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 {
@@ -567,12 +569,12 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	/* ECAL for UA_TX1<->UA_ORX2, Tx1EN and ORx2EN pins are controlled by FPGA */
 #ifdef RFFC_CTL_BY_SW
-	if (AD9009N1_SPI_CS == phy->spi->chip_select)
+	if (N1_SPI_CS == phy->spi->chip_select)
 		writel(hwio_n1[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
-	else /*if (AD9009N2_SPI_CS == phy->spi->chip_select)*/
+	else /*if (N2_SPI_CS == phy->spi->chip_select)*/
 		writel(hwio_n2[itx-TAL_TX1], phy->tddc_regs+TDDC_REG_OUT);
 	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x\n", __func__,
-		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
+		(uint32_t)phy->tddc_regs+TDDC_REG_OUT, 
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
 #ifndef RFIC_CTL_MODE_PIN
@@ -593,7 +595,7 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 		return ret;
 	}
 
-	enable_irq(phy->spi->irq);/* allow  interrupt to overcome 'hung_task' timeout */
+	//enable_irq(phy->spi->irq);/* allow  interrupt to overcome 'hung_task' timeout */
 	for (tx_att=20; tx_att>0; tx_att--) {
 		/* 20190529: later send (run-time) signal with the TARGET att
 		   (it's a MUST per manually test) */
@@ -633,7 +635,7 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 			txlolret.varianceMetric, txlolret.iterCount, txlolret.updateCount);
 #endif
 	}
-	disable_irq(phy->spi->irq);/* revert interrupt to overcome 'hung_task' timeout */
+	//disable_irq(phy->spi->irq);/* revert interrupt to overcome 'hung_task' timeout */
 
 	/* recover the TxAttenuation configured in DTS */
 	ret = TALISE_setTxAttenuation(phy->talDevice, itx, 
@@ -648,6 +650,7 @@ static int txlol_ecal(struct adrv9009_rf_phy *phy, int iorx, int itx)
 static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 {
 	int ret = TALACT_NO_ACTION;
+	u32 val;
 
 	//return ret; /* to compile "uImage_ecal0_xxx" */
 #ifdef RFIC_CTL_MODE_PIN
@@ -659,31 +662,41 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 	}
 #endif
 #ifdef RFFC_CTL_BY_SW
-	if (NULL == request_mem_region(FHK_FPGA_TDDC_IO_BASE,
-			FHK_FPGA_TDDC_IO_SIZE, phy->indio_dev->name)) {
+	if (NULL == request_mem_region(FHK_PL_TDDC_IO_BASE,
+			FHK_PL_TDDC_IO_SIZE, phy->indio_dev->name)) {
 		dev_err(&phy->spi->dev, "%s:%d Couldn't lock memory region 0x%08X+0x%x",
-			__func__, __LINE__, FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+			__func__, __LINE__, FHK_PL_TDDC_IO_BASE, FHK_PL_TDDC_IO_SIZE);
 		return -ENOMEM;
 	}
-	phy->tddc_regs = ioremap(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+	phy->tddc_regs = ioremap(FHK_PL_TDDC_IO_BASE, FHK_PL_TDDC_IO_SIZE);
 	if (IS_ERR(phy->tddc_regs)) {
 		ret = PTR_ERR(phy->tddc_regs);
 		dev_err(&phy->spi->dev, "Failed to remap TDDC_IOMEM, err = %d\n", ret);
 		goto out_release_iomem;
 	}
 
-	/* FPGA-RFES-TDDC: io_config_manually enable
-	writel(0x00000000, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
-	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
-		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
-		readl(phy->tddc_regs+TDDC_REG_CTL));*/
+	/* FPGA-RFES-TDDC: io_config_manually enable */
+	val = readl(phy->tddc_regs+TDDC_REG_CTL);
+	if (((val & 0xff000000) >> 24) != 0x7a) { /* 'z01': 0x7a3031 */
+		dev_err(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x: *** wrong PL-TDDC version ***\n",
+			__func__, (uint32_t)phy->tddc_regs+TDDC_REG_CTL, val);
+		goto out_unmap_iomem;
+	}
+	val &= ~ BIT(0);/* default is 0/ARM-control */
+	val |= BIT(4);/* PA_Power Enable */
+	writel(val, phy->tddc_regs+TDDC_REG_CTL);
+	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x: PL-TDDC(%c%c%c) is detected",
+		__func__, (uint32_t)phy->tddc_regs+TDDC_REG_CTL, val, 
+		(val & 0xff000000) >> 24,
+		(val & 0x00ff0000) >> 16,
+		(val & 0x0000ff00) >>  8);
 #endif
 	/* TX2 performance is worse than TX1, whatever disable TX1-ECAL or not  */
-	ret = txlol_ecal(phy, AD9009N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
+	ret = txlol_ecal(phy, N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX1);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
-	ret = txlol_ecal(phy, AD9009N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX2);
+	ret = txlol_ecal(phy, N1_SPI_CS==phy->spi->chip_select?TAL_ORX2_EN:TAL_ORX1_EN, TAL_TX2);
 	/* not critical (performance issue), so continue
 	if (ret != TALACT_NO_ACTION)
 		goto out_unmap_iomem;*/
@@ -692,7 +705,7 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 #ifdef RFFC_CTL_BY_SW
 	writel(0x04aa83f0, phy->tddc_regs+TDDC_REG_OUT);
 	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
-		(uint32_t)phy->tddc_regs+TDDC_REG_OUT,
+		(uint32_t)phy->tddc_regs+TDDC_REG_OUT, 
 		readl(phy->tddc_regs+TDDC_REG_OUT));
 #endif
 #ifndef RFIC_CTL_MODE_PIN
@@ -718,20 +731,22 @@ static int adrv9009_txlol_ecal(struct adrv9009_rf_phy *phy)
 		dev_err(&phy->spi->dev, "%s:%d (ret %d)", __func__, __LINE__, ret);
 		ret = -EFAULT;
 	}
-	/* FPGA-RFES-TDDC: io_config_manually disable
-	writel(0x00000001, phy->tddc_regs+TDDC_REG_CTL);//default is 0/ ARM-control
+	/* FPGA-RFES-TDDC: io_config_manually disable */
+	//val = readl(phy->tddc_regs+TDDC_REG_CTL);
+	val |= BIT(0);/* change into 1/FPGA-control */
+	writel(val, phy->tddc_regs+TDDC_REG_CTL);
 	dev_info(&phy->spi->dev, "%s: inw(0x%08X)=0x%08x", __func__,
-		(uint32_t)phy->tddc_regs+TDDC_REG_CTL,
-		readl(phy->tddc_regs+TDDC_REG_CTL)); */
+		(uint32_t)phy->tddc_regs+TDDC_REG_CTL, val);
 #endif
 out_unmap_iomem:
 #ifdef RFFC_CTL_BY_SW
 	iounmap(phy->tddc_regs);
 out_release_iomem:
-	release_mem_region(FHK_FPGA_TDDC_IO_BASE, FHK_FPGA_TDDC_IO_SIZE);
+	release_mem_region(FHK_PL_TDDC_IO_BASE, FHK_PL_TDDC_IO_SIZE);
 #endif
 	return ret;
 }
+#endif
 
 static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 {
@@ -755,7 +770,9 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	case ID_ADRV9009_X2:
 		dev_dbg(&phy->spi->dev, "%s : phy->init_cal_mask=0x%08x", __func__, phy->init_cal_mask);
 		initCalMask = phy->init_cal_mask ? phy->init_cal_mask : ADRV9009_ICAL_DEFAULT;
+#ifdef FHK_RFIC_TXLOL_ECAL
 		initCalMask |= TAL_TX_LO_LEAKAGE_EXTERNAL;/* comment if no FPGA-TDDC in your design */
+#endif
 		dev_info(&phy->spi->dev, "%s : initCalMask=0x%08x", __func__, initCalMask);
 		break;
 	case ID_ADRV90081:
@@ -1030,18 +1047,19 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	/*************************************************************************/
 	/*** < Action: Please ensure PA is enabled operational at this time > ***/
 	if (initCalMask & TAL_TX_LO_LEAKAGE_EXTERNAL) {
+#ifdef FHK_RFIC_TXLOL_ECAL
 		static int n1_flag = 0, n2_flag = 0;
 		if ((!n1_flag) || (!n2_flag)) {/* to avoid TXLOL_ECAL more than one time */
 			ret = adrv9009_txlol_ecal(phy);
-			if (ret != TALACT_NO_ACTION) {
-				ret = -EFAULT;
+			/*if (ret != TALACT_NO_ACTION) { it's not a MUST but a performance option
 				goto out_disable_tx_clk;
-			}
-			if (AD9009N1_SPI_CS==phy->spi->chip_select)
+			}*/
+			if (N1_SPI_CS==phy->spi->chip_select)
 				n1_flag=1;
 			else
 				n2_flag=1;
 		}
+#endif
 	}
 
 	/*************************************************************************/
@@ -1055,7 +1073,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	//adrv9009_sysref_req(phy, SYSREF_CONT_OFF);
 
 	/*** Enable Talise JESD204B Framers ***/
-
 	//FpgaTalise.EnableJesd204bDeframer(FpgaTalise.FpgaDeframerSelect.DisableAll)
 	//FpgaTalise.ResetFpgaIp(FpgaTalise.FpgaResets.RxJesdRst)
 	//FpgaTalise.ResetFpgaIp(FpgaTalise.FpgaResets.ClearAllRst)
@@ -1132,7 +1149,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/*** Enable  Talise JESD204B Deframers ***/
-
 	//FpgaTalise.EnableJesd204bDeframer(FpgaTalise.FpgaFramerSelect.DisableAll)
 	//FpgaTalise.ResetFpgaIp(FpgaTalise.FpgaResets.TxJesdRst)
 	//FpgaTalise.ResetFpgaIp(FpgaTalise.FpgaResets.ClearAllRst)
@@ -1164,7 +1180,6 @@ static int adrv9009_do_setup(struct adrv9009_rf_phy *phy)
 	}
 
 	/*** < User Send SYSREF Here AFTER  Enable ALL Framers/Deframers > ***/
-
 	adrv9009_sysref_req(phy, SYSREF_CONT_ON);
 
 	/* JACKY-FIX2ADI: put ahead of 'has_rx_and_en(phy)' otherwise QPLL-491SPS failed! */
@@ -1374,7 +1389,11 @@ static int adrv9009_setup(struct adrv9009_rf_phy *phy)
 				 __func__, __LINE__);
 		} else {
 			if (framer_b_m != 2 || framer_b_f != 2 ||
+#ifndef FHK_ORX_STITCH_FIXUP	/* JACKY-FIX2ADI */
 				orx_channel_enabled != 1)
+#else
+				orx_channel_enabled == 3)/* both orx1 and orx2 support 491sps */
+#endif
 				dev_warn(&phy->spi->dev,
 					 "%s:%d: ORx samples might be incorrect",
 					 __func__, __LINE__);
