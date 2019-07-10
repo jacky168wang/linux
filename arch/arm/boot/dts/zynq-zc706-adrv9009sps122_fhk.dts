@@ -28,8 +28,8 @@ History	:
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
-#define AD9009N1_ENABLE 1
-#define AD9009N2_ENABLE 1
+#define AD9009N1_ENABLE
+#define AD9009N2_ENABLE
 
 &i2c_mux {
 	i2c@5 { /* HPC IIC */
@@ -181,7 +181,7 @@ History	:
 			adi,signal-source = <SOURCE_VCO>;
 		};
 	};
-#if AD9009N1_ENABLE
+#ifdef AD9009N1_ENABLE
 	trx0_adrv9009: adrv9009-phy@1 {
 		compatible = "adi,adrv9009";
 		reg = <1>;
@@ -585,7 +585,7 @@ History	:
 		adi,tx-pa-protection-tx2-peak-threshold = <130>;
 	};
 #endif
-#if AD9009N2_ENABLE
+#ifdef AD9009N2_ENABLE
 	trx1_adrv9009: adrv9009n2-phy@2 {
 		compatible = "adi,adrv9009";
 		reg = <2>;
@@ -993,7 +993,7 @@ History	:
 
 
 &fpga_axi {
-#if AD9009N1_ENABLE
+#ifdef AD9009N1_ENABLE
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
@@ -1251,7 +1251,7 @@ History	:
 		adi,out-clk-select = <3>;
 	};
 #endif
-#if AD9009N2_ENABLE
+#ifdef AD9009N2_ENABLE
 	/* 0 (AXI_DMAC_TYPE_AXI_MM): Memory mapped AXI interface
 	   1 (AXI_DMAC_TYPE_AXI_STREAM): Streaming AXI interface
 	   2 (AXI_DMAC_TYPE_AXI_FIFO): FIFO interface */
@@ -1510,7 +1510,7 @@ History	:
 	};
 #endif
 };
-#if AD9009N1_ENABLE
+#ifdef AD9009N1_ENABLE
 // adrv9009_dac_fifo_bypass_s 60
 // ad9528_reset_b,       // 59
 // ad9528_sysref_req,    // 58
@@ -1552,7 +1552,7 @@ History	:
 	tx1-enable-gpios = <&gpio0 111 0>;*/
 };
 #endif
-#if AD9009N2_ENABLE
+#ifdef AD9009N2_ENABLE
 // adrv9009_tx1_enable,    // 31
 // adrv9009_tx2_enable,    // 30
 // adrv9009_rx1_enable,    // 29
